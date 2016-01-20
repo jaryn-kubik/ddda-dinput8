@@ -32,6 +32,7 @@
     <ClInclude Include="MinHook.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="README" />
   </ItemGroup>
   <ItemGroup>
     <None Include="dinput8.def">
