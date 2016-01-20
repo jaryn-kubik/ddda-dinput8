@@ -8,7 +8,7 @@ Every time the game tries to create a save, the hook adds a timestamp to the fil
 Then whenever the game tries to load a save, the hook redirects it to the one with the latest timestamp.
 -> When you need to revert to previous save, simply remove the new ones.
 
-It also creates a log file (dinput8.log) in the main DDDA directory, with logs paths/names of handled saves.
+It also creates a log file (dinput8.log) in the main DDDA directory, which logs paths/names of handled saves.
 (-> so you can see where to find them) 
 
 ## Installation
