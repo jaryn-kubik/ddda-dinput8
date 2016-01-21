@@ -1,7 +1,7 @@
 ﻿-------------------------------------------------------------------------------
 ####################				Features				###################
 -------------------------------------------------------------------------------
-1) Save backups
+Save backups
 	Every time the game tries to create a save, the hook adds a timestamp to
 	the file name.
 	(instead of "ddda.sav" it's for example "ddda_2016-01-20_20-18-59.sav")
@@ -14,12 +14,12 @@
 	logs paths/names of handled saves.
 	(-> so you can see where to find them)
 
-2) Character customization screen
+Character customization screen
 	Allows you to enter the character customization screen at any time:
 	
-	a) go to the main menu (either the one with load game/options/etc or
+	1) go to the main menu (either the one with load game/options/etc or
 							the one with main menu/manual/exit game)
-	b) hold Home+End and press Enter
+	2) hold Home+End and press Enter
 -------------------------------------------------------------------------------
 ####################				Installation			###################
 -------------------------------------------------------------------------------

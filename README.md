@@ -15,8 +15,8 @@ It also creates a log file (dinput8.log) in the main DDDA directory, which logs 
 
 ### Character customization screen
 Allows you to enter the character customization screen at any time:  
-a) go to the main menu (either the one with load game/options/etc or the one with main menu/manual/exit game)  
-b) hold Home+End and press Enter
+1) go to the main menu (either the one with load game/options/etc or the one with main menu/manual/exit game)  
+2) hold Home+End and press Enter
 
 ## Installation
 Copy dinput8.dll into the main DDDA folder.
