@@ -159,6 +159,7 @@
     <ClInclude Include="dinput8.h" />
     <ClInclude Include="json.hpp" />
     <ClInclude Include="MinHook.h" />
+    <ClInclude Include="README" />
     <ClInclude Include="README.md" />
     <ClInclude Include="utils.h" />
   </ItemGroup>
