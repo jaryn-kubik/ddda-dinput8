@@ -40,6 +40,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Library Include="libMinHook-x86-v140-md.lib" />
+    <Library Include="libMinHook-x86-v140-mt.lib" />
   </ItemGroup>
 </Project>
