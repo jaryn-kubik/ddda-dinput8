@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-namespace CreateFileHook
+namespace CharCustomization
 {
 	void Init();
 	void Uninit();

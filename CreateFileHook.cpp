@@ -1,4 +1,5 @@
 ﻿#include "CreateFileHook.h"
+#include "dinput8.h"
 #include <ctime>
 #include <cwchar>
 #include <sstream>
@@ -36,7 +37,9 @@ std::wstring findLastSave(std::wstring dir)
 	return std::wstring();
 }
 
+typedef HANDLE(WINAPI *tCreateFileW)(LPCWSTR, DWORD, DWORD, LPSECURITY_ATTRIBUTES, DWORD, DWORD, HANDLE);
 tCreateFileW oCreateFileW;
+
 HANDLE WINAPI HCreateFileW(LPCWSTR fileName, DWORD access, DWORD share, LPSECURITY_ATTRIBUTES sec, DWORD disp, DWORD flags, HANDLE templ)
 {
 	std::wstring str(fileName);
@@ -61,4 +64,15 @@ HANDLE WINAPI HCreateFileW(LPCWSTR fileName, DWORD access, DWORD share, LPSECURI
 		}
 	}
 	return oCreateFileW(fileName, access, share, sec, disp, flags, templ);
+}
+
+void CreateFileHook::Init()
+{
+	logStatus("CreateFileW hook", MH_CreateHookEx(&CreateFileW, &HCreateFileW, &oCreateFileW));
+	logStatus("CreateFileW enable", MH_EnableHook(&CreateFileW));
+}
+
+void CreateFileHook::Uninit()
+{
+	logStatus("CreateFileW disable", MH_DisableHook(&CreateFileW));
 }

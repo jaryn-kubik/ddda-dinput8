@@ -148,14 +148,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CharCustomization.cpp" />
     <ClCompile Include="CreateFileHook.cpp" />
     <ClCompile Include="dinput8.cpp" />
+    <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CharCustomization.h" />
     <ClInclude Include="CreateFileHook.h" />
     <ClInclude Include="dinput8.h" />
+    <ClInclude Include="json.hpp" />
     <ClInclude Include="MinHook.h" />
     <ClInclude Include="README.md" />
+    <ClInclude Include="utils.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="dinput8.def" />

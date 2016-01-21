@@ -21,11 +21,14 @@
     <ClCompile Include="dinput8.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="CharCustomization.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CreateFileHook.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="dinput8.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -33,6 +36,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="README.md" />
+    <ClInclude Include="json.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CharCustomization.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CreateFileHook.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="dinput8.def">
