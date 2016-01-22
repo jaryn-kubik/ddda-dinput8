@@ -8,8 +8,8 @@ namespace utils
 	{
 		return
 		{
-			//{ "savePath", nullptr },
-			{ "charCustomizationKeys",{ 0x23, 0x24 } }//home + end
+			{ "charNumber", 0 },
+			{ "charCustomizationKeys", { 0x23, 0x24 } }//home + end
 		};
 	}
 

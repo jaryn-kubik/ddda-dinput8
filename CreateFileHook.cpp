@@ -8,7 +8,7 @@
 std::wstring findLastSave(std::wstring dir)
 {
 	time_t lastTime = 0;
-	WCHAR lastFile[260];
+	WCHAR lastFile[MAX_PATH];
 
 	WIN32_FIND_DATA ffd;
 	HANDLE hFind = FindFirstFileW((dir + L"ddda_*.sav").c_str(), &ffd);
@@ -31,10 +31,7 @@ std::wstring findLastSave(std::wstring dir)
 		} while (FindNextFile(hFind, &ffd) != 0);
 	}
 	FindClose(hFind);
-
-	if (lastTime > 0)
-		return dir + lastFile;
-	return std::wstring();
+	return dir + (lastTime > 0 ? lastFile : L"ddda.sav");
 }
 
 typedef HANDLE(WINAPI *tCreateFileW)(LPCWSTR, DWORD, DWORD, LPSECURITY_ATTRIBUTES, DWORD, DWORD, HANDLE);
@@ -44,15 +41,20 @@ HANDLE WINAPI HCreateFileW(LPCWSTR fileName, DWORD access, DWORD share, LPSECURI
 {
 	std::wstring str(fileName);
 	size_t index = str.rfind(L"ddda.sav");
-	if (index != std::string::npos && str.length() - index == 8)
+	if (index != std::string::npos && str.size() - index == 8)
 	{
+		auto charNumber = config["charNumber"];
+		if (charNumber.is_number_integer() && charNumber.get<int>() > 0)
+		{
+			str.insert(index, std::to_wstring(charNumber.get<int>()) + L"\\");
+			index = str.size() - 8;
+			CreateDirectory(str.substr(0, index).c_str(), nullptr);
+		}
 		if (access == GENERIC_READ)
 		{
-			std::wstring result = findLastSave(str.substr(0, index));
-			if (!result.empty())
-				fileName = result.c_str();
-			logFile << "Loaded: " << fileName << std::endl;
-			return oCreateFileW(fileName, access, share, sec, disp, flags, templ);
+			str = findLastSave(str.erase(index));
+			logFile << "Loaded: " << str << std::endl;
+			return oCreateFileW(str.c_str(), access, share, sec, disp, flags, templ);
 		}
 		if (access == GENERIC_WRITE)
 		{
@@ -62,6 +64,7 @@ HANDLE WINAPI HCreateFileW(LPCWSTR fileName, DWORD access, DWORD share, LPSECURI
 			logFile << "Saved: " << str.insert(index + 4, wstr).c_str() << std::endl;
 			return oCreateFileW(str.c_str(), access, share, sec, disp, flags, templ);
 		}
+		logFile << "Unknown access: " << access << std::endl;
 	}
 	return oCreateFileW(fileName, access, share, sec, disp, flags, templ);
 }

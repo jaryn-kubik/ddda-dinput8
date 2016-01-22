@@ -18,6 +18,16 @@ Allows you to enter the character customization screen at any time:
 1) go to the main menu (either the one with load game/options/etc or the one with main menu/manual/exit game)  
 2) hold Home+End and press Enter
 
+The keys (Home+End) can be changed in dinput8.json
+
+### Switching between multiple characters
+It allows you to switch between multiple characters.  
+In dinput8.json you can change the current character number ("charNumber": number).  
+It then creates an additional folder in your save directory according to the number and starts to load/save from/to there.
+
+0 means use the original save folder  
+bigger than 0 creates a new folder and uses it
+
 ## Installation
 Copy dinput8.dll into the main DDDA folder.
 
