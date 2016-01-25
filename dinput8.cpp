@@ -1,26 +1,33 @@
 #include "dinput8.h"
-#include "utils.h"
-#include "CreateFileHook.h"
+#include "SaveBackup.h"
 #include "CharCustomization.h"
 
-std::wofstream logFile;
-nlohmann::json config;
+std::wofstream logFile("dinput8.log", std::ios_base::out);
+INIReader config("dinput8.ini");
 
 void Initialize()
 {
-	logFile.open("dinput8.log", std::ios_base::out);
-	config = utils::LoadSettings();
-
-	logStatus("MH_Initialize()", MH_Initialize());
-	CreateFileHook::Init();
-	CharCustomization::Init();
+	utils::Initialize();
+	if (config.ParseError() == 0)
+	{
+		logStatus("MH_Initialize()", MH_Initialize());
+		SaveBackup::Init();
+		CharCustomization::Init();
+	}
+	else if (config.ParseError() == -1)
+		logFile << "Config: file not found!" << std::endl;
+	else
+		logFile << "Config: parse error on line " << config.ParseError() << std::endl;
 }
 
 void Unitialize()
 {
-	CharCustomization::Uninit();
-	CreateFileHook::Uninit();
-	logStatus("MH_Uninitialize()", MH_Uninitialize());
+	if (config.ParseError() == 0)
+	{
+		CharCustomization::Uninit();
+		SaveBackup::Uninit();
+		logStatus("MH_Uninitialize()", MH_Uninitialize());
+	}
 	if (logFile)
 		logFile.close();
 }
@@ -50,4 +57,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 }
 
 HRESULT WINAPI DirectInput8Create(HINSTANCE inst_handle, DWORD version, const IID& r_iid, LPVOID* out_wrapper, LPUNKNOWN p_unk)
-{ return oDirectInput8Create(inst_handle, version, r_iid, out_wrapper, p_unk); }
+{
+	return oDirectInput8Create(inst_handle, version, r_iid, out_wrapper, p_unk);
+}

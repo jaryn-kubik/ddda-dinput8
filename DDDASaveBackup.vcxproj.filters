@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="include">
+      <UniqueIdentifier>{1100a992-abbc-40f3-abf5-a80a6a9ac4d3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CreateFileHook.cpp">
@@ -27,18 +30,21 @@
     <ClCompile Include="utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="include\ini.c">
+      <Filter>include</Filter>
+    </ClCompile>
+    <ClCompile Include="include\INIReader.cpp">
+      <Filter>include</Filter>
+    </ClCompile>
+    <ClCompile Include="SaveBackup.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dinput8.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MinHook.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="README.md" />
-    <ClInclude Include="json.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="CharCustomization.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -49,6 +55,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="README" />
+    <ClInclude Include="include\ini.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\INIReader.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\MinHook.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="SaveBackup.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="dinput8.def">
@@ -56,6 +74,13 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Library Include="libMinHook-x86-v140-mt.lib" />
+    <Library Include="include\libMinHook-x86-v140-mt.lib">
+      <Filter>include</Filter>
+    </Library>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="include\LICENSE.txt">
+      <Filter>include</Filter>
+    </Text>
   </ItemGroup>
 </Project>

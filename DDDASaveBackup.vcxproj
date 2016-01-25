@@ -129,6 +129,13 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>dinput8.def</ModuleDefinitionFile>
     </Link>
+    <CustomBuildStep>
+      <Command>
+      </Command>
+    </CustomBuildStep>
+    <PostBuildEvent>
+      <Command>xcopy /y /d "$(TargetPath)" "C:\Games\Dragons Dogma Dark Arisen\"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -151,23 +158,31 @@
     <ClCompile Include="CharCustomization.cpp" />
     <ClCompile Include="CreateFileHook.cpp" />
     <ClCompile Include="dinput8.cpp" />
+    <ClCompile Include="include\ini.c" />
+    <ClCompile Include="include\INIReader.cpp" />
+    <ClCompile Include="SaveBackup.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CharCustomization.h" />
     <ClInclude Include="CreateFileHook.h" />
     <ClInclude Include="dinput8.h" />
-    <ClInclude Include="json.hpp" />
-    <ClInclude Include="MinHook.h" />
+    <ClInclude Include="include\ini.h" />
+    <ClInclude Include="include\INIReader.h" />
+    <ClInclude Include="include\MinHook.h" />
     <ClInclude Include="README" />
     <ClInclude Include="README.md" />
+    <ClInclude Include="SaveBackup.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="dinput8.def" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="libMinHook-x86-v140-mt.lib" />
+    <Library Include="include\libMinHook-x86-v140-mt.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="include\LICENSE.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -5,16 +5,12 @@
 
 #include "CharCustomization.h"
 #include "dinput8.h"
-#include "utils.h"
 
 BYTE *pCharCustomization;
 LPVOID oCharCustomization;
-bool __stdcall checkKeys()
+int __stdcall checkKeys()
 {
-	for (auto key : config["charCustomizationKeys"])
-		if (!(GetAsyncKeyState(key.get<int>()) & 0x8000))
-			return false;
-	return true;
+	return GetAsyncKeyState(config.GetInteger("", "charCustomizationKey", VK_HOME)) & 0x8000;
 }
 
 void __declspec(naked) HCharCustomization()
@@ -38,17 +34,13 @@ void CharCustomization::Init()
 {
 	BYTE sig[] = { 0x83, 0xBB, 0x84, 0x02, 0x00, 0x00, 0x0B };
 
-	if (utils::Find(sig, &pCharCustomization))
+	if (utils::FindSignature(sig, &pCharCustomization, "CharCustomization signature"))
 	{
-		logFile << "CharCustomization signature: " << pCharCustomization << std::endl;
 		logStatus("CharCustomization hook", MH_CreateHook(pCharCustomization, &HCharCustomization, &oCharCustomization));
 		logStatus("CharCustomization enable", MH_EnableHook(pCharCustomization));
 	}
 	else
-	{
-		logFile << "CharCustomization signature: not found!" << std::endl;
 		pCharCustomization = nullptr;
-	}
 }
 
 void CharCustomization::Uninit()

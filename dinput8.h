@@ -1,10 +1,11 @@
 #pragma once
 #include <windows.h>
 #include <fstream>
-#include "MinHook.h"
-#include "json.hpp"
+#include "utils.h"
+#include "include\MinHook.h"
+#include "include\INIReader.h"
 
 extern std::wofstream logFile;
-extern nlohmann::json config;
+extern INIReader config;
 
 void logStatus(LPCSTR name, MH_STATUS status);

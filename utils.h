@@ -1,20 +1,28 @@
 ﻿#pragma once
 #include "dinput8.h"
-#include "json.hpp"
 
-namespace utils
+class utils
 {
-	inline nlohmann::json getDefault()
+	static BYTE *codeBase, *codeEnd, *dataBase, *dataEnd;
+	static bool Find(BYTE* start, BYTE* end, BYTE *signature, size_t len, BYTE **offset, LPCSTR msg = nullptr);
+
+public:
+	static void Initialize();
+
+	template<size_t len> static bool Find(BYTE* start, BYTE* end, BYTE(&signature)[len], BYTE **offset, LPCSTR msg = nullptr)
+	{ return utils::Find(start, end, signature, len, offset, msg); }
+
+	template<size_t len> static bool FindSignature(BYTE(&signature)[len], BYTE **offset, LPCSTR msg = nullptr)
+	{ return utils::Find(codeBase, codeEnd, signature, len, offset, msg); }
+	
+	template<size_t len> static bool FindData(BYTE(&signature)[len], BYTE **offset, LPCSTR msg = nullptr)
+	{ return utils::Find(dataBase, dataEnd, signature, len, offset, msg); }
+
+	template<typename Type>	static void Set(Type *address, Type data)
 	{
-		return
-		{
-			{ "charNumber", 0 },
-			{ "charCustomizationKeys", { 0x23, 0x24 } }//home + end
-		};
+		DWORD oldProtect;
+		VirtualProtect(address, sizeof(Type), PAGE_EXECUTE_READWRITE, &oldProtect);
+		*address = data;
+		VirtualProtect(address, sizeof(Type), oldProtect, &oldProtect);
 	}
-
-	nlohmann::json LoadSettings();
-
-	bool FindSignature(BYTE *signature, size_t len, BYTE **offset);
-	template<size_t len> bool Find(BYTE(&signature)[len], BYTE **offset) { return FindSignature(signature, len, offset); }
 };
