@@ -72,6 +72,8 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <TargetName>dinput8</TargetName>
+    <LibraryPath>$(DXSDK_DIR)Lib\x86;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(DXSDK_DIR)Include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -79,6 +81,8 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <TargetName>dinput8</TargetName>
+    <IncludePath>$(DXSDK_DIR)Include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(DXSDK_DIR)Lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -156,7 +160,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CharCustomization.cpp" />
-    <ClCompile Include="CreateFileHook.cpp" />
+    <ClCompile Include="d3d9.cpp" />
+    <ClCompile Include="d3d9Hook.cpp" />
     <ClCompile Include="dinput8.cpp" />
     <ClCompile Include="include\ini.c" />
     <ClCompile Include="include\INIReader.cpp" />
@@ -165,7 +170,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CharCustomization.h" />
-    <ClInclude Include="CreateFileHook.h" />
+    <ClInclude Include="d3d9.h" />
+    <ClInclude Include="d3d9Hook.h" />
     <ClInclude Include="dinput8.h" />
     <ClInclude Include="include\ini.h" />
     <ClInclude Include="include\INIReader.h" />

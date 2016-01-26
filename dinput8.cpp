@@ -1,6 +1,7 @@
 #include "dinput8.h"
 #include "SaveBackup.h"
 #include "CharCustomization.h"
+#include "d3d9Hook.h"
 
 std::wofstream logFile("dinput8.log", std::ios_base::out);
 INIReader config("dinput8.ini");
@@ -13,6 +14,7 @@ void Initialize()
 		logStatus("MH_Initialize()", MH_Initialize());
 		SaveBackup::Init();
 		CharCustomization::Init();
+		d3d9Hook::Init();
 	}
 	else if (config.ParseError() == -1)
 		logFile << "Config: file not found!" << std::endl;
@@ -24,6 +26,7 @@ void Unitialize()
 {
 	if (config.ParseError() == 0)
 	{
+		d3d9Hook::Uninit();
 		CharCustomization::Uninit();
 		SaveBackup::Uninit();
 		logStatus("MH_Uninitialize()", MH_Uninitialize());

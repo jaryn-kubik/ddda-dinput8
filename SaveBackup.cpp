@@ -42,6 +42,34 @@ void __declspec(naked) HSaveGame()
 
 void SaveBackup::Init()
 {
+	/*
+	//sub_4B6770 - openFile
+	BYTE sigOpen[] = { 0x53, 0x56, 0x57,		//push	edx, esi, edi
+						0xFF, 0x24, 0x85 };		//jmp	xxx[eax*4]
+	
+	if (utils::FindSignature(sigOpen, &pOpen, "SaveBackup signature"))
+	{
+		BYTE sig1[] = { 0x68, 0x00, 0x00, 0x00, 0x00 };
+		*(LPDWORD)(sig1 + 1) = (DWORD)pSaveName;
+
+		BYTE *pOffset;
+		if (utils::Find(pOpen, pOpen + 0x100, sig1, &pOffset, "SaveBackup hook1"))
+			utils::Set((DWORD*)++pOffset, (DWORD)pNewName);
+		if (utils::Find(pOffset, pOffset + 0x100, sig1, &pOffset, "SaveBackup hook2"))
+			utils::Set((DWORD*)++pOffset, (DWORD)pNewName);
+		if (utils::Find(pOffset, pOffset + 0x100, sig1, &pOffset, "SaveBackup hook3"))
+			utils::Set((DWORD*)++pOffset, (DWORD)pNewName);
+
+		BYTE sig2[] = { 0x8D, 0x93, 0xE6, 0x09, 0x00, 0x00,
+			0x68, 0x00, 0x00, 0x00, 0x00 };
+			*(LPDWORD)(sig2 + 7) = (DWORD)pSaveName;
+
+		if (utils::FindSignature(sig2, &pOffset, "SaveBackup hook4"))
+			utils::Set((DWORD*)(pOffset += 7), (DWORD)pNewName);
+		if (utils::Find(pOffset, pOffset + 0x1000, sig2, &pOffset, "SaveBackup hook5"))
+			utils::Set((DWORD*)(pOffset += 7), (DWORD)pNewName);
+	}*/
+
 	BYTE *pSaveName;
 	BYTE saveName[] = "DDDA.sav";
 	if (utils::FindData(saveName, &pSaveName, "SaveBackup saveName"))
