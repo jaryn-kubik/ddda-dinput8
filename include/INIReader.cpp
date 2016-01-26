@@ -29,14 +29,22 @@ string INIReader::Get(string section, string name, string default_value)
     return _values.count(key) ? _values[key] : default_value;
 }
 
-long INIReader::GetInteger(string section, string name, long default_value)
+long INIReader::GetInt(string section, string name, long default_value)
 {
-    string valstr = Get(section, name, "");
-    const char* value = valstr.c_str();
-    char* end;
-    // This parses "1234" (decimal) and also "0x4D2" (hex)
-    long n = strtol(value, &end, 0);
-    return end > value ? n : default_value;
+	string valstr = Get(section, name, "");
+	const char* value = valstr.c_str();
+	char* end;
+	long n = strtol(value, &end, 0);
+	return end > value ? n : default_value;
+}
+
+unsigned long INIReader::GetUInt(string section, string name, unsigned long default_value)
+{
+	string valstr = Get(section, name, "");
+	const char* value = valstr.c_str();
+	char* end;
+	unsigned long n = strtoul(value, &end, 0);
+	return end > value ? n : default_value;
 }
 
 double INIReader::GetReal(string section, string name, double default_value)
@@ -48,7 +56,7 @@ double INIReader::GetReal(string section, string name, double default_value)
     return end > value ? n : default_value;
 }
 
-bool INIReader::GetBoolean(string section, string name, bool default_value)
+bool INIReader::GetBool(string section, string name, bool default_value)
 {
     string valstr = Get(section, name, "");
     // Convert to lower case to make string comparisons case-insensitive

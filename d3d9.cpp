@@ -4,15 +4,18 @@
 fIDirect3D9::fIDirect3D9()
 {
 	pD3D9 = nullptr;
-	onCreateDevice = nullptr;
 	onEndScene = nullptr;
+	onCreateDevice = onLostDevice = onResetDevice = nullptr;
 }
 
-fIDirect3D9::fIDirect3D9(LPDIRECT3D9 pD3D9, d3d9Callback onCreateDevice, d3d9DevCallback onEndScene)
+fIDirect3D9::fIDirect3D9(LPDIRECT3D9 pD3D9, d3d9Callback onEndScene, d3d9CallbackEx onCreateDevice,
+	d3d9CallbackEx onLostDevice, d3d9CallbackEx onResetDevice)
 {
 	this->pD3D9 = pD3D9;
-	this->onCreateDevice = onCreateDevice;
 	this->onEndScene = onEndScene;
+	this->onCreateDevice = onCreateDevice;
+	this->onLostDevice = onLostDevice;
+	this->onResetDevice = onResetDevice;
 }
 
 fIDirect3DDevice9::fIDirect3DDevice9()
@@ -29,24 +32,25 @@ fIDirect3DDevice9::fIDirect3DDevice9(LPDIRECT3DDEVICE9 pD3DDevice, fIDirect3D9 *
 
 HRESULT fIDirect3D9::CreateDevice(UINT Adapter, D3DDEVTYPE DeviceType, HWND hFocusWindow, DWORD BehaviorFlags, D3DPRESENT_PARAMETERS* pPresentationParameters, IDirect3DDevice9** ppReturnedDeviceInterface)
 {
+	logFile << "DEBUG: CreateDevice called" << std::endl;
 	IDirect3DDevice9* pDirect3DDevice9;
 	HRESULT hr = pD3D9->CreateDevice(Adapter, DeviceType, hFocusWindow, BehaviorFlags, pPresentationParameters, &pDirect3DDevice9);
 	*ppReturnedDeviceInterface = new fIDirect3DDevice9(pDirect3DDevice9, this);
-	onCreateDevice(pD3D9); // NOTE: initialize your custom D3D components here.
+	onCreateDevice(pDirect3DDevice9, pPresentationParameters);
 	return hr;
 }
 
 HRESULT fIDirect3DDevice9::EndScene()
 {
-	pD3D9->onEndScene(pD3DDevice); // NOTE: draw your custom D3D components here.
+	pD3D9->onEndScene(pD3DDevice);
 	return pD3DDevice->EndScene();
 }
 
 HRESULT fIDirect3DDevice9::Reset(D3DPRESENT_PARAMETERS* pPresentationParameters)
 {
-	//NOTE: call onLostDevice for custom D3D components here.
+	pD3D9->onLostDevice(pD3DDevice, pPresentationParameters);
 	HRESULT hr = pD3DDevice->Reset(pPresentationParameters);
-	// NOTE: call onResetDevice for custom D3D components here.
+	pD3D9->onResetDevice(pD3DDevice, pPresentationParameters);
 	return hr;
 }
 

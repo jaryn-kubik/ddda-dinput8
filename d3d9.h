@@ -3,19 +3,20 @@
 #pragma comment(lib, "d3d9.lib")
 #pragma comment(lib, "d3dx9.lib")
 
-typedef void(*d3d9Callback)(LPDIRECT3D9);
-typedef void(*d3d9DevCallback)(LPDIRECT3DDEVICE9);
+typedef void(*d3d9Callback)(LPDIRECT3DDEVICE9);
+typedef void(*d3d9CallbackEx)(LPDIRECT3DDEVICE9, D3DPRESENT_PARAMETERS*);
 
 class fIDirect3D9 : public IDirect3D9
 {
 public:
 	LPDIRECT3D9 pD3D9;
-	d3d9Callback onCreateDevice;
-	d3d9DevCallback onEndScene;
+	d3d9Callback onEndScene;
+	d3d9CallbackEx onCreateDevice, onLostDevice, onResetDevice;
 
 	virtual ~fIDirect3D9() { }
 	fIDirect3D9();
-	fIDirect3D9(LPDIRECT3D9 pD3D9, d3d9Callback onCreateDevice, d3d9DevCallback onEndScene);
+	fIDirect3D9(LPDIRECT3D9 pD3D9, d3d9Callback onEndScene, d3d9CallbackEx onCreateDevice,
+		d3d9CallbackEx onLostDevice, d3d9CallbackEx onResetDevice);
 
 	HRESULT __stdcall QueryInterface(const IID& riid, void** ppvObj) override;
 	ULONG __stdcall AddRef() override;

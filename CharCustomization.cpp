@@ -10,7 +10,7 @@ BYTE *pCharCustomization;
 LPVOID oCharCustomization;
 int __stdcall checkKeys()
 {
-	return GetAsyncKeyState(config.GetInteger("", "charCustomizationKey", VK_HOME)) & 0x8000;
+	return GetAsyncKeyState(config.GetUInt("", "charCustomizationKey", VK_HOME)) & 0x8000;
 }
 
 void __declspec(naked) HCharCustomization()
