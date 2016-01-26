@@ -22,11 +22,11 @@ You can change the font size/color in dinput.ini.
 Copy dinput8.dll and dinput8.ini into the main DDDA folder.
 
 ## Credits
-MinHook - The Minimalistic x86/x64 API Hooking Library:
+MinHook - The Minimalistic x86/x64 API Hooking Library:  
 http://www.codeproject.com/Articles/44326/MinHook-The-Minimalistic-x-x-API-Hooking-Libra
 
-inih - simple .INI file parser
+inih - simple .INI file parser  
 https://github.com/benhoyt/inih
 
-Idea for entering customization screen + pointers for clock taken from:
+Idea for entering customization screen + pointers for clock taken from:  
 http://forum.cheatengine.org/viewtopic.php?p=5641841#5641841
