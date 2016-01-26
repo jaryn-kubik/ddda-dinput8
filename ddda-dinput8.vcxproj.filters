@@ -84,9 +84,4 @@
       <Filter>include</Filter>
     </Library>
   </ItemGroup>
-  <ItemGroup>
-    <Text Include="include\LICENSE.txt">
-      <Filter>include</Filter>
-    </Text>
-  </ItemGroup>
 </Project>

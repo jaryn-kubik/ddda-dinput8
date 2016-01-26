@@ -2,47 +2,40 @@
 ####################               Features                 ###################
 -------------------------------------------------------------------------------
 Save backups
-     Every time the game tries to create a save, the hook adds a timestamp to
-     the file name.
-     (instead of "ddda.sav" it's for example "ddda_2016-01-20_20-18-59.sav")
+     !!!You need to set the right path to your save folder in dinput8.ini!!!
 
-     Then whenever the game tries to load a save, the hook redirects it to the
-     one with the latest timestamp.
-     -> When you need to revert to previous save, simply remove the new ones.
+     A hook is placed just before the game creates a save. When it gets there,
+     the current save gets duplicated with a timestamp added to it.
 
-     It also creates a log file (dinput8.log) in the main DDDA directory, which
-     logs paths/names of handled saves.
-     (-> so you can see where to find them)
+     If you need to revert to previous save, simply rename it to "ddda.sav".
 
 Character customization screen
      Allows you to enter the character customization screen at any time:
 	
      1) go to the main menu (either the one with load game/options/etc or
                              the one with main menu/manual/exit game)
-     2) hold Home+End and press Enter
+     2) hold Home (can be changed in dinput8.ini) and press Enter
 
-     The keys (Home+End) can be changed in dinput8.json
+     !!!you need to really press enter, it doesn't work with mouse!!!
 
-Switching between multiple characters
-     It allows you to switch between multiple characters. In dinput8.json you
-     can change the current character number ("charNumber": number). It then
-     creates an additional folder in your save directory according to the number
-     and starts to load/save from/to there.
+In-game clock
+     Displays in-game time in top right corner of the screen.
+	 May not work with enb, steam overlay, etc.
 
-     0 means use the original save folder
-     bigger than 0 creates a new folder and uses it
+	 You need to enable it in dinput.ini.
+	 You can change the font size/color in dinput.ini.
 -------------------------------------------------------------------------------
 ####################               Installation             ###################
 -------------------------------------------------------------------------------
-Copy dinput8.dll into the main DDDA folder.
+Copy dinput8.dll and dinput8.ini into the main DDDA folder.
 -------------------------------------------------------------------------------
 ####################               Credits                  ###################
 -------------------------------------------------------------------------------
 MinHook - The Minimalistic x86/x64 API Hooking Library:
 http://www.codeproject.com/Articles/44326/MinHook-The-Minimalistic-x-x-API-Hooking-Libra
 
-JSON for Modern C++
-http://nlohmann.github.io/json/
+inih - simple .INI file parser
+https://github.com/benhoyt/inih
 
-Idea for entering customization screen taken from:
-http://forum.cheatengine.org/viewtopic.php?p=5641841&sid=74351ba2a0e31e335a5cb0b5cbf3105f#5641841
+Idea for entering customization screen + pointers for clock taken from:
+http://forum.cheatengine.org/viewtopic.php?p=5641841#5641841

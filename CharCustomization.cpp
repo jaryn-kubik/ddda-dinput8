@@ -1,6 +1,6 @@
 ﻿/*
 	Idea taken from CheatEngine table by user Cielos
-	http://forum.cheatengine.org/viewtopic.php?p=5641841&sid=74351ba2a0e31e335a5cb0b5cbf3105f#5641841
+	http://forum.cheatengine.org/viewtopic.php?p=5641841#5641841
 */
 
 #include "CharCustomization.h"
