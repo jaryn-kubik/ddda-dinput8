@@ -1,38 +1,43 @@
 ﻿#include "SaveBackup.h"
 #include "dinput8.h"
 #include "utils.h"
+#include <locale>
+
+std::wstring saveDir, savePath;
+void printError(LPCSTR msg, DWORD error)
+{
+	logFile << msg << ": ";
+	if (error == ERROR_FILE_NOT_FOUND)
+		logFile << "file not found";
+	else if (error == ERROR_PATH_NOT_FOUND)
+		logFile << "path not found";
+	else if (error == ERROR_INVALID_NAME)
+		logFile << "invalid path";
+	else
+		logFile << (LPVOID)error;
+	logFile << " - " << savePath << std::endl;
+}
 
 void __stdcall handleSave()
 {
-	std::string path = config.Get("", "savePath", "null");
-	path.erase(path.find_last_not_of('\\') + 1);
-	path.push_back('\\');
-
 	WIN32_FILE_ATTRIBUTE_DATA fileData;
-	if (GetFileAttributesExA((path + "ddda.sav").c_str(), GetFileExInfoStandard, &fileData))
+	if (GetFileAttributesEx(savePath.c_str(), GetFileExInfoStandard, &fileData))
 	{
 		SYSTEMTIME systemTime, t;
 		FileTimeToSystemTime(&fileData.ftLastWriteTime, &systemTime);
 		SystemTimeToTzSpecificLocalTime(nullptr, &systemTime, &t);
 
-		CHAR str[64];
-		snprintf(str, 64, "ddda_%04d-%02d-%02d_%02d-%02d-%02d.sav", t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond);
+		WCHAR str[64];
+		swprintf(str, 64, L"ddda_%04d-%02d-%02d_%02d-%02d-%02d.sav", t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond);
+		std::wstring backupPath = saveDir + str;
 
-		if (CopyFileA((path + "ddda.sav").c_str(), (path + str).c_str(), FALSE))
-			logFile << "Creating backup: " << (path + str).c_str() << std::endl;
+		if (CopyFile(savePath.c_str(), backupPath.c_str(), FALSE))
+			logFile << "Creating backup: " << backupPath.c_str() << std::endl;
 		else
-			logFile << "Creating backup error: " << (LPVOID)GetLastError() << std::endl;
+			printError("Creating backup copy error", GetLastError());
 	}
 	else
-	{
-		DWORD error = GetLastError();
-		if (error == ERROR_FILE_NOT_FOUND)
-			logFile << "Creating backup error: file not found - " << (path + "ddda.sav").c_str() << std::endl;
-		else if (error == ERROR_PATH_NOT_FOUND)
-			logFile << "Creating backup error: path not found - " << path.c_str() << std::endl;
-		else
-			logFile << "Creating backup error: " << (LPVOID)error << std::endl;
-	}
+		printError("Creating backup error", GetLastError());
 }
 
 BYTE *pSaveGame = nullptr;
@@ -77,6 +82,12 @@ void SaveBackup::Init()
 		if (utils::Find(pOffset, pOffset + 0x1000, sig2, &pOffset, "SaveBackup hook5"))
 			utils::Set((DWORD*)(pOffset += 7), (DWORD)pNewName);
 	}*/
+
+	std::wstring_convert<std::codecvt<wchar_t, char, mbstate_t>> conv;
+	saveDir = conv.from_bytes(config.Get("", "savePath", "null"));
+	saveDir.erase(saveDir.find_last_not_of('\\') + 1);
+	saveDir.push_back('\\');
+	savePath = saveDir + L"ddda.sav";
 
 	BYTE *pSaveName;
 	BYTE saveName[] = "DDDA.sav";
