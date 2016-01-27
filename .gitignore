@@ -210,5 +210,4 @@ FakesAssemblies/
 GeneratedArtifacts/
 _Pvt_Extensions/
 ModelManifest.xml
-/DDDASaveBackup.VC.opendb
-*.opendb
+/ddda-dinput8.VC.opendb
