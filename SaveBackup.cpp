@@ -4,7 +4,7 @@
 
 void __stdcall handleSave()
 {
-	std::string path = config.Get("", "savePath", "");
+	std::string path = config.Get("", "savePath", "null");
 	path.erase(path.find_last_not_of('\\') + 1);
 	path.push_back('\\');
 
@@ -21,10 +21,18 @@ void __stdcall handleSave()
 		if (CopyFileA((path + "ddda.sav").c_str(), (path + str).c_str(), FALSE))
 			logFile << "Creating backup: " << (path + str).c_str() << std::endl;
 		else
-			logFile << "Creating backup: " << (LPVOID)GetLastError() << std::endl;
+			logFile << "Creating backup error: " << (LPVOID)GetLastError() << std::endl;
 	}
 	else
-		logFile << "Finding save: " << (LPVOID)GetLastError() << std::endl;
+	{
+		DWORD error = GetLastError();
+		if (error == ERROR_FILE_NOT_FOUND)
+			logFile << "Creating backup error: file not found - " << (path + "ddda.sav").c_str() << std::endl;
+		else if (error == ERROR_PATH_NOT_FOUND)
+			logFile << "Creating backup error: path not found - " << path.c_str() << std::endl;
+		else
+			logFile << "Creating backup error: " << (LPVOID)error << std::endl;
+	}
 }
 
 BYTE *pSaveGame = nullptr;
@@ -46,7 +54,7 @@ void SaveBackup::Init()
 	//sub_4B6770 - openFile
 	BYTE sigOpen[] = { 0x53, 0x56, 0x57,		//push	edx, esi, edi
 						0xFF, 0x24, 0x85 };		//jmp	xxx[eax*4]
-	
+
 	if (utils::FindSignature(sigOpen, &pOpen, "SaveBackup signature"))
 	{
 		BYTE sig1[] = { 0x68, 0x00, 0x00, 0x00, 0x00 };
