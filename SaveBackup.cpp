@@ -1,6 +1,5 @@
 ﻿#include "SaveBackup.h"
 #include "dinput8.h"
-#include "utils.h"
 #include <locale>
 #include "steam_api.h"
 
@@ -117,7 +116,7 @@ void SaveBackup::Init()
 	saveDir.erase(saveDir.find_last_not_of('\\') + 1);
 	saveDir.push_back('\\');
 	savePath = saveDir + L"ddda.sav";
-	logFile << "SaveBackup path: " << savePath << std::endl;
+	logFile << "SaveBackup path: " << savePath << std::endl;	
 }
 
 void SaveBackup::Uninit()
