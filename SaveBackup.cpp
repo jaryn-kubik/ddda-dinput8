@@ -2,6 +2,7 @@
 #include "dinput8.h"
 #include "utils.h"
 #include <locale>
+#include "steam_api.h"
 
 std::wstring saveDir, savePath;
 void printError(LPCSTR msg, DWORD error)
@@ -83,12 +84,6 @@ void SaveBackup::Init()
 			utils::Set((DWORD*)(pOffset += 7), (DWORD)pNewName);
 	}*/
 
-	std::wstring_convert<std::codecvt<wchar_t, char, mbstate_t>> conv;
-	saveDir = conv.from_bytes(config.Get("", "savePath", "null"));
-	saveDir.erase(saveDir.find_last_not_of('\\') + 1);
-	saveDir.push_back('\\');
-	savePath = saveDir + L"ddda.sav";
-
 	BYTE *pSaveName;
 	BYTE saveName[] = "DDDA.sav";
 	if (utils::FindData(saveName, &pSaveName, "SaveBackup saveName"))
@@ -105,6 +100,24 @@ void SaveBackup::Init()
 		else
 			pSaveGame = nullptr;
 	}
+
+	std::string configPath = config.Get("", "savePath", "");
+	if (configPath.empty())
+	{
+		HMODULE hModule = GetModuleHandle(L"steam_api.dll");
+		tSteamUser pSteamUser = (tSteamUser)GetProcAddress(hModule, "SteamUser");
+		char buf[512];
+		pSteamUser()->GetUserDataFolder(buf, 512);
+		configPath = buf;
+		configPath.replace(configPath.rfind("local"), 5, "remote");
+	}
+
+	std::wstring_convert<std::codecvt<wchar_t, char, mbstate_t>> conv;
+	saveDir = conv.from_bytes(configPath);
+	saveDir.erase(saveDir.find_last_not_of('\\') + 1);
+	saveDir.push_back('\\');
+	savePath = saveDir + L"ddda.sav";
+	logFile << "SaveBackup path: " << savePath << std::endl;
 }
 
 void SaveBackup::Uninit()
