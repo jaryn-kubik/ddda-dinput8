@@ -1,7 +1,7 @@
 # Dragon's Dogma: Dark Arisen dinput8.dll hook
 ## Features
 ### Save backups
-You need to set the right path to your save folder in dinput8.ini.  
+It should find the save path automatically, if not see dinput8.ini.
 A hook is placed just before the game creates a save. When it gets there, the current save gets duplicated with a timestamp added to it.  
 If you need to revert to previous save, simply rename it to "ddda.sav".
 

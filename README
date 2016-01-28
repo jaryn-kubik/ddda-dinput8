@@ -2,7 +2,7 @@
 ####################               Features                 ###################
 -------------------------------------------------------------------------------
 Save backups
-     !!!You need to set the right path to your save folder in dinput8.ini!!!
+     It should find the save path automatically, if not see dinput8.ini.
 
      A hook is placed just before the game creates a save. When it gets there,
      the current save gets duplicated with a timestamp added to it.
@@ -20,7 +20,7 @@ Character customization screen
 
 In-game clock
      Displays in-game time in top right corner of the screen.
-	 May not work with enb, steam overlay, etc.
+     May not work with enb, steam overlay, etc.
 
 	 You need to enable it in dinput.ini.
 	 You can change the font size/color in dinput.ini.
