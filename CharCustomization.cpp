@@ -6,23 +6,14 @@
 #include "CharCustomization.h"
 #include "dinput8.h"
 
-BYTE *pCharCustomization;
-LPVOID oCharCustomization;
-int __stdcall checkKeys()
-{
-	return GetAsyncKeyState(config.GetUInt("", "charCustomizationKey", VK_HOME)) & 0x8000;
-}
-
+BYTE *pCharCustomization = nullptr;
+LPVOID oCharCustomization = nullptr;
 void __declspec(naked) HCharCustomization()
 {
 	__asm
 	{
-		pushad;
-		call	checkKeys;
-		cmp		eax, 0;
-		popad;
-
-		je		getBack;
+		cmp     dword ptr[ebx + 284h], 10;
+		jne		getBack;
 		mov		dword ptr[ebx + 284h], 2;
 
 	getBack:
@@ -32,15 +23,20 @@ void __declspec(naked) HCharCustomization()
 
 void CharCustomization::Init()
 {
-	BYTE sig[] = { 0x83, 0xBB, 0x84, 0x02, 0x00, 0x00, 0x0B };
-
-	if (utils::FindSignature(sig, &pCharCustomization, "CharCustomization signature"))
+	if (config.GetBool("", "charCustomization", true))
 	{
-		logStatus("CharCustomization hook", MH_CreateHook(pCharCustomization, &HCharCustomization, &oCharCustomization));
-		logStatus("CharCustomization enable", MH_EnableHook(pCharCustomization));
+		BYTE sig[] = { 0x83, 0xBB, 0x84, 0x02, 0x00, 0x00, 0x0B };
+
+		if (utils::FindSignature(sig, &pCharCustomization, "CharCustomization signature"))
+		{
+			logStatus("CharCustomization hook", MH_CreateHook(pCharCustomization, &HCharCustomization, &oCharCustomization));
+			logStatus("CharCustomization enable", MH_EnableHook(pCharCustomization));
+		}
+		else
+			pCharCustomization = nullptr;
 	}
 	else
-		pCharCustomization = nullptr;
+		logFile << "CharCustomization: skipped" << std::endl;
 }
 
 void CharCustomization::Uninit()

@@ -6,10 +6,10 @@ A hook is placed just before the game creates a save. When it gets there, the cu
 If you need to revert to previous save, simply rename it to "ddda.sav".
 
 ### Character customization screen
-Allows you to enter the character customization screen at any time:  
-1) go to the main menu (either the one with load game/options/etc or the one with main menu/manual/exit game)  
-2) hold Home (can be changed in dinput8.ini) and press Enter  
-!!!you need to really press enter, it doesn't work with mouse!!!
+Allows you to enter the character customization screen at any time.  
+It replaces the Manual menu (the one on the very first screen).
+
+You need to enter it with keyboard (press enter), doesn't work with mouse.
 
 ### In-game clock
 Displays in-game time in top right corner of the screen.  
@@ -19,8 +19,8 @@ You need to enable it in dinput8.ini.
 You can change the font size/color in dinput8.ini.
 
 ### Cheats
-An option to remove stamina drain while running outside of cities.
-An option to reduce your total weight.
+An option to remove stamina drain while running outside of cities.  
+An option to reduce your total weight.  
 See dinput8.ini.
 
 ## Installation

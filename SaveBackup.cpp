@@ -55,7 +55,7 @@ void __declspec(naked) HSaveGame()
 
 void SaveBackup::Init()
 {
-	if (!config.GetBool("", "backupSaves", true))
+	if (!config.GetBool("", "backupSaves", false))
 	{
 		logFile << "SaveBackup: skipped" << std::endl;
 		return;

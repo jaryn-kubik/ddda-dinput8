@@ -10,13 +10,10 @@ Save backups
      If you need to revert to previous save, simply rename it to "ddda.sav".
 
 Character customization screen
-     Allows you to enter the character customization screen at any time:
-	
-     1) go to the main menu (either the one with load game/options/etc or
-                             the one with main menu/manual/exit game)
-     2) hold Home (can be changed in dinput8.ini) and press Enter
+     Allows you to enter the character customization screen at any time.
+	 It replaces the Manual menu (the one on the very first screen).
 
-     !!!you need to really press enter, it doesn't work with mouse!!!
+	 You need to enter it with keyboard (press enter), doesn't work with mouse. 
 
 In-game clock
      Displays in-game time in top right corner of the screen.
