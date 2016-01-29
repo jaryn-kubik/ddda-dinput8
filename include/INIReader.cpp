@@ -47,13 +47,22 @@ unsigned long INIReader::GetUInt(string section, string name, unsigned long defa
 	return end > value ? n : default_value;
 }
 
-double INIReader::GetReal(string section, string name, double default_value)
+double INIReader::GetDouble(string section, string name, double default_value)
 {
-    string valstr = Get(section, name, "");
-    const char* value = valstr.c_str();
-    char* end;
-    double n = strtod(value, &end);
-    return end > value ? n : default_value;
+	string valstr = Get(section, name, "");
+	const char* value = valstr.c_str();
+	char* end;
+	double n = strtod(value, &end);
+	return end > value ? n : default_value;
+}
+
+float INIReader::GetFloat(string section, string name, float default_value)
+{
+	string valstr = Get(section, name, "");
+	const char* value = valstr.c_str();
+	char* end;
+	float n = strtof(value, &end);
+	return end > value ? n : default_value;
 }
 
 bool INIReader::GetBool(string section, string name, bool default_value)

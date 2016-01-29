@@ -20,6 +20,7 @@ You can change the font size/color in dinput8.ini.
 
 ### Cheats
 An option to remove stamina drain while running outside of cities.
+An option to reduce your total weight.
 See dinput8.ini.
 
 ## Installation
