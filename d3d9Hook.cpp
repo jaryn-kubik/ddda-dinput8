@@ -50,14 +50,14 @@ LPDIRECT3D9 WINAPI HDirect3DCreate9(UINT SDKVersion)
 
 void d3d9Hook::Init()
 {
-	fontSize = config.GetUInt("d3d9", "fontSize", 25);
-	fontColor = config.GetUInt("d3d9", "fontColor", 0xDF00FF00);
-
 	if (!config.GetBool("d3d9", "enabled", false))
 	{
-		logFile << "D3D9 hook: skipped" << std::endl;
+		logFile << "D3D9: skipped" << std::endl;
 		return;
 	}
+
+	fontSize = config.GetUInt("d3d9", "fontSize", 25);
+	fontColor = config.GetUInt("d3d9", "fontColor", 0xDF00FF00);
 
 	HMODULE hMod = LoadLibrary(L"d3d9.dll");
 	oDirect3DCreate9 = (tDirect3DCreate9)GetProcAddress(hMod, "Direct3DCreate9");

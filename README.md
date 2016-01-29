@@ -15,8 +15,12 @@ Allows you to enter the character customization screen at any time:
 Displays in-game time in top right corner of the screen.  
 May not work with enb, steam overlay, etc.
 
-You need to enable it in dinput.ini.  
-You can change the font size/color in dinput.ini.
+You need to enable it in dinput8.ini.  
+You can change the font size/color in dinput8.ini.
+
+### Cheats
+An option to remove stamina drain while running outside of cities.
+See dinput8.ini.
 
 ## Installation
 Copy dinput8.dll and dinput8.ini into the main DDDA folder.

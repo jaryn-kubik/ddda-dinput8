@@ -14,17 +14,22 @@ void __declspec(naked) HDrainStam()
 
 void Cheats::Init()
 {
-	BYTE stamSig[] = { 0xF3, 0x0F, 0x10, 0x43, 0x04,	//movss		xmm0, dword ptr[ebx + 4]
-						0x8B, 0x0D };					//mov		ecx, dword_xxx
-
-	if (utils::FindSignature(stamSig, &pDrainStam, "Cheat (stamina) signature"))
+	if (config.GetBool("cheats", "removeStaminaDrain", false))
 	{
-		pDrainStam += 5;
-		logStatus("Cheat (stamina) hook", MH_CreateHook(pDrainStam, &HDrainStam, &oDrainStam));
-		logStatus("Cheat (stamina) enable", MH_EnableHook(pDrainStam));
+		BYTE stamSig[] = { 0xF3, 0x0F, 0x10, 0x43, 0x04,	//movss		xmm0, dword ptr[ebx + 4]
+							0x8B, 0x0D };					//mov		ecx, dword_xxx
+
+		if (utils::FindSignature(stamSig, &pDrainStam, "Cheat (stamina) signature"))
+		{
+			pDrainStam += 5;
+			logStatus("Cheat (stamina) hook", MH_CreateHook(pDrainStam, &HDrainStam, &oDrainStam));
+			logStatus("Cheat (stamina) enable", MH_EnableHook(pDrainStam));
+		}
+		else
+			pDrainStam = nullptr;
 	}
 	else
-		pDrainStam = nullptr;
+		logFile << "Cheat (stamina): skipped" << std::endl;
 }
 
 void Cheats::Uninit()
