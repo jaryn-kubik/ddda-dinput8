@@ -82,11 +82,24 @@ void SaveBackup::Init()
 	if (configPath.empty())
 	{
 		HMODULE hModule = GetModuleHandle(L"steam_api.dll");
-		tSteamUser pSteamUser = (tSteamUser)GetProcAddress(hModule, "SteamUser");
-		char buf[512];
-		pSteamUser()->GetUserDataFolder(buf, 512);
-		configPath = buf;
-		configPath.replace(configPath.rfind("local"), 5, "remote");
+		if (hModule)
+		{
+			tSteamUser pSteamUser = (tSteamUser)GetProcAddress(hModule, "SteamUser");
+			if (pSteamUser)
+			{
+				char buf[1024];
+				if (pSteamUser() && pSteamUser()->GetUserDataFolder(buf, 1024))
+				{
+					configPath = std::string(buf);
+					size_t index = configPath.rfind("local");
+					if (index != std::string::npos)
+					{
+						configPath.erase(index);
+						configPath += "remote";
+					}
+				}
+			}
+		}
 	}
 
 	std::wstring_convert<std::codecvt<wchar_t, char, mbstate_t>> conv;
@@ -94,7 +107,7 @@ void SaveBackup::Init()
 	saveDir.erase(saveDir.find_last_not_of('\\') + 1);
 	saveDir.push_back('\\');
 	savePath = saveDir + L"ddda.sav";
-	logFile << "SaveBackup path: " << savePath << std::endl;	
+	logFile << "SaveBackup path: " << savePath << std::endl;
 }
 
 void SaveBackup::Uninit()
