@@ -2,8 +2,11 @@
 #include "dinput8.h"
 #include <locale>
 #include "steam_api.h"
+#include <vector>
+#include <algorithm>
 
 std::wstring saveDir, savePath;
+int saveLimit;
 void printError(LPCSTR msg, DWORD error)
 {
 	logFile << msg << ": ";
@@ -18,6 +21,36 @@ void printError(LPCSTR msg, DWORD error)
 	logFile << std::endl;
 }
 
+void clearBackups()
+{
+	WIN32_FIND_DATA ffd;
+	HANDLE hFind = FindFirstFile((saveDir + L"*_*.sav").c_str(), &ffd);
+	if (hFind == INVALID_HANDLE_VALUE)
+		return;
+
+	std::vector<std::pair<UINT64, std::wstring>> files;
+	do
+	{
+		SYSTEMTIME t;
+		if (swscanf_s(ffd.cFileName, L"ddda_%04hd-%02hd-%02hd_%02hd-%02hd-%02hd.sav",
+			&t.wYear, &t.wMonth, &t.wDay, &t.wHour, &t.wMinute, &t.wSecond) == 6)
+		{
+			UINT64 time;
+			SystemTimeToFileTime(&t, (LPFILETIME)&time);
+			files.push_back({ time, ffd.cFileName });
+		}
+	} while (FindNextFile(hFind, &ffd));
+	FindClose(hFind);
+
+	sort(files.begin(), files.end());
+	for (int i = 0; i < files.size() - saveLimit; i++)
+	{
+		std::wstring file = saveDir + files[i].second;
+		DeleteFile(file.c_str());
+		logFile << "Backup deleted: " << file << std::endl;
+	}
+}
+
 void __stdcall handleSave()
 {
 	WIN32_FILE_ATTRIBUTE_DATA fileData;
@@ -28,16 +61,20 @@ void __stdcall handleSave()
 		SystemTimeToTzSpecificLocalTime(nullptr, &systemTime, &t);
 
 		WCHAR str[64];
-		swprintf(str, 64, L"ddda_%04d-%02d-%02d_%02d-%02d-%02d.sav", t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond);
+		swprintf_s(str, L"ddda_%04hd-%02hd-%02hd_%02hd-%02hd-%02hd.sav", t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond);
 		std::wstring backupPath = saveDir + str;
 
 		if (CopyFile(savePath.c_str(), backupPath.c_str(), FALSE))
-			logFile << "Creating backup: " << backupPath.c_str() << std::endl;
+		{
+			logFile << "Backup created: " << backupPath.c_str() << std::endl;
+			if (saveLimit > 0)
+				clearBackups();
+		}
 		else
-			printError("Creating backup copy error", GetLastError());
+			printError("Creating backup", GetLastError());
 	}
 	else
-		printError("Creating backup error", GetLastError());
+		printError("Finding save", GetLastError());
 }
 
 BYTE *pSaveGame = nullptr;
@@ -106,6 +143,8 @@ void Hooks::SaveBackup()
 		logFile << "SaveBackup: disabled" << std::endl;
 		return;
 	}
+
+	saveLimit = config.GetInt("", "saveLimit", -1);
 
 	BYTE *pSaveName;
 	BYTE saveName[] = "DDDA.sav";
