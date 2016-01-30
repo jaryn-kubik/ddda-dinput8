@@ -8,6 +8,7 @@ Save backups
      the current save gets duplicated with a timestamp added to it.
 
      If you need to revert to previous save, simply rename it to "ddda.sav".
+	 You can limit the number of backups it keeps in dinput8.ini.
 
 Character customization screen
      Allows you to enter the character customization screen at any time.
@@ -17,15 +18,16 @@ Character customization screen
 
 In-game clock
      Displays in-game time in top right corner of the screen.
-     May not work with enb, steam overlay, etc.
+     Should work with enb, maybe not with steam overlay etc.
 
 	 You need to enable it in dinput8.ini.
 	 You can change the font size/color in dinput8.ini.
+	 You can also change how often is the clock updated.
 
 Cheats
-	An option to remove stamina drain while running outside of cities.
-	An option to reduce your total weight.
-	See dinput8.ini
+	An option to remove stamina drain while running outside of cities.  
+	An option to reduce your total weight.  
+	See dinput8.ini.
 -------------------------------------------------------------------------------
 ####################               Installation             ###################
 -------------------------------------------------------------------------------

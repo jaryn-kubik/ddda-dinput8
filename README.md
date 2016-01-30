@@ -1,9 +1,10 @@
 # Dragon's Dogma: Dark Arisen dinput8.dll hook
 ## Features
 ### Save backups
-It should find the save path automatically, if not see dinput8.ini.
+It should find the save path automatically, if not see dinput8.ini.  
 A hook is placed just before the game creates a save. When it gets there, the current save gets duplicated with a timestamp added to it.  
-If you need to revert to previous save, simply rename it to "ddda.sav".
+If you need to revert to previous save, simply rename it to "ddda.sav".  
+You can limit the number of backups it keeps in dinput8.ini.
 
 ### Character customization screen
 Allows you to enter the character customization screen at any time.  
@@ -16,7 +17,8 @@ Displays in-game time in top right corner of the screen.
 May not work with enb, steam overlay, etc.
 
 You need to enable it in dinput8.ini.  
-You can change the font size/color in dinput8.ini.
+You can change the font size/color in dinput8.ini.  
+You can also change how often is the clock updated.
 
 ### Cheats
 An option to remove stamina drain while running outside of cities.  
