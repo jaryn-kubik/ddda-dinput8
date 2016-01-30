@@ -100,7 +100,7 @@
     <ClCompile Include="CharCustomization.cpp" />
     <ClCompile Include="Cheats.cpp" />
     <ClCompile Include="d3d9.cpp" />
-    <ClCompile Include="d3d9Hook.cpp" />
+    <ClCompile Include="InGameClock.cpp" />
     <ClCompile Include="dinput8.cpp" />
     <ClCompile Include="include\ini.c" />
     <ClCompile Include="include\INIReader.cpp" />
@@ -111,7 +111,7 @@
     <ClInclude Include="CharCustomization.h" />
     <ClInclude Include="Cheats.h" />
     <ClInclude Include="d3d9.h" />
-    <ClInclude Include="d3d9Hook.h" />
+    <ClInclude Include="InGameClock.h" />
     <ClInclude Include="dinput8.h" />
     <ClInclude Include="include\ini.h" />
     <ClInclude Include="include\INIReader.h" />

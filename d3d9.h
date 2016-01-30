@@ -1,22 +1,24 @@
 ﻿#pragma once
 #include <d3d9.h>
-#pragma comment(lib, "d3d9.lib")
-#pragma comment(lib, "d3dx9.lib")
+#include <d3dx9.h>
 
 typedef void(*d3d9Callback)(LPDIRECT3DDEVICE9);
 typedef void(*d3d9CallbackEx)(LPDIRECT3DDEVICE9, D3DPRESENT_PARAMETERS*);
+
+namespace Hooks
+{
+	bool D3D9();
+	void D3D9Add(d3d9CallbackEx onCreateDevice, d3d9CallbackEx onLostDevice, d3d9CallbackEx onResetDevice, d3d9Callback onEndScene);
+}
 
 class fIDirect3D9 : public IDirect3D9
 {
 public:
 	LPDIRECT3D9 pD3D9;
-	d3d9Callback onEndScene;
-	d3d9CallbackEx onCreateDevice, onLostDevice, onResetDevice;
 
 	virtual ~fIDirect3D9() { }
-	fIDirect3D9();
-	fIDirect3D9(LPDIRECT3D9 pD3D9, d3d9Callback onEndScene, d3d9CallbackEx onCreateDevice,
-		d3d9CallbackEx onLostDevice, d3d9CallbackEx onResetDevice);
+	fIDirect3D9() : fIDirect3D9(nullptr) { }
+	fIDirect3D9(LPDIRECT3D9 pD3D9) { this->pD3D9 = pD3D9; }
 
 	HRESULT __stdcall QueryInterface(const IID& riid, void** ppvObj) override;
 	ULONG __stdcall AddRef() override;
@@ -44,8 +46,12 @@ public:
 	fIDirect3D9 *pD3D9;
 
 	virtual ~fIDirect3DDevice9() { }
-	fIDirect3DDevice9();
-	fIDirect3DDevice9(LPDIRECT3DDEVICE9 pD3DDevice, fIDirect3D9 *pD3D9);
+	fIDirect3DDevice9() : fIDirect3DDevice9(nullptr, nullptr) {	}
+	fIDirect3DDevice9(LPDIRECT3DDEVICE9 pD3DDevice, fIDirect3D9 *pD3D9)
+	{
+		this->pD3DDevice = pD3DDevice;
+		this->pD3D9 = pD3D9;
+	}
 
 	HRESULT __stdcall QueryInterface(const IID& riid, void** ppvObj) override;
 	ULONG __stdcall AddRef() override;

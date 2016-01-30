@@ -1,22 +1,27 @@
 #include "dinput8.h"
+#include "include\MinHook.h"
+#include "d3d9.h"
 #include "SaveBackup.h"
 #include "CharCustomization.h"
-#include "d3d9Hook.h"
 #include "Cheats.h"
+#include "InGameClock.h"
 
 std::wofstream logFile("dinput8.log", std::ios_base::out);
 INIReader config("dinput8.ini");
 
 void Initialize()
 {
-	utils::Initialize();
+	logFile << "MH_Initialize: " << MH_StatusToString(MH_Initialize()) << std::endl;
 	if (config.ParseError() == 0)
 	{
-		logStatus("MH_Initialize()", MH_Initialize());
-		SaveBackup::Init();
-		CharCustomization::Init();
-		d3d9Hook::Init();
-		Cheats::Init();
+		Hooks::Utils();
+		Hooks::SaveBackup();
+		Hooks::CharCustomization();
+		Hooks::Cheats();
+		if (Hooks::D3D9())
+		{
+			Hooks::InGameClock();
+		}
 	}
 	else if (config.ParseError() == -1)
 		logFile << "Config: file not found!" << std::endl;
@@ -26,19 +31,18 @@ void Initialize()
 
 void Unitialize()
 {
-	if (config.ParseError() == 0)
-	{
-		Cheats::Uninit();
-		d3d9Hook::Uninit();
-		CharCustomization::Uninit();
-		SaveBackup::Uninit();
-		logStatus("MH_Uninitialize()", MH_Uninitialize());
-	}
+	logFile << "MH_DisableHook: " << MH_StatusToString(MH_DisableHook(MH_ALL_HOOKS)) << std::endl;
+	logFile << "MH_Uninitialize: " << MH_StatusToString(MH_Uninitialize()) << std::endl;
 	if (logFile)
 		logFile.close();
 }
 
-void logStatus(LPCSTR name, MH_STATUS status) { logFile << name << ": " << MH_StatusToString(status) << std::endl; }
+void Hooks::CreateHook(LPCSTR msg, LPVOID pTarget, LPVOID pDetour, LPVOID* ppOriginal)
+{
+	MH_STATUS create = MH_CreateHook(pTarget, pDetour, ppOriginal);
+	MH_STATUS enable = MH_EnableHook(pTarget);
+	logFile << msg << " hook: " << MH_StatusToString(create) << ", " << MH_StatusToString(enable) << std::endl;
+}
 
 typedef HRESULT(WINAPI *tDirectInput8Create)(HINSTANCE inst_handle, DWORD version, const IID& r_iid, LPVOID* out_wrapper, LPUNKNOWN p_unk);
 tDirectInput8Create oDirectInput8Create;

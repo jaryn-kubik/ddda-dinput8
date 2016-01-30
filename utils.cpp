@@ -1,7 +1,7 @@
 ﻿#include "utils.h"
 
-BYTE *utils::codeBase, *utils::codeEnd, *utils::dataBase, *utils::dataEnd;
-void utils::Initialize()
+BYTE *codeBase, *codeEnd, *dataBase, *dataEnd;
+void Hooks::Utils()
 {
 	DWORD base = (DWORD)GetModuleHandle(nullptr);
 	auto idh = (PIMAGE_DOS_HEADER)base;
@@ -13,7 +13,7 @@ void utils::Initialize()
 	dataEnd = dataBase + ioh->SizeOfInitializedData;
 }
 
-bool utils::Find(BYTE* start, BYTE* end, BYTE *signature, size_t len, BYTE **offset, LPCSTR msg)
+bool Hooks::Find(LPCSTR msg, BYTE* start, BYTE* end, BYTE *signature, size_t len, BYTE **offset)
 {
 	for (*offset = start; *offset < end; (*offset)++)
 	{
@@ -23,13 +23,21 @@ bool utils::Find(BYTE* start, BYTE* end, BYTE *signature, size_t len, BYTE **off
 				break;
 			if (i == len - 1)
 			{
-				if (msg)
-					logFile << msg << ": " << *offset << std::endl;
+				logFile << msg << " pointer: " << *offset << std::endl;
 				return true;
 			}
 		}
 	}
-	if (msg)
-		logFile << msg << ": not found" << std::endl;
+	logFile << msg << " pointer: not found" << std::endl;
 	return false;
+}
+
+bool Hooks::FindSignature(LPCSTR msg, BYTE* signature, size_t len, BYTE** offset)
+{
+	return Find(msg, codeBase, codeEnd, signature, len, offset);
+}
+
+bool Hooks::FindData(LPCSTR msg, BYTE* signature, size_t len, BYTE** offset)
+{
+	return Find(msg, dataBase, dataEnd, signature, len, offset);
 }

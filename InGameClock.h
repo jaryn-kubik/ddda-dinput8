@@ -2,5 +2,5 @@
 
 namespace Hooks
 {
-	void Cheats();
+	void InGameClock();
 }

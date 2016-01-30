@@ -1,7 +1,6 @@
 ﻿#pragma once
 
-namespace CharCustomization
+namespace Hooks
 {
-	void Init();
-	void Uninit();
+	void CharCustomization();
 }

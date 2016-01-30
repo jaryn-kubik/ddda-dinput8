@@ -39,10 +39,10 @@
     <ClCompile Include="d3d9.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="d3d9Hook.cpp">
+    <ClCompile Include="Cheats.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Cheats.cpp">
+    <ClCompile Include="InGameClock.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -73,13 +73,13 @@
     <ClInclude Include="d3d9.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="d3d9Hook.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="steam_api.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Cheats.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="InGameClock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

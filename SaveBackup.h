@@ -1,7 +1,6 @@
 ﻿#pragma once
 
-namespace SaveBackup
+namespace Hooks
 {
-	void Init();
-	void Uninit();
+	void SaveBackup();
 }

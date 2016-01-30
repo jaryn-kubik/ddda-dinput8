@@ -1,22 +1,22 @@
 ﻿#pragma once
 #include "dinput8.h"
 
-class utils
+namespace Hooks
 {
-	static BYTE *codeBase, *codeEnd, *dataBase, *dataEnd;
-	static bool Find(BYTE* start, BYTE* end, BYTE *signature, size_t len, BYTE **offset, LPCSTR msg = nullptr);
+	void Utils();
 
-public:
-	static void Initialize();
+	bool Find(LPCSTR msg, BYTE* start, BYTE* end, BYTE *signature, size_t len, BYTE **offset);
+	bool FindSignature(LPCSTR msg, BYTE *signature, size_t len, BYTE **offset);
+	bool FindData(LPCSTR msg, BYTE *signature, size_t len, BYTE **offset);
 
-	template<size_t len> static bool Find(BYTE* start, BYTE* end, BYTE(&signature)[len], BYTE **offset, LPCSTR msg = nullptr)
-	{ return utils::Find(start, end, signature, len, offset, msg); }
+	template<size_t len> static bool Find(LPCSTR msg, BYTE* start, BYTE* end, BYTE(&signature)[len], BYTE **offset)
+	{ return Find(start, end, signature, len, offset, msg); }
 
-	template<size_t len> static bool FindSignature(BYTE(&signature)[len], BYTE **offset, LPCSTR msg = nullptr)
-	{ return utils::Find(codeBase, codeEnd, signature, len, offset, msg); }
+	template<size_t len> static bool FindSignature(LPCSTR msg, BYTE(&signature)[len], BYTE **offset)
+	{ return FindSignature(msg, signature, len, offset); }
 	
-	template<size_t len> static bool FindData(BYTE(&signature)[len], BYTE **offset, LPCSTR msg = nullptr)
-	{ return utils::Find(dataBase, dataEnd, signature, len, offset, msg); }
+	template<size_t len> static bool FindData(LPCSTR msg, BYTE(&signature)[len], BYTE **offset)
+	{ return FindData(msg, signature, len, offset); }
 
 	template<typename Type>	static void Set(Type *address, Type data)
 	{

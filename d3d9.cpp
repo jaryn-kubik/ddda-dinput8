@@ -1,56 +1,63 @@
 ﻿#include "dinput8.h"
 #include "d3d9.h"
+#include <vector>
+#pragma comment(lib, "d3d9.lib")
+#pragma comment(lib, "d3dx9.lib")
 
-fIDirect3D9::fIDirect3D9()
+typedef LPDIRECT3D9(WINAPI *tDirect3DCreate9)(UINT SDKVersion);
+tDirect3DCreate9 oDirect3DCreate9;
+LPDIRECT3D9 WINAPI HDirect3DCreate9(UINT SDKVersion) { return new fIDirect3D9(oDirect3DCreate9(SDKVersion)); }
+
+bool Hooks::D3D9()
 {
-	pD3D9 = nullptr;
-	onEndScene = nullptr;
-	onCreateDevice = onLostDevice = onResetDevice = nullptr;
+	if (!config.GetBool("d3d9", "enabled", false))
+	{
+		logFile << "D3D9: disabled" << std::endl;
+		return false;
+	}
+
+	HMODULE hMod = LoadLibrary(L"d3d9.dll");
+	oDirect3DCreate9 = (tDirect3DCreate9)GetProcAddress(hMod, "Direct3DCreate9");
+	CreateHook("D3D9", Direct3DCreate9, &HDirect3DCreate9, &oDirect3DCreate9);
+	return true;
 }
 
-fIDirect3D9::fIDirect3D9(LPDIRECT3D9 pD3D9, d3d9Callback onEndScene, d3d9CallbackEx onCreateDevice,
-	d3d9CallbackEx onLostDevice, d3d9CallbackEx onResetDevice)
+std::vector<d3d9CallbackEx> onCreateDevice, onLostDevice, onResetDevice;
+std::vector<d3d9Callback> onEndScene;
+void Hooks::D3D9Add(d3d9CallbackEx onCreate, d3d9CallbackEx onLost, d3d9CallbackEx onReset, d3d9Callback onEnd)
 {
-	this->pD3D9 = pD3D9;
-	this->onEndScene = onEndScene;
-	this->onCreateDevice = onCreateDevice;
-	this->onLostDevice = onLostDevice;
-	this->onResetDevice = onResetDevice;
+	onCreateDevice.push_back(onCreate);
+	onLostDevice.push_back(onLost);
+	onResetDevice.push_back(onReset);
+	onEndScene.push_back(onEnd);
 }
-
-fIDirect3DDevice9::fIDirect3DDevice9()
-{
-	pD3DDevice = nullptr;
-	pD3D9 = nullptr;
-}
-
-fIDirect3DDevice9::fIDirect3DDevice9(LPDIRECT3DDEVICE9 pD3DDevice, fIDirect3D9 *pD3D9)
-{
-	this->pD3DDevice = pD3DDevice;
-	this->pD3D9 = pD3D9;
-}
-
+/*---------------------------------------------------------------------------
+---------------------------------------------------------------------------
+---------------------------------------------------------------------------*/
 HRESULT fIDirect3D9::CreateDevice(UINT Adapter, D3DDEVTYPE DeviceType, HWND hFocusWindow, DWORD BehaviorFlags, D3DPRESENT_PARAMETERS* pPresentationParameters, IDirect3DDevice9** ppReturnedDeviceInterface)
 {
-	logFile << "DEBUG: CreateDevice called" << std::endl;
 	IDirect3DDevice9* pDirect3DDevice9;
 	HRESULT hr = pD3D9->CreateDevice(Adapter, DeviceType, hFocusWindow, BehaviorFlags, pPresentationParameters, &pDirect3DDevice9);
 	*ppReturnedDeviceInterface = new fIDirect3DDevice9(pDirect3DDevice9, this);
-	onCreateDevice(pDirect3DDevice9, pPresentationParameters);
+	for (auto &h : onCreateDevice)
+		h(pDirect3DDevice9, pPresentationParameters);
 	return hr;
 }
 
 HRESULT fIDirect3DDevice9::EndScene()
 {
-	pD3D9->onEndScene(pD3DDevice);
+	for (auto &h : onEndScene)
+		h(pD3DDevice);
 	return pD3DDevice->EndScene();
 }
 
 HRESULT fIDirect3DDevice9::Reset(D3DPRESENT_PARAMETERS* pPresentationParameters)
 {
-	pD3D9->onLostDevice(pD3DDevice, pPresentationParameters);
+	for (auto &h : onLostDevice)
+		h(pD3DDevice, pPresentationParameters);
 	HRESULT hr = pD3DDevice->Reset(pPresentationParameters);
-	pD3D9->onResetDevice(pD3DDevice, pPresentationParameters);
+	for (auto &h : onResetDevice)
+		h(pD3DDevice, pPresentationParameters);
 	return hr;
 }
 

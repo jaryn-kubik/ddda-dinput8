@@ -15,7 +15,7 @@ void printError(LPCSTR msg, DWORD error)
 		logFile << "invalid path";
 	else
 		logFile << (LPVOID)error;
-	logFile << " - " << savePath << std::endl;
+	logFile << std::endl;
 }
 
 void __stdcall handleSave()
@@ -53,93 +53,69 @@ void __declspec(naked) HSaveGame()
 	}
 }
 
-void SaveBackup::Init()
+bool findSavePath()
 {
-	if (!config.GetBool("", "backupSaves", false))
-	{
-		logFile << "SaveBackup: skipped" << std::endl;
-		return;
-	}
-
-	BYTE *pSaveName;
-	BYTE saveName[] = "DDDA.sav";
-	if (utils::FindData(saveName, &pSaveName, "SaveBackup saveName"))
-	{
-		BYTE sig[] = { 0x8D, 0x93, 0xE6, 0x09, 0x00, 0x00,
-						0x68, 0x00, 0x00, 0x00, 0x00 };
-		*(LPDWORD)(sig + 7) = (DWORD)pSaveName;
-
-		if (utils::FindSignature(sig, &pSaveGame, "SaveBackup hook"))
-		{
-			logStatus("SaveBackup hook", MH_CreateHook(pSaveGame, &HSaveGame, &oSaveGame));
-			logStatus("SaveBackup enable", MH_EnableHook(pSaveGame));
-		}
-		else
-			pSaveGame = nullptr;
-	}
-
 	std::string configPath = config.Get("", "savePath", "");
 	if (configPath.empty())
 	{
 		HMODULE hModule = GetModuleHandle(L"steam_api.dll");
 		if (hModule)
 		{
+			char buf[1024];
 			tSteamUser pSteamUser = (tSteamUser)GetProcAddress(hModule, "SteamUser");
-			if (pSteamUser)
+			if (pSteamUser && pSteamUser() && pSteamUser()->GetUserDataFolder(buf, 1024))
 			{
-				char buf[1024];
-				if (pSteamUser() && pSteamUser()->GetUserDataFolder(buf, 1024))
+				configPath = std::string(buf);
+				size_t index = configPath.rfind("local");
+				if (index != std::string::npos)
 				{
-					configPath = std::string(buf);
-					size_t index = configPath.rfind("local");
-					if (index != std::string::npos)
-					{
-						configPath.erase(index);
-						configPath += "remote";
-					}
+					configPath.erase(index);
+					configPath += "remote";
 				}
 			}
 		}
+	}
+
+	if (configPath.empty())
+	{
+		logFile << "SaveBackup path: NOT FOUND, SET MANUALLY IN DINPUT8.INI" << std::endl;
+		return false;
 	}
 
 	std::wstring_convert<std::codecvt<wchar_t, char, mbstate_t>> conv;
 	saveDir = conv.from_bytes(configPath);
 	saveDir.erase(saveDir.find_last_not_of('\\') + 1);
 	saveDir.push_back('\\');
+
+	DWORD attributes = GetFileAttributes(saveDir.c_str());
+	if (attributes == INVALID_FILE_ATTRIBUTES || (attributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
+	{
+		logFile << "SaveBackup path: INVALID PATH - " << saveDir << std::endl;
+		return false;
+	}
+
 	savePath = saveDir + L"ddda.sav";
 	logFile << "SaveBackup path: " << savePath << std::endl;
+	return true;
 }
 
-void SaveBackup::Uninit()
+void Hooks::SaveBackup()
 {
-	if (pSaveGame)
-		logStatus("SaveBackup disable", MH_DisableHook(pSaveGame));
+	if (!config.GetBool("", "backupSaves", false) || !findSavePath())
+	{
+		logFile << "SaveBackup: disabled" << std::endl;
+		return;
+	}
+
+	BYTE *pSaveName;
+	BYTE saveName[] = "DDDA.sav";
+	if (FindData("SaveBackup", saveName, &pSaveName))
+	{
+		BYTE sig[] = { 0x8D, 0x93, 0xE6, 0x09, 0x00, 0x00,
+			0x68, 0x00, 0x00, 0x00, 0x00 };
+		*(LPDWORD)(sig + 7) = (DWORD)pSaveName;
+
+		if (FindSignature("SaveBackup", sig, &pSaveGame))
+			CreateHook("SaveBackup", pSaveGame, &HSaveGame, &oSaveGame);
+	}
 }
-
-/*
-//sub_4B6770 - openFile
-BYTE sigOpen[] = { 0x53, 0x56, 0x57,		//push	edx, esi, edi
-0xFF, 0x24, 0x85 };		//jmp	xxx[eax*4]
-
-if (utils::FindSignature(sigOpen, &pOpen, "SaveBackup signature"))
-{
-BYTE sig1[] = { 0x68, 0x00, 0x00, 0x00, 0x00 };
-*(LPDWORD)(sig1 + 1) = (DWORD)pSaveName;
-
-BYTE *pOffset;
-if (utils::Find(pOpen, pOpen + 0x100, sig1, &pOffset, "SaveBackup hook1"))
-utils::Set((DWORD*)++pOffset, (DWORD)pNewName);
-if (utils::Find(pOffset, pOffset + 0x100, sig1, &pOffset, "SaveBackup hook2"))
-utils::Set((DWORD*)++pOffset, (DWORD)pNewName);
-if (utils::Find(pOffset, pOffset + 0x100, sig1, &pOffset, "SaveBackup hook3"))
-utils::Set((DWORD*)++pOffset, (DWORD)pNewName);
-
-BYTE sig2[] = { 0x8D, 0x93, 0xE6, 0x09, 0x00, 0x00,
-0x68, 0x00, 0x00, 0x00, 0x00 };
-*(LPDWORD)(sig2 + 7) = (DWORD)pSaveName;
-
-if (utils::FindSignature(sig2, &pOffset, "SaveBackup hook4"))
-utils::Set((DWORD*)(pOffset += 7), (DWORD)pNewName);
-if (utils::Find(pOffset, pOffset + 0x1000, sig2, &pOffset, "SaveBackup hook5"))
-utils::Set((DWORD*)(pOffset += 7), (DWORD)pNewName);
-}*/
