@@ -6,8 +6,7 @@
 #include "CharCustomization.h"
 #include "dinput8.h"
 
-BYTE *pCharCustomization = nullptr;
-LPVOID oCharCustomization = nullptr;
+LPVOID oCharCustomization;
 void __declspec(naked) HCharCustomization()
 {
 	__asm
@@ -23,12 +22,12 @@ void __declspec(naked) HCharCustomization()
 
 void Hooks::CharCustomization()
 {
-	if (config.GetBool("", "charCustomization", false))
+	if (config.GetBool("main", "charCustomization", false))
 	{
-		BYTE sig[] = { 0x83, 0xBB, 0x84, 0x02, 0x00, 0x00, 0x0B };
-
-		if (FindSignature("CharCustomization", sig, &pCharCustomization))
-			CreateHook("CharCustomization", pCharCustomization, &HCharCustomization, &oCharCustomization);
+		BYTE sig[] = { 0x83, 0xBB, 0x84, 0x02, 0x00, 0x00, 0x0B }; //cmp	dword ptr [ebx+284h], 0Bh
+		BYTE *pOffset;
+		if (FindSignature("CharCustomization", sig, &pOffset))
+			CreateHook("CharCustomization", pOffset, &HCharCustomization, &oCharCustomization);
 	}
 	else
 		logFile << "CharCustomization: disabled" << std::endl;

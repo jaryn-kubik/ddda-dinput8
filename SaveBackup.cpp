@@ -43,7 +43,7 @@ void clearBackups()
 	FindClose(hFind);
 
 	sort(files.begin(), files.end());
-	for (int i = 0; i < files.size() - saveLimit; i++)
+	for (int i = 0; i < (int)files.size() - saveLimit; i++)
 	{
 		std::wstring file = saveDir + files[i].second;
 		DeleteFile(file.c_str());
@@ -77,7 +77,6 @@ void __stdcall handleSave()
 		printError("Finding save", GetLastError());
 }
 
-BYTE *pSaveGame = nullptr;
 LPVOID oSaveGame = nullptr;
 void __declspec(naked) HSaveGame()
 {
@@ -92,7 +91,7 @@ void __declspec(naked) HSaveGame()
 
 bool findSavePath()
 {
-	std::string configPath = config.Get("", "savePath", "");
+	std::string configPath = config.Get("main", "savePath", "");
 	if (configPath.empty())
 	{
 		HMODULE hModule = GetModuleHandle(L"steam_api.dll");
@@ -138,13 +137,13 @@ bool findSavePath()
 
 void Hooks::SaveBackup()
 {
-	if (!config.GetBool("", "backupSaves", false) || !findSavePath())
+	if (!config.GetBool("main", "backupSaves", false) || !findSavePath())
 	{
 		logFile << "SaveBackup: disabled" << std::endl;
 		return;
 	}
 
-	saveLimit = config.GetInt("", "saveLimit", -1);
+	saveLimit = config.GetInt("main", "saveLimit", -1);
 
 	BYTE *pSaveName;
 	BYTE saveName[] = "DDDA.sav";
@@ -153,8 +152,8 @@ void Hooks::SaveBackup()
 		BYTE sig[] = { 0x8D, 0x93, 0xE6, 0x09, 0x00, 0x00,
 			0x68, 0x00, 0x00, 0x00, 0x00 };
 		*(LPDWORD)(sig + 7) = (DWORD)pSaveName;
-
-		if (FindSignature("SaveBackup", sig, &pSaveGame))
-			CreateHook("SaveBackup", pSaveGame, &HSaveGame, &oSaveGame);
+		BYTE *pOffset;
+		if (FindSignature("SaveBackup", sig, &pOffset))
+			CreateHook("SaveBackup", pOffset, &HSaveGame, &oSaveGame);
 	}
 }

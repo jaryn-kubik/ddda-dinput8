@@ -1,20 +1,19 @@
 ﻿#include "Cheats.h"
 #include "dinput8.h"
 
-BYTE *pDrainStam = nullptr;
-LPVOID oDrainStam = nullptr;
-void __declspec(naked) HDrainStam()
+//taken from http://forum.cheatengine.org/viewtopic.php?p=5641841#5641841
+LPVOID oRunAnimation;
+void __declspec(naked) HRunAnimation()
 {
 	__asm
 	{
-		xorps   xmm0, xmm0;
-		jmp		oDrainStam;
+		mov		eax, 0x20;
+		jmp		oRunAnimation;
 	}
 }
 
 float mWeight = 1.0;
-BYTE *pWeight = nullptr;
-LPVOID oWeight = nullptr;
+LPVOID oWeight;
 void __declspec(naked) HWeight()
 {
 	__asm
@@ -27,28 +26,26 @@ void __declspec(naked) HWeight()
 
 void Hooks::Cheats()
 {
-	if (config.GetBool("cheats", "removeStaminaDrain", false))
+	if (config.GetBool("cheats", "useTownRun", false))
 	{
-		BYTE stamSig[] = { 0xF3, 0x0F, 0x10, 0x43, 0x04,	//movss		xmm0, dword ptr[ebx + 4]
-							0x8B, 0x0D };					//mov		ecx, dword_xxx
-
-		if (FindSignature("Cheat (stamina)", stamSig, &pDrainStam))
-		{
-			pDrainStam += 5;
-			CreateHook("Cheat (stamina)", pDrainStam, &HDrainStam, &oDrainStam);
-		}
+		BYTE townWalkSig[] = { 0x8B, 0x42, 0x40,			//mov	eax, [edx+40h]
+								0x53,						//push	ebx
+								0x8B, 0x5C, 0x24, 0x08 };	//mov	ebx, [esp+4+arg_0]
+		BYTE *pOffset;
+		if (FindSignature("Cheat (town run)", townWalkSig, &pOffset))
+			CreateHook("Cheat (town run)", pOffset + 3, &HRunAnimation, &oRunAnimation);
 	}
 	else
-		logFile << "Cheat (stamina): disabled" << std::endl;
+		logFile << "Cheat (town run): disabled" << std::endl;
 
 	mWeight = config.GetFloat("cheats", "weightMultiplicator", -1);
 	if (mWeight >= 0)
 	{
 		BYTE weightSig[] = { 0xF3, 0x0F, 0x58, 0xAB, 0x4C, 0x02, 0x00, 0x00,	//addss		xmm5, dword ptr [ebx+24Ch]
 							0x45 };												//inc		ebp
-
-		if (FindSignature("Cheat (weight)", weightSig, &pWeight))
-			CreateHook("Cheat (weight)", pWeight, &HWeight, &oWeight);
+		BYTE *pOffset;
+		if (FindSignature("Cheat (weight)", weightSig, &pOffset))
+			CreateHook("Cheat (weight)", pOffset, &HWeight, &oWeight);
 	}
 	else
 		logFile << "Cheat (weight): disabled" << std::endl;
