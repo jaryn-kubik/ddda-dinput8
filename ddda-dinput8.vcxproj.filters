@@ -27,12 +27,6 @@
     <ClCompile Include="utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="include\ini.c">
-      <Filter>include</Filter>
-    </ClCompile>
-    <ClCompile Include="include\INIReader.cpp">
-      <Filter>include</Filter>
-    </ClCompile>
     <ClCompile Include="SaveBackup.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -43,6 +37,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="InGameClock.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="iniConfig.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -58,12 +55,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="README" />
-    <ClInclude Include="include\ini.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="include\INIReader.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="include\MinHook.h">
       <Filter>include</Filter>
     </ClInclude>
@@ -80,6 +71,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="InGameClock.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="iniConfig.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -5,28 +5,23 @@
 #include "CharCustomization.h"
 #include "Cheats.h"
 #include "InGameClock.h"
+#include "iniConfig.h"
 
 std::wofstream logFile("dinput8.log", std::ios_base::out);
-INIReader config("dinput8.ini");
+iniConfig config(L".\\dinput8.ini");
 
 void Initialize()
 {
 	logFile << "MH_Initialize: " << MH_StatusToString(MH_Initialize()) << std::endl;
-	if (config.ParseError() == 0)
+
+	Hooks::Utils();
+	Hooks::SaveBackup();
+	Hooks::CharCustomization();
+	Hooks::Cheats();
+	if (Hooks::D3D9())
 	{
-		Hooks::Utils();
-		Hooks::SaveBackup();
-		Hooks::CharCustomization();
-		Hooks::Cheats();
-		if (Hooks::D3D9())
-		{
-			Hooks::InGameClock();
-		}
+		Hooks::InGameClock();
 	}
-	else if (config.ParseError() == -1)
-		logFile << "Config: file not found!" << std::endl;
-	else
-		logFile << "Config: parse error on line " << config.ParseError() << std::endl;
 }
 
 void Unitialize()

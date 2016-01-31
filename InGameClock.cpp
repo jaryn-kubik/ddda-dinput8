@@ -40,11 +40,11 @@ void onEndScene(LPDIRECT3DDEVICE9 pD3DDevice)
 
 void Hooks::InGameClock()
 {
-	if (config.GetBool("d3d9", "inGameClock", false))
+	if (config.getBool(L"d3d9", L"inGameClock", false))
 	{
-		clockTimebase = config.GetUInt("d3d9", "inGameClockTimebase", 1);
-		clockSize = config.GetUInt("d3d9", "inGameClockSize", 30);
-		clockColor = config.GetUInt("d3d9", "inGameClockColor", 0xDF00FF00);
+		clockTimebase = config.getUInt(L"d3d9", L"inGameClockTimebase", 1);
+		clockSize = config.getUInt(L"d3d9", L"inGameClockSize", 30);
+		clockColor = config.getUInt(L"d3d9", L"inGameClockColor", 0xDF00FF00);
 		if (clockTimebase < 1 || clockTimebase > 60 * 24)
 			clockTimebase = 1;
 

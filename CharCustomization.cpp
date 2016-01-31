@@ -22,7 +22,7 @@ void __declspec(naked) HCharCustomization()
 
 void Hooks::CharCustomization()
 {
-	if (config.GetBool("main", "charCustomization", false))
+	if (config.getBool(L"main", L"charCustomization", false))
 	{
 		BYTE sig[] = { 0x83, 0xBB, 0x84, 0x02, 0x00, 0x00, 0x0B }; //cmp	dword ptr [ebx+284h], 0Bh
 		BYTE *pOffset;

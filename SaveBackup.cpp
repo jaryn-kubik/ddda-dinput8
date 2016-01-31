@@ -91,8 +91,8 @@ void __declspec(naked) HSaveGame()
 
 bool findSavePath()
 {
-	std::string configPath = config.Get("main", "savePath", "");
-	if (configPath.empty())
+	bool manual = config.getBool(L"main", L"useManualPath", false);
+	if (!manual)
 	{
 		HMODULE hModule = GetModuleHandle(L"steam_api.dll");
 		if (hModule)
@@ -101,35 +101,31 @@ bool findSavePath()
 			tSteamUser pSteamUser = (tSteamUser)GetProcAddress(hModule, "SteamUser");
 			if (pSteamUser && pSteamUser() && pSteamUser()->GetUserDataFolder(buf, 1024))
 			{
-				configPath = std::string(buf);
-				size_t index = configPath.rfind("local");
+				saveDir = std::wstring_convert<std::codecvt<wchar_t, char, mbstate_t>>().from_bytes(buf);
+				size_t index = saveDir.rfind(L"local");
 				if (index != std::string::npos)
 				{
-					configPath.erase(index);
-					configPath += "remote";
+					saveDir.erase(index);
+					saveDir += L"remote";
 				}
 			}
 		}
 	}
-
-	if (configPath.empty())
-	{
-		logFile << "SaveBackup path: NOT FOUND, SET MANUALLY IN DINPUT8.INI" << std::endl;
-		return false;
-	}
-
-	std::wstring_convert<std::codecvt<wchar_t, char, mbstate_t>> conv;
-	saveDir = conv.from_bytes(configPath);
+	else
+		saveDir = config.getStr(L"main", L"savePath", std::wstring());
 	saveDir.erase(saveDir.find_last_not_of('\\') + 1);
-	saveDir.push_back('\\');
 
 	DWORD attributes = GetFileAttributes(saveDir.c_str());
 	if (attributes == INVALID_FILE_ATTRIBUTES || (attributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
 	{
-		logFile << "SaveBackup path: INVALID PATH - " << saveDir << std::endl;
+		if (manual)
+			logFile << "SaveBackup path: INVALID PATH - " << saveDir << std::endl;
+		else
+			logFile << "SaveBackup path: NOT FOUND, SET MANUALLY IN DINPUT8.INI" << std::endl;
 		return false;
 	}
 
+	saveDir.push_back('\\');
 	savePath = saveDir + L"ddda.sav";
 	logFile << "SaveBackup path: " << savePath << std::endl;
 	return true;
@@ -137,20 +133,20 @@ bool findSavePath()
 
 void Hooks::SaveBackup()
 {
-	if (!config.GetBool("main", "backupSaves", false) || !findSavePath())
+	if (!config.getBool(L"main", L"backupSaves", false) || !findSavePath())
 	{
 		logFile << "SaveBackup: disabled" << std::endl;
 		return;
 	}
 
-	saveLimit = config.GetInt("main", "saveLimit", -1);
+	saveLimit = config.getInt(L"main", L"saveLimit", -1);
 
 	BYTE *pSaveName;
 	BYTE saveName[] = "DDDA.sav";
 	if (FindData("SaveBackup", saveName, &pSaveName))
 	{
 		BYTE sig[] = { 0x8D, 0x93, 0xE6, 0x09, 0x00, 0x00,
-			0x68, 0x00, 0x00, 0x00, 0x00 };
+						0x68, 0x00, 0x00, 0x00, 0x00 };
 		*(LPDWORD)(sig + 7) = (DWORD)pSaveName;
 		BYTE *pOffset;
 		if (FindSignature("SaveBackup", sig, &pOffset))

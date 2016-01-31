@@ -102,8 +102,7 @@
     <ClCompile Include="d3d9.cpp" />
     <ClCompile Include="InGameClock.cpp" />
     <ClCompile Include="dinput8.cpp" />
-    <ClCompile Include="include\ini.c" />
-    <ClCompile Include="include\INIReader.cpp" />
+    <ClCompile Include="iniConfig.cpp" />
     <ClCompile Include="SaveBackup.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
@@ -113,9 +112,8 @@
     <ClInclude Include="d3d9.h" />
     <ClInclude Include="InGameClock.h" />
     <ClInclude Include="dinput8.h" />
-    <ClInclude Include="include\ini.h" />
-    <ClInclude Include="include\INIReader.h" />
     <ClInclude Include="include\MinHook.h" />
+    <ClInclude Include="iniConfig.h" />
     <ClInclude Include="README" />
     <ClInclude Include="README.md" />
     <ClInclude Include="SaveBackup.h" />

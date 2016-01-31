@@ -2,10 +2,10 @@
 #include <windows.h>
 #include <fstream>
 #include "utils.h"
-#include "include\INIReader.h"
+#include "iniConfig.h"
 
 extern std::wofstream logFile;
-extern INIReader config;
+extern iniConfig config;
 
 namespace Hooks
 {
@@ -14,6 +14,6 @@ namespace Hooks
 	template <typename T>
 	void CreateHook(LPCSTR msg, LPVOID pTarget, LPVOID pDetour, T** ppOriginal)
 	{
-		return CreateHook(msg, pTarget, pDetour, reinterpret_cast<LPVOID*>(ppOriginal));
+		CreateHook(msg, pTarget, pDetour, reinterpret_cast<LPVOID*>(ppOriginal));
 	}
 }
