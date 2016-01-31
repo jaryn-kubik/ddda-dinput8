@@ -54,7 +54,6 @@
     <ClInclude Include="utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="README" />
     <ClInclude Include="include\MinHook.h">
       <Filter>include</Filter>
     </ClInclude>
@@ -81,6 +80,7 @@
     <None Include="dinput8.def">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="dinput8.ini" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="include\libMinHook-x86-v140-mt.lib">
