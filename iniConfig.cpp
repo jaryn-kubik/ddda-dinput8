@@ -90,7 +90,21 @@ bool iniConfig::getBool(LPCTSTR section, LPCTSTR key, bool defValue)
 				return true;
 			if (str == L"false" || str == L"no" || str == L"off")
 				return false;
-			throw std::invalid_argument("invalid value");
+		}
+	}
+	catch (...) {}
+	return printError(section, key, defValue);
+}
+
+int iniConfig::getEnum(LPCTSTR section, LPCTSTR key, int defValue, std::map<stringType, int> map)
+{
+	try
+	{
+		if (get(section, key))
+		{
+			std::wstring str(buffer);
+			transform(str.begin(), str.end(), str.begin(), tolower);
+			return map.at(str);
 		}
 	}
 	catch (...) {}
