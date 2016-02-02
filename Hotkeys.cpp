@@ -3,6 +3,7 @@
 
 INPUT keyInput = { INPUT_KEYBOARD, {} };
 DWORD menuPause;
+UINT keySave, keyMap, keyJournal, keyEquipment;
 void SendKeyPress(WORD vKey)
 {
 	keyInput.ki.wVk = vKey;
@@ -10,6 +11,15 @@ void SendKeyPress(WORD vKey)
 	SendInput(1, &keyInput, sizeof(INPUT));
 	keyInput.ki.dwFlags = KEYEVENTF_KEYUP;
 	SendInput(1, &keyInput, sizeof(INPUT));
+}
+
+DWORD WINAPI hotkeySave(LPVOID lpThreadParameter)
+{
+	Sleep(menuPause);
+	SendKeyPress('I');
+	Sleep(menuPause / 5 * 4);
+	SendKeyPress(VK_RETURN);
+	return 0;
 }
 
 DWORD WINAPI hotkeyMap(LPVOID lpThreadParameter)
@@ -27,11 +37,10 @@ DWORD WINAPI hotkeyJournal(LPVOID lpThreadParameter)
 	return 0;
 }
 
-DWORD WINAPI hotkeySave(LPVOID lpThreadParameter)
+DWORD WINAPI hotkeyEquipment(LPVOID lpThreadParameter)
 {
 	Sleep(menuPause);
-	SendKeyPress(0x49); // VK_I
-	Sleep(menuPause / 5 * 4);
+	SendKeyPress(VK_RIGHT);
 	SendKeyPress(VK_RETURN);
 	return 0;
 }
@@ -39,21 +48,22 @@ DWORD WINAPI hotkeySave(LPVOID lpThreadParameter)
 WNDPROC oWndProc;
 LRESULT CALLBACK HWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	if (msg == WM_KEYDOWN && (lParam & (1 << 30)) == 0)
+	if (msg == WM_KEYDOWN && (HIWORD(lParam) & KF_REPEAT) == 0)
 	{
-		switch (wParam)
+		LPTHREAD_START_ROUTINE func = nullptr;
+		if (wParam == keySave)
+			func = hotkeySave;
+		else if (wParam == keyMap)
+			func = hotkeyMap;
+		else if (wParam == keyJournal)
+			func = hotkeyJournal;	
+		else if (wParam == keyEquipment)
+			func = hotkeyEquipment;
+
+		if (func)
 		{
-		case 0x4D: // VK_M
 			SendKeyPress(VK_ESCAPE);
-			QueueUserWorkItem(hotkeyMap, nullptr, WT_EXECUTEDEFAULT);
-			return 0;
-		case 0x4A: // VK_J
-			SendKeyPress(VK_ESCAPE);
-			QueueUserWorkItem(hotkeyJournal, nullptr, WT_EXECUTEDEFAULT);
-			return 0;
-		case VK_F5:
-			SendKeyPress(VK_ESCAPE);
-			QueueUserWorkItem(hotkeySave, nullptr, WT_EXECUTEDEFAULT);
+			QueueUserWorkItem(func, nullptr, WT_EXECUTEDEFAULT);
 			return 0;
 		}
 	}
@@ -65,6 +75,10 @@ void Hooks::Hotkeys()
 	if (config.getBool(L"hotkeys", L"enabled", false))
 	{
 		menuPause = config.getUInt(L"hotkeys", L"menuPause", 500);
+		keySave = config.getUInt(L"hotkeys", L"keySave", VK_F5);
+		keyMap = config.getUInt(L"hotkeys", L"keyMap", 'M');
+		keyJournal = config.getUInt(L"hotkeys", L"keyJournal", 'J');
+		keyEquipment = config.getUInt(L"hotkeys", L"keyEquipment", 'U');
 
 		BYTE sig[] = { 0x83, 0xEC, 0x50,			//sub	esp, 50h
 						0x53,						//push	ebx
