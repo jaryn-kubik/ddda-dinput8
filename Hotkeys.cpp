@@ -1,9 +1,10 @@
 ﻿#include "Hotkeys.h"
 #include "dinput8.h"
+#include "InGameClock.h"
 
 INPUT keyInput = { INPUT_KEYBOARD, {} };
 DWORD menuPause;
-UINT keySave, keyMap, keyJournal, keyEquipment;
+UINT keySave, keyMap, keyJournal, keyEquipment, keyStatus, keyClock;
 void SendKeyPress(WORD vKey)
 {
 	keyInput.ki.wVk = vKey;
@@ -45,6 +46,14 @@ DWORD WINAPI hotkeyEquipment(LPVOID lpThreadParameter)
 	return 0;
 }
 
+DWORD WINAPI hotkeyStatus(LPVOID lpThreadParameter)
+{
+	Sleep(menuPause);
+	SendKeyPress(VK_DOWN);
+	SendKeyPress(VK_RETURN);
+	return 0;
+}
+
 WNDPROC oWndProc;
 LRESULT CALLBACK HWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -59,6 +68,13 @@ LRESULT CALLBACK HWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			func = hotkeyJournal;	
 		else if (wParam == keyEquipment)
 			func = hotkeyEquipment;
+		else if (wParam == keyStatus)
+			func = hotkeyStatus;
+		else if (wParam == keyClock)
+		{
+			Hooks::InGameClockSwitch();
+			return 0;
+		}
 
 		if (func)
 		{
@@ -79,6 +95,8 @@ void Hooks::Hotkeys()
 		keyMap = config.getUInt(L"hotkeys", L"keyMap", 'M');
 		keyJournal = config.getUInt(L"hotkeys", L"keyJournal", 'J');
 		keyEquipment = config.getUInt(L"hotkeys", L"keyEquipment", 'U');
+		keyStatus = config.getUInt(L"hotkeys", L"keyStatus", 'K');
+		keyClock = config.getUInt(L"hotkeys", L"keyClock", 'P');
 
 		BYTE sig[] = { 0x83, 0xEC, 0x50,			//sub	esp, 50h
 						0x53,						//push	ebx

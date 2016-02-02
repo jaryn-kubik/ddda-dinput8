@@ -6,6 +6,7 @@ DWORD **pClock;
 RECT outLeft, outTop, outRight, outBottom, rect;
 LPD3DXFONT pFont;
 std::wstring clockFont;
+bool clockShow = true;
 DWORD clockTimebase, clockSize, clockColor, clockLeft, clockTop, clockRight, clockBottom, clockPosition;
 void setRectangles(LONG width, LONG height)
 {
@@ -37,7 +38,7 @@ void onResetDevice(LPDIRECT3DDEVICE9 pD3DDevice, D3DPRESENT_PARAMETERS* pParams)
 
 void onEndScene(LPDIRECT3DDEVICE9 pD3DDevice)
 {
-	if (pClock && *pClock)
+	if (clockShow && pClock && *pClock)
 	{
 		DWORD t = (*pClock)[0xB876C / 4] * 60 + (*pClock)[0xB8770 / 4];
 		t -= t % clockTimebase;
@@ -52,6 +53,7 @@ void onEndScene(LPDIRECT3DDEVICE9 pD3DDevice)
 	}
 }
 
+void Hooks::InGameClockSwitch() { clockShow = !clockShow; }
 void Hooks::InGameClock()
 {
 	if (config.getBool(L"d3d9", L"inGameClock", false))
