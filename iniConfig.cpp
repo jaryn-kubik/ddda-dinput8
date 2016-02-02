@@ -13,11 +13,11 @@ iniConfig::iniConfig(LPCTSTR fileName)
 		logFile << "Config: file not found!" << std::endl;
 }
 
-bool iniConfig::get(LPCTSTR section, LPCTSTR key)
+bool iniConfig::get(LPCTSTR section, LPCTSTR key, bool allowEmpty)
 {
 	SetLastError(ERROR_SUCCESS);
 	DWORD result = GetPrivateProfileString(section, key, nullptr, buffer, 512, fileName);
-	return GetLastError() != ERROR_FILE_NOT_FOUND && result > 0;
+	return GetLastError() != ERROR_FILE_NOT_FOUND && (allowEmpty || result > 0);
 }
 
 template <typename T>
@@ -29,9 +29,9 @@ T printError(LPCTSTR section, LPCTSTR key, T defValue)
 
 iniConfig::stringType iniConfig::getStr(LPCTSTR section, LPCTSTR key, stringType defValue)
 {
-	if (!get(section, key))
-		printError(section, key, defValue);
-	return buffer;
+	if (get(section, key, true))
+		return buffer;
+	return printError(section, key, defValue);
 }
 
 int iniConfig::getInt(LPCTSTR section, LPCTSTR key, int defValue)

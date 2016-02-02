@@ -24,6 +24,10 @@ void Initialize()
 	{
 		Hooks::InGameClock();
 	}
+
+	std::wstring loadLibrary = config.getStr(L"main", L"loadLibrary", std::wstring());
+	if (!loadLibrary.empty())
+		LoadLibrary(loadLibrary.c_str());
 }
 
 void Unitialize()

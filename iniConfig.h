@@ -12,7 +12,7 @@ class iniConfig
 	TCHAR buffer[512];
 	LPCTSTR fileName;
 
-	bool get(LPCTSTR section, LPCTSTR key);
+	bool get(LPCTSTR section, LPCTSTR key, bool allowEmpty = false);
 public:
 	iniConfig(LPCTSTR fileName);
 
