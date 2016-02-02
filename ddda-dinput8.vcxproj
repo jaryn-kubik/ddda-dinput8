@@ -69,6 +69,9 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>dinput8.def</ModuleDefinitionFile>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y /d "$(TargetPath)" "C:\Games\Dragons Dogma Dark Arisen\"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -100,6 +103,7 @@
     <ClCompile Include="CharCustomization.cpp" />
     <ClCompile Include="Cheats.cpp" />
     <ClCompile Include="d3d9.cpp" />
+    <ClCompile Include="Hotkeys.cpp" />
     <ClCompile Include="InGameClock.cpp" />
     <ClCompile Include="dinput8.cpp" />
     <ClCompile Include="iniConfig.cpp" />
@@ -110,11 +114,13 @@
     <ClInclude Include="CharCustomization.h" />
     <ClInclude Include="Cheats.h" />
     <ClInclude Include="d3d9.h" />
+    <ClInclude Include="Hotkeys.h" />
     <ClInclude Include="InGameClock.h" />
     <ClInclude Include="dinput8.h" />
     <ClInclude Include="include\MinHook.h" />
     <ClInclude Include="iniConfig.h" />
     <ClInclude Include="README.md" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="SaveBackup.h" />
     <ClInclude Include="steam_api.h" />
     <ClInclude Include="utils.h" />
@@ -125,6 +131,9 @@
   </ItemGroup>
   <ItemGroup>
     <Library Include="include\libMinHook-x86-v140-mt.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Version.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

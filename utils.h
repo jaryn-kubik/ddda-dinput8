@@ -5,6 +5,9 @@ namespace Hooks
 {
 	void Utils();
 
+	bool InCodeRange(LPVOID address);
+	bool InDataRange(LPVOID address);
+
 	bool Find(LPCSTR msg, BYTE* start, BYTE* end, BYTE *signature, size_t len, BYTE **offset);
 	bool FindSignature(LPCSTR msg, BYTE *signature, size_t len, BYTE **offset);
 	bool FindData(LPCSTR msg, BYTE *signature, size_t len, BYTE **offset);

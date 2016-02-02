@@ -6,6 +6,7 @@
 #include "Cheats.h"
 #include "InGameClock.h"
 #include "iniConfig.h"
+#include "Hotkeys.h"
 
 std::wofstream logFile("dinput8.log", std::ios_base::out);
 iniConfig config(L".\\dinput8.ini");
@@ -18,6 +19,7 @@ void Initialize()
 	Hooks::SaveBackup();
 	Hooks::CharCustomization();
 	Hooks::Cheats();
+	Hooks::Hotkeys();
 	if (Hooks::D3D9())
 	{
 		Hooks::InGameClock();

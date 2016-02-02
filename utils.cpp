@@ -13,6 +13,8 @@ void Hooks::Utils()
 	dataEnd = dataBase + ioh->SizeOfInitializedData;
 }
 
+bool Hooks::InCodeRange(LPVOID address) { return address >= codeBase && address <= codeEnd; }
+bool Hooks::InDataRange(LPVOID address) { return address >= dataBase && address <= dataEnd; }
 bool Hooks::Find(LPCSTR msg, BYTE* start, BYTE* end, BYTE *signature, size_t len, BYTE **offset)
 {
 	for (*offset = start; *offset < end; (*offset)++)

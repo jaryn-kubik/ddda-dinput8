@@ -9,7 +9,7 @@ extern iniConfig config;
 
 namespace Hooks
 {
-	void CreateHook(LPCSTR name, LPVOID pTarget, LPVOID pDetour, LPVOID *ppOriginal);
+	void CreateHook(LPCSTR msg, LPVOID pTarget, LPVOID pDetour, LPVOID *ppOriginal);
 
 	template <typename T>
 	void CreateHook(LPCSTR msg, LPVOID pTarget, LPVOID pDetour, T** ppOriginal)
