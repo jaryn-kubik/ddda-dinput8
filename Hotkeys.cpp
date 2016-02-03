@@ -4,7 +4,7 @@
 
 INPUT keyInput = { INPUT_KEYBOARD, {} };
 DWORD menuPause;
-UINT keySave, keyMap, keyJournal, keyEquipment, keyStatus;
+UINT keyInventory, keySave, keyMap, keyJournal, keyEquipment, keyStatus;
 UINT keyClock, keyClockHourInc, keyClockHourDec, keyClockMinInc, keyClockMinDec;
 void SendKeyPress(WORD vKey)
 {
@@ -18,7 +18,7 @@ void SendKeyPress(WORD vKey)
 DWORD WINAPI hotkeySave(LPVOID lpThreadParameter)
 {
 	Sleep(menuPause);
-	SendKeyPress('I');
+	SendKeyPress(keyInventory);
 	Sleep(menuPause / 5 * 4);
 	SendKeyPress(VK_RETURN);
 	return 0;
@@ -97,6 +97,7 @@ void Hooks::Hotkeys()
 	if (config.getBool(L"hotkeys", L"enabled", false))
 	{
 		menuPause = config.getUInt(L"hotkeys", L"menuPause", 500);
+		keyInventory = config.getUInt(L"hotkeys", L"keyInventory", 'I');
 		keySave = config.getUInt(L"hotkeys", L"keySave", VK_F5);
 		keyMap = config.getUInt(L"hotkeys", L"keyMap", 'M');
 		keyJournal = config.getUInt(L"hotkeys", L"keyJournal", 'J');
