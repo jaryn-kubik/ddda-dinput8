@@ -4,7 +4,8 @@
 
 INPUT keyInput = { INPUT_KEYBOARD, {} };
 DWORD menuPause;
-UINT keySave, keyMap, keyJournal, keyEquipment, keyStatus, keyClock;
+UINT keySave, keyMap, keyJournal, keyEquipment, keyStatus;
+UINT keyClock, keyClockHourInc, keyClockHourDec, keyClockMinInc, keyClockMinDec;
 void SendKeyPress(WORD vKey)
 {
 	keyInput.ki.wVk = vKey;
@@ -54,36 +55,41 @@ DWORD WINAPI hotkeyStatus(LPVOID lpThreadParameter)
 	return 0;
 }
 
+void hotkeyMenu(LPTHREAD_START_ROUTINE func)
+{
+	SendKeyPress(VK_ESCAPE);
+	QueueUserWorkItem(func, nullptr, WT_EXECUTEDEFAULT);
+}
+
 WNDPROC oWndProc;
 LRESULT CALLBACK HWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	if (msg == WM_KEYDOWN && (HIWORD(lParam) & KF_REPEAT) == 0)
-	{
-		LPTHREAD_START_ROUTINE func = nullptr;
-		if (wParam == keySave)
-			func = hotkeySave;
-		else if (wParam == keyMap)
-			func = hotkeyMap;
-		else if (wParam == keyJournal)
-			func = hotkeyJournal;	
-		else if (wParam == keyEquipment)
-			func = hotkeyEquipment;
-		else if (wParam == keyStatus)
-			func = hotkeyStatus;
-		else if (wParam == keyClock)
-		{
-			Hooks::InGameClockSwitch();
-			return 0;
-		}
+	if (msg != WM_KEYDOWN || (HIWORD(lParam) & KF_REPEAT) != 0)
+		return oWndProc(hwnd, msg, wParam, lParam);
 
-		if (func)
-		{
-			SendKeyPress(VK_ESCAPE);
-			QueueUserWorkItem(func, nullptr, WT_EXECUTEDEFAULT);
-			return 0;
-		}
-	}
-	return oWndProc(hwnd, msg, wParam, lParam);
+	if (wParam == keySave)
+		hotkeyMenu(hotkeySave);
+	else if (wParam == keyMap)
+		hotkeyMenu(hotkeyMap);
+	else if (wParam == keyJournal)
+		hotkeyMenu(hotkeyJournal);
+	else if (wParam == keyEquipment)
+		hotkeyMenu(hotkeyEquipment);
+	else if (wParam == keyStatus)
+		hotkeyMenu(hotkeyStatus);
+	else if (wParam == keyClock)
+		Hooks::InGameClockSwitch();
+	else if (wParam == keyClockMinDec)
+		Hooks::InGameClockDec(1);
+	else if (wParam == keyClockMinInc)
+		Hooks::InGameClockInc(1);
+	else if (wParam == keyClockHourDec)
+		Hooks::InGameClockDec(60);
+	else if (wParam == keyClockHourInc)
+		Hooks::InGameClockInc(60);
+	else
+		return oWndProc(hwnd, msg, wParam, lParam);
+	return 0;
 }
 
 void Hooks::Hotkeys()
@@ -96,7 +102,11 @@ void Hooks::Hotkeys()
 		keyJournal = config.getUInt(L"hotkeys", L"keyJournal", 'J');
 		keyEquipment = config.getUInt(L"hotkeys", L"keyEquipment", 'U');
 		keyStatus = config.getUInt(L"hotkeys", L"keyStatus", 'K');
-		keyClock = config.getUInt(L"hotkeys", L"keyClock", 'P');
+		keyClock = config.getUInt(L"hotkeys", L"keyClock", VK_NUMPAD5);
+		keyClockMinDec = config.getUInt(L"hotkeys", L"keyClockMinDec", VK_NUMPAD4);
+		keyClockMinInc = config.getUInt(L"hotkeys", L"keyClockMinInc", VK_NUMPAD6);
+		keyClockHourDec = config.getUInt(L"hotkeys", L"keyClockHourDec", VK_NUMPAD2);
+		keyClockHourInc = config.getUInt(L"hotkeys", L"keyClockHourInc", VK_NUMPAD8);
 
 		BYTE sig[] = { 0x83, 0xEC, 0x50,			//sub	esp, 50h
 						0x53,						//push	ebx

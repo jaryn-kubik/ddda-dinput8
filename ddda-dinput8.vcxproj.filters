@@ -21,9 +21,6 @@
     <ClCompile Include="dinput8.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CharCustomization.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -45,15 +42,15 @@
     <ClCompile Include="Hotkeys.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Misc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dinput8.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="README.md" />
-    <ClInclude Include="CharCustomization.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -83,6 +80,9 @@
     </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Misc.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -2,7 +2,7 @@
 #include "include\MinHook.h"
 #include "d3d9.h"
 #include "SaveBackup.h"
-#include "CharCustomization.h"
+#include "Misc.h"
 #include "Cheats.h"
 #include "InGameClock.h"
 #include "iniConfig.h"
@@ -19,9 +19,9 @@ void Initialize()
 
 	Hooks::Utils();
 	Hooks::SaveBackup();
-	Hooks::CharCustomization();
-	Hooks::Cheats();
 	Hooks::Hotkeys();
+	Hooks::Misc();
+	Hooks::Cheats();
 	if (Hooks::D3D9())
 	{
 		Hooks::InGameClock();

@@ -8,7 +8,7 @@ namespace Hooks
 	bool InCodeRange(LPVOID address);
 	bool InDataRange(LPVOID address);
 
-	bool Find(LPCSTR msg, BYTE* start, BYTE* end, BYTE *signature, size_t len, BYTE **offset);
+	bool Find(LPCSTR msg, BYTE *start, BYTE *end, BYTE *signature, size_t len, BYTE **offset);
 	bool FindSignature(LPCSTR msg, BYTE *signature, size_t len, BYTE **offset);
 	bool FindData(LPCSTR msg, BYTE *signature, size_t len, BYTE **offset);
 
@@ -21,11 +21,12 @@ namespace Hooks
 	template<size_t len> static bool FindData(LPCSTR msg, BYTE(&signature)[len], BYTE **offset)
 	{ return FindData(msg, signature, len, offset); }
 
-	template<typename Type>	static void Set(Type *address, Type data)
+	template<typename T> static void Set(T *address, std::initializer_list<T> args)
 	{
 		DWORD oldProtect;
-		VirtualProtect(address, sizeof(Type), PAGE_EXECUTE_READWRITE, &oldProtect);
-		*address = data;
-		VirtualProtect(address, sizeof(Type), oldProtect, &oldProtect);
+		VirtualProtect(address, args.size() * sizeof(T), PAGE_EXECUTE_READWRITE, &oldProtect);
+		for (auto &arg : args)
+			*(address++) = arg;
+		VirtualProtect(address, args.size() * sizeof(T), oldProtect, &oldProtect);
 	}
 };

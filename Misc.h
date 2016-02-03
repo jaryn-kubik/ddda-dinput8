@@ -2,5 +2,5 @@
 
 namespace Hooks
 {
-	void CharCustomization();
+	void Misc();
 }

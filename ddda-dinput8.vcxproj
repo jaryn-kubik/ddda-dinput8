@@ -100,7 +100,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="CharCustomization.cpp" />
+    <ClCompile Include="Misc.cpp" />
     <ClCompile Include="Cheats.cpp" />
     <ClCompile Include="d3d9.cpp" />
     <ClCompile Include="Hotkeys.cpp" />
@@ -111,7 +111,7 @@
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CharCustomization.h" />
+    <ClInclude Include="Misc.h" />
     <ClInclude Include="Cheats.h" />
     <ClInclude Include="d3d9.h" />
     <ClInclude Include="Hotkeys.h" />

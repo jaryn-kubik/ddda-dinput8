@@ -54,6 +54,27 @@ void onEndScene(LPDIRECT3DDEVICE9 pD3DDevice)
 }
 
 void Hooks::InGameClockSwitch() { clockShow = !clockShow; }
+void Hooks::InGameClockInc(BYTE minutes)
+{
+	if (pClock && *pClock)
+		(*pClock)[0xB8768 / 4] += minutes * 60000;
+}
+
+void Hooks::InGameClockDec(BYTE minutes)
+{
+	if (pClock && *pClock)
+	{
+		DWORD time = (*pClock)[0xB8768 / 4];
+		if (time < minutes * 60000)
+		{
+			if ((*pClock)[0xB8760 / 4] > 0)
+				(*pClock)[0xB8760 / 4]--;
+			time += 3600000 * 24;
+		}
+		(*pClock)[0xB8768 / 4] = time - minutes * 60000;
+	}
+}
+
 void Hooks::InGameClock()
 {
 	if (config.getBool(L"d3d9", L"inGameClock", false))

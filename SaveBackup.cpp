@@ -91,8 +91,8 @@ void __declspec(naked) HSaveGame()
 
 bool findSavePath()
 {
-	bool manual = config.getBool(L"main", L"useManualPath", false);
-	if (!manual)
+	std::wstring configDir = config.getStr(L"main", L"savePath", std::wstring());
+	if (configDir.empty())
 	{
 		HMODULE hModule = GetModuleHandle(L"steam_api.dll");
 		if (hModule)
@@ -112,16 +112,16 @@ bool findSavePath()
 		}
 	}
 	else
-		saveDir = config.getStr(L"main", L"savePath", std::wstring());
+		saveDir = configDir;
 	saveDir.erase(saveDir.find_last_not_of('\\') + 1);
 
 	DWORD attributes = GetFileAttributes(saveDir.c_str());
 	if (attributes == INVALID_FILE_ATTRIBUTES || (attributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
 	{
-		if (manual)
-			logFile << "SaveBackup path: INVALID PATH - " << saveDir << std::endl;
-		else
+		if (configDir.empty())
 			logFile << "SaveBackup path: NOT FOUND, SET MANUALLY IN DINPUT8.INI" << std::endl;
+		else
+			logFile << "SaveBackup path: INVALID PATH - " << saveDir << std::endl;
 		return false;
 	}
 
