@@ -8,6 +8,8 @@
 #include "iniConfig.h"
 #include "Hotkeys.h"
 
+typedef HRESULT(WINAPI *tDirectInput8Create)(HINSTANCE inst_handle, DWORD version, const IID& r_iid, LPVOID* out_wrapper, LPUNKNOWN p_unk);
+tDirectInput8Create oDirectInput8Create;
 std::wofstream logFile("dinput8.log", std::ios_base::out);
 iniConfig config(L".\\dinput8.ini");
 
@@ -27,7 +29,12 @@ void Initialize()
 
 	std::wstring loadLibrary = config.getStr(L"main", L"loadLibrary", std::wstring());
 	if (!loadLibrary.empty())
-		LoadLibrary(loadLibrary.c_str());
+	{
+		HMODULE hMod = LoadLibrary(loadLibrary.c_str());
+		tDirectInput8Create newProc = (tDirectInput8Create)GetProcAddress(hMod, "DirectInput8Create");
+		if (newProc)
+			oDirectInput8Create = newProc;
+	}
 }
 
 void Unitialize()
@@ -44,9 +51,6 @@ void Hooks::CreateHook(LPCSTR msg, LPVOID pTarget, LPVOID pDetour, LPVOID* ppOri
 	MH_STATUS enable = MH_EnableHook(pTarget);
 	logFile << msg << " hook: " << MH_StatusToString(create) << ", " << MH_StatusToString(enable) << std::endl;
 }
-
-typedef HRESULT(WINAPI *tDirectInput8Create)(HINSTANCE inst_handle, DWORD version, const IID& r_iid, LPVOID* out_wrapper, LPUNKNOWN p_unk);
-tDirectInput8Create oDirectInput8Create;
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
 {
