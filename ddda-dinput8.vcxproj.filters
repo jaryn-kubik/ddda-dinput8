@@ -45,6 +45,9 @@
     <ClCompile Include="Misc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TweakBar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dinput8.h">
@@ -84,6 +87,12 @@
     <ClInclude Include="Misc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="TweakBar.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\AntTweakBar.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="dinput8.def">
@@ -93,6 +102,9 @@
   </ItemGroup>
   <ItemGroup>
     <Library Include="include\libMinHook-x86-v140-mt.lib">
+      <Filter>include</Filter>
+    </Library>
+    <Library Include="include\AntTweakBarStatic.lib">
       <Filter>include</Filter>
     </Library>
   </ItemGroup>

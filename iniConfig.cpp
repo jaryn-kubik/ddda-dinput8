@@ -2,6 +2,7 @@
 #include "iniConfig.h"
 #include <algorithm>
 #include <string>
+#include <locale>
 
 iniConfig::iniConfig(LPCTSTR fileName)
 {
@@ -27,10 +28,32 @@ T printError(LPCTSTR section, LPCTSTR key, T defValue)
 	return defValue;
 }
 
-iniConfig::stringType iniConfig::getStr(LPCTSTR section, LPCTSTR key, stringType defValue)
+template <typename T>
+std::basic_string<T> printError(LPCTSTR section, LPCTSTR key, std::basic_string<T> defValue)
+{
+	logFile << "Config: " << section << "->" << key << " has invalid value, using default (" << defValue.c_str() << ")" << std::endl;
+	return defValue;
+}
+
+std::string iniConfig::getStrA(LPCTSTR section, LPCTSTR key, std::string defValue)
 {
 	if (get(section, key, true))
+#ifdef UNICODE
+		return std::wstring_convert<std::codecvt<wchar_t, char, mbstate_t>>().to_bytes(buffer);
+#else
 		return buffer;
+#endif
+	return printError(section, key, defValue);
+}
+
+std::wstring iniConfig::getStrW(LPCTSTR section, LPCTSTR key, std::wstring defValue)
+{
+	if (get(section, key, true))
+#ifdef UNICODE
+		return buffer;
+#else
+		return std::wstring_convert<std::codecvt<wchar_t, char, mbstate_t>>().from_bytes(buffer);
+#endif
 	return printError(section, key, defValue);
 }
 

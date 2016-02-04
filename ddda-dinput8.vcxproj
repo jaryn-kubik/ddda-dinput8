@@ -108,9 +108,11 @@
     <ClCompile Include="dinput8.cpp" />
     <ClCompile Include="iniConfig.cpp" />
     <ClCompile Include="SaveBackup.cpp" />
+    <ClCompile Include="TweakBar.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\AntTweakBar.h" />
     <ClInclude Include="Misc.h" />
     <ClInclude Include="Cheats.h" />
     <ClInclude Include="d3d9.h" />
@@ -123,6 +125,7 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="SaveBackup.h" />
     <ClInclude Include="steam_api.h" />
+    <ClInclude Include="TweakBar.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>
   <ItemGroup>
@@ -130,6 +133,7 @@
     <None Include="dinput8.ini" />
   </ItemGroup>
   <ItemGroup>
+    <Library Include="include\AntTweakBarStatic.lib" />
     <Library Include="include\libMinHook-x86-v140-mt.lib" />
   </ItemGroup>
   <ItemGroup>

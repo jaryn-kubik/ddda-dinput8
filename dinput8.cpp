@@ -7,6 +7,7 @@
 #include "InGameClock.h"
 #include "iniConfig.h"
 #include "Hotkeys.h"
+#include "TweakBar.h"
 
 typedef HRESULT(WINAPI *tDirectInput8Create)(HINSTANCE inst_handle, DWORD version, const IID& r_iid, LPVOID* out_wrapper, LPUNKNOWN p_unk);
 tDirectInput8Create oDirectInput8Create;
@@ -25,9 +26,10 @@ void Initialize()
 	if (Hooks::D3D9())
 	{
 		Hooks::InGameClock();
+		Hooks::TweakBar();
 	}
 
-	std::wstring loadLibrary = config.getStr(L"main", L"loadLibrary", std::wstring());
+	std::wstring loadLibrary = config.getStrW(L"main", L"loadLibrary", std::wstring());
 	if (!loadLibrary.empty())
 	{
 		HMODULE hMod = LoadLibrary(loadLibrary.c_str());

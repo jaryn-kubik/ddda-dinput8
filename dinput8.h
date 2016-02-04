@@ -3,6 +3,7 @@
 #include <fstream>
 #include "utils.h"
 #include "iniConfig.h"
+using std::string;
 
 extern std::wofstream logFile;
 extern iniConfig config;

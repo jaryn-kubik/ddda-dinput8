@@ -91,7 +91,7 @@ void __declspec(naked) HSaveGame()
 
 bool findSavePath()
 {
-	std::wstring configDir = config.getStr(L"main", L"savePath", std::wstring());
+	std::wstring configDir = config.getStrW(L"main", L"savePath", std::wstring());
 	if (configDir.empty())
 	{
 		HMODULE hModule = GetModuleHandle(L"steam_api.dll");

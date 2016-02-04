@@ -1,11 +1,13 @@
 ﻿#include "Hotkeys.h"
 #include "dinput8.h"
 #include "InGameClock.h"
+#include "TweakBar.h"
 
 INPUT keyInput = { INPUT_KEYBOARD, {} };
 DWORD menuPause;
 UINT keyInventory, keySave, keyMap, keyJournal, keyEquipment, keyStatus;
 UINT keyClock, keyClockHourInc, keyClockHourDec, keyClockMinInc, keyClockMinDec;
+UINT keyConfig;
 void SendKeyPress(WORD vKey)
 {
 	keyInput.ki.wVk = vKey;
@@ -64,6 +66,8 @@ void hotkeyMenu(LPTHREAD_START_ROUTINE func)
 WNDPROC oWndProc;
 LRESULT CALLBACK HWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+	if (Hooks::TweakBarEvent(hwnd, msg, wParam, lParam))
+		return 0;
 	if (msg != WM_KEYDOWN || (HIWORD(lParam) & KF_REPEAT) != 0)
 		return oWndProc(hwnd, msg, wParam, lParam);
 
@@ -87,6 +91,8 @@ LRESULT CALLBACK HWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		Hooks::InGameClockDec(60);
 	else if (wParam == keyClockHourInc)
 		Hooks::InGameClockInc(60);
+	else if (wParam == keyConfig)
+		Hooks::TweakBarSwitch();
 	else
 		return oWndProc(hwnd, msg, wParam, lParam);
 	return 0;
@@ -97,6 +103,7 @@ void Hooks::Hotkeys()
 	if (config.getBool(L"hotkeys", L"enabled", false))
 	{
 		menuPause = config.getUInt(L"hotkeys", L"menuPause", 500);
+		keyConfig = config.getUInt(L"hotkeys", L"keyConfig", VK_OEM_3);
 		keyInventory = config.getUInt(L"hotkeys", L"keyInventory", 'I');
 		keySave = config.getUInt(L"hotkeys", L"keySave", VK_F5);
 		keyMap = config.getUInt(L"hotkeys", L"keyMap", 'M');
@@ -117,6 +124,10 @@ void Hooks::Hotkeys()
 		BYTE *pOffset;
 		if (FindSignature("Hotkeys", sig, &pOffset))
 			CreateHook("Hotkeys", pOffset, &HWndProc, &oWndProc);
+
+		TweakBarAdd({ TweakBarRW, "menuPause", TW_TYPE_UINT16, &menuPause, "group='Hotkeys'" });
+		TweakBarAdd({ TweakBarRW, "config", TW_TYPE_UINT8, &keyConfig, "group='Hotkeys'" });
+		TweakBarAdd({ TweakBarRW, "inventory", TW_TYPE_UINT8, &keyInventory, "group='Hotkeys'" });
 	}
 	else
 		logFile << "Hotkeys: disabled" << std::endl;

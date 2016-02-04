@@ -16,7 +16,8 @@ class iniConfig
 public:
 	iniConfig(LPCTSTR fileName);
 
-	stringType getStr(LPCTSTR section, LPCTSTR key, stringType defValue);
+	std::string getStrA(LPCTSTR section, LPCTSTR key, std::string defValue);
+	std::wstring getStrW(LPCTSTR section, LPCTSTR key, std::wstring defValue);
 	int getInt(LPCTSTR section, LPCTSTR key, int defValue);
 	unsigned int getUInt(LPCTSTR section, LPCTSTR key, unsigned int defValue);
 	float getFloat(LPCTSTR section, LPCTSTR key, float defValue);
