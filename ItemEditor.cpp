@@ -118,8 +118,8 @@ TwEnumVal itemStarTypeEV[], itemEnchantEV[], itemBonusEV[], itemIdEV[];
 void addItemEditor(TwBar *bar)
 {
 	BYTE *pOffset;
-	BYTE si1[] = { 0x8B, 0x44, 0x24, 0x04, 0x39, 0x81, 0x80, 0x00, 0x00, 0x00 };
-	if (!Hooks::FindSignature("ItemEditor1", si1, &pStringRead))
+	BYTE sig1[] = { 0x8B, 0x44, 0x24, 0x04, 0x39, 0x81, 0x80, 0x00, 0x00, 0x00 };
+	if (!Hooks::FindSignature("ItemEditor1", sig1, &pStringRead))
 		return;
 
 	BYTE sig2[] = { 0x8B, 0xF0, 0x0F, 0xBF, 0x47, 0x10, 0x85, 0xC0, 0x78 };
@@ -150,6 +150,7 @@ void addItemEditor(TwBar *bar)
 	TwType itemBonusEnum = TwDefineEnum("ItemBonus", itemBonusEV, 18);
 	TwAddVarCB(bar, "bonus 1", itemBonusEnum, setItemEditor, getItemEditor, (LPVOID)VAR_IBONUS1, "group='Item editor'");
 	TwAddVarCB(bar, "bonus 2", itemBonusEnum, setItemEditor, getItemEditor, (LPVOID)VAR_IBONUS2, "group='Item editor'");
+	TwDefine("DDDAFix/'Item editor' opened=false");
 }
 
 void Hooks::ItemEditor() { TweakBarAdd(addItemEditor); }

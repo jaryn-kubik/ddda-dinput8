@@ -108,6 +108,7 @@
     <ClCompile Include="InGameClock.cpp" />
     <ClCompile Include="dinput8.cpp" />
     <ClCompile Include="iniConfig.cpp" />
+    <ClCompile Include="PlayerStats.cpp" />
     <ClCompile Include="SaveBackup.cpp" />
     <ClCompile Include="TweakBar.cpp" />
     <ClCompile Include="utils.cpp" />
@@ -123,6 +124,7 @@
     <ClInclude Include="dinput8.h" />
     <ClInclude Include="include\MinHook.h" />
     <ClInclude Include="iniConfig.h" />
+    <ClInclude Include="PlayerStats.h" />
     <ClInclude Include="README.md" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SaveBackup.h" />

@@ -118,6 +118,7 @@ void addInGameClock(TwBar *bar)
 	TwAddVarRW(bar, "outlineTop", TW_TYPE_COLOR32, &clockTop, "group='In-Game clock' alpha=true");
 	TwAddVarRW(bar, "outlineRight", TW_TYPE_COLOR32, &clockRight, "group='In-Game clock' alpha=true");
 	TwAddVarRW(bar, "outlineBottom", TW_TYPE_COLOR32, &clockBottom, "group='In-Game clock' alpha=true");
+	TwDefine("DDDAFix/'In-Game clock' opened=false");
 }
 
 void Hooks::InGameClock()
