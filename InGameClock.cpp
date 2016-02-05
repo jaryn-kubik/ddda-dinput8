@@ -84,7 +84,7 @@ void Hooks::InGameClockDec(BYTE minutes)
 	}
 }
 
-void SetCallback(const void *value, void *clientData)
+void setInGameClock(const void *value, void *clientData)
 {
 	if (clientData == &clockSize)
 		clockSize = *(LPDWORD)value;
@@ -97,12 +97,27 @@ void SetCallback(const void *value, void *clientData)
 		CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, clockFont.c_str(), &pNewFont);
 }
 
-void GetCallback(void *value, void *clientData)
+void getInGameClock(void *value, void *clientData)
 {
 	if (clientData == &clockSize)
 		*(LPDWORD)value = clockSize;
 	else if (clientData == &clockFont)
 		TwCopyStdStringToLibrary(*static_cast<string*>(value), clockFont);
+}
+
+void addInGameClock(TwBar *bar)
+{
+	TwAddVarRW(bar, "enabled", TW_TYPE_BOOLCPP, &clockShow, "group='In-Game clock'");
+	TwAddVarCB(bar, "size", TW_TYPE_UINT16, setInGameClock, getInGameClock, &clockSize, "group='In-Game clock' min=1");
+	TwAddVarCB(bar, "font", TW_TYPE_STDSTRING, setInGameClock, getInGameClock, &clockFont, "group='In-Game clock'");
+	TwAddVarRW(bar, "timebase", TW_TYPE_UINT16, &clockTimebase, "group='In-Game clock'");
+	TwAddVarRW(bar, "positionV", TwDefineEnum("positionV", nullptr, 0), &clockPositionV, "group='In-Game clock' enum='0 {top}, 8 {bottom}'");
+	TwAddVarRW(bar, "positionH", TwDefineEnum("positionH", nullptr, 0), &clockPositionH, "group='In-Game clock' enum='0 {left}, 1 {center}, 2 {right}'");
+	TwAddVarRW(bar, "color", TW_TYPE_COLOR32, &clockColor, "group='In-Game clock' alpha=true");
+	TwAddVarRW(bar, "outlineLeft", TW_TYPE_COLOR32, &clockLeft, "group='In-Game clock' alpha=true");
+	TwAddVarRW(bar, "outlineTop", TW_TYPE_COLOR32, &clockTop, "group='In-Game clock' alpha=true");
+	TwAddVarRW(bar, "outlineRight", TW_TYPE_COLOR32, &clockRight, "group='In-Game clock' alpha=true");
+	TwAddVarRW(bar, "outlineBottom", TW_TYPE_COLOR32, &clockBottom, "group='In-Game clock' alpha=true");
 }
 
 void Hooks::InGameClock()
@@ -128,23 +143,12 @@ void Hooks::InGameClock()
 
 		BYTE sig[] = { 0x8B, 0x15, 0xCC, 0xCC, 0xCC, 0xCC, 0x33, 0xDB, 0x8B, 0xF8 };
 		BYTE *pOffset;
-		if (!FindSignature("InGameClock", sig, &pOffset))
-			return;
-
-		pClock = (DWORD**)*(LPDWORD)(pOffset + 2);
-		D3D9Add(onCreateDevice, onLostDevice, onResetDevice, onEndScene);
-
-		TweakBarAdd({ TweakBarRW, "enabled", TW_TYPE_BOOLCPP, &clockShow, "group='In-Game clock'" });
-		TweakBarAdd({ TweakBarCB, "size", TW_TYPE_UINT16, &clockSize, "group='In-Game clock' min=1", SetCallback, GetCallback });
-		TweakBarAdd({ TweakBarCB, "font", TW_TYPE_STDSTRING, &clockFont, "group='In-Game clock'", SetCallback, GetCallback });
-		TweakBarAdd({ TweakBarRW, "timebase", TW_TYPE_UINT16, &clockTimebase, "group='In-Game clock'" });
-		TweakBarAdd({ TweakBarRW, "positionV", TW_TYPE_UNDEF, &clockPositionV, "group='In-Game clock' enum='0 {top}, 8 {bottom}'" });
-		TweakBarAdd({ TweakBarRW, "positionH", TW_TYPE_UNDEF, &clockPositionH, "group='In-Game clock' enum='0 {left}, 1 {center}, 2 {right}'" });
-		TweakBarAdd({ TweakBarRW, "color", TW_TYPE_COLOR32, &clockColor, "group='In-Game clock' alpha=true" });
-		TweakBarAdd({ TweakBarRW, "outlineLeft", TW_TYPE_COLOR32, &clockLeft, "group='In-Game clock' alpha=true" });
-		TweakBarAdd({ TweakBarRW, "outlineTop", TW_TYPE_COLOR32, &clockTop, "group='In-Game clock' alpha=true" });
-		TweakBarAdd({ TweakBarRW, "outlineRight", TW_TYPE_COLOR32, &clockRight, "group='In-Game clock' alpha=true" });
-		TweakBarAdd({ TweakBarRW, "outlineBottom", TW_TYPE_COLOR32, &clockBottom, "group='In-Game clock' alpha=true" });
+		if (FindSignature("InGameClock", sig, &pOffset))
+		{
+			pClock = (DWORD**)*(LPDWORD)(pOffset + 2);
+			D3D9Add(onCreateDevice, onLostDevice, onResetDevice, onEndScene);
+			TweakBarAdd(addInGameClock);
+		}
 	}
 	else
 		logFile << "InGameClock: disabled" << std::endl;

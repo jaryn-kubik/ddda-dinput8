@@ -8,6 +8,7 @@
 #include "iniConfig.h"
 #include "Hotkeys.h"
 #include "TweakBar.h"
+#include "ItemEditor.h"
 
 typedef HRESULT(WINAPI *tDirectInput8Create)(HINSTANCE inst_handle, DWORD version, const IID& r_iid, LPVOID* out_wrapper, LPUNKNOWN p_unk);
 tDirectInput8Create oDirectInput8Create;
@@ -25,6 +26,7 @@ void Initialize()
 	Hooks::Cheats();
 	if (Hooks::D3D9())
 	{
+		Hooks::ItemEditor();
 		Hooks::InGameClock();
 		Hooks::TweakBar();
 	}

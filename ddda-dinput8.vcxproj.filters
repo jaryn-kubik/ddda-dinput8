@@ -48,6 +48,9 @@
     <ClCompile Include="TweakBar.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ItemEditor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dinput8.h">
@@ -92,6 +95,9 @@
     </ClInclude>
     <ClInclude Include="include\AntTweakBar.h">
       <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="ItemEditor.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -103,7 +103,7 @@ void Hooks::Hotkeys()
 	if (config.getBool(L"hotkeys", L"enabled", false))
 	{
 		menuPause = config.getUInt(L"hotkeys", L"menuPause", 500);
-		keyConfig = config.getUInt(L"hotkeys", L"keyConfig", VK_OEM_3);
+		keyConfig = config.getUInt(L"hotkeys", L"keyTweakBar", VK_OEM_3);
 		keyInventory = config.getUInt(L"hotkeys", L"keyInventory", 'I');
 		keySave = config.getUInt(L"hotkeys", L"keySave", VK_F5);
 		keyMap = config.getUInt(L"hotkeys", L"keyMap", 'M');
@@ -124,10 +124,6 @@ void Hooks::Hotkeys()
 		BYTE *pOffset;
 		if (FindSignature("Hotkeys", sig, &pOffset))
 			CreateHook("Hotkeys", pOffset, &HWndProc, &oWndProc);
-
-		TweakBarAdd({ TweakBarRW, "menuPause", TW_TYPE_UINT16, &menuPause, "group='Hotkeys'" });
-		TweakBarAdd({ TweakBarRW, "config", TW_TYPE_UINT8, &keyConfig, "group='Hotkeys'" });
-		TweakBarAdd({ TweakBarRW, "inventory", TW_TYPE_UINT8, &keyInventory, "group='Hotkeys'" });
 	}
 	else
 		logFile << "Hotkeys: disabled" << std::endl;
