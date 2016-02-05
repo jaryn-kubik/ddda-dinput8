@@ -73,6 +73,18 @@ void Hooks::Cheats()
 	else
 		logFile << "Cheat (weight): disabled" << std::endl;
 
+	mTimeInterval = config.getFloat(L"cheats", L"timeInterval", -1);
+	if (mTimeInterval >= 0)
+	{
+		if (mTimeInterval == 0)
+			realTime = true;
+		BYTE sig[] = { 0x8B, 0x44, 0x24, 0x08, 0x01, 0x86, 0x68, 0x87, 0x0B, 0x00 };
+		if (FindSignature("Cheat (timeInterval)", sig, &pOffset))
+			CreateHook("Cheat (timeInterval)", pOffset, &HTimeInterval, &oTimeInterval);
+	}
+	else
+		logFile << "Cheat (timeInterval): disabled" << std::endl;
+
 	if (config.getBool(L"cheats", L"shareWeaponSkills", false))
 	{
 		BYTE sig1[] = { 0x0F,0x84,0x97,0x00,0x00,0x00,0x8B,0xCC,0xCC,0xCC,0x8B,0xCC,0x8B };
@@ -101,7 +113,7 @@ void Hooks::Cheats()
 	if (config.getBool(L"cheats", L"ignoreEquipVocation", false))
 	{
 		BYTE sig1[] = { 0x0F, 0x94, 0xC0, 0xC2, 0x0C, 0x00 };
-		BYTE sig2[] = { 0x74, 0x0F, 0x3B, 0xC2, 0x74, 0x0E, 0x8B, 0x41, 0x04, 0x83 };;
+		BYTE sig2[] = { 0x74, 0x0F, 0x3B, 0xC2, 0x74, 0x0E, 0x8B, 0x41, 0x04, 0x83 };
 		BYTE sig3[] = { 0x3B, 0xC2, 0x75, 0x15, 0x8B, 0x4D, 0x10 };
 		BYTE sig4[] = { 0x0F, 0x94, 0xC0, 0x84, 0xC0, 0x75, 0x09, 0x5F };
 		BYTE sig5[] = { 0x0F, 0x94, 0xC0, 0x84, 0xC0, 0x74, 0x60 };
@@ -121,15 +133,18 @@ void Hooks::Cheats()
 	else
 		logFile << "Cheat (ignoreEquipVocation): disabled" << std::endl;
 
-	mTimeInterval = config.getFloat(L"cheats", L"timeInterval", -1);
-	if (mTimeInterval >= 0)
+	if (config.getBool(L"cheats", L"ignoreSkillVocation", false))
 	{
-		if (mTimeInterval == 0)
-			realTime = true;
-		BYTE sig[] = { 0x8B, 0x44, 0x24, 0x08, 0x01, 0x86, 0x68, 0x87, 0x0B, 0x00 };
-		if (FindSignature("Cheat (timeInterval)", sig, &pOffset))
-			CreateHook("Cheat (timeInterval)", pOffset, &HTimeInterval, &oTimeInterval);
+		BYTE sig1[] = { 0x74, 0x2F, 0x8B, 0x47, 0x10 };
+		BYTE sig2[] = { 0x74, 0x74, 0x8B, 0x44, 0x24, 0x1C };
+		BYTE sig3[] = { 0x74, 0x24, 0x83, 0xBD, 0xCC, 0xCC, 0xCC, 0xCC, 0x05 };
+		BYTE sig4[] = { 0x8B, 0x4A, 0x10, 0x49, 0x3B, 0xC1 };
+
+		if (FindSignature("Cheat (ignoreSkillVocation1)", sig1, &pOffset)) Set<BYTE>(pOffset, { 0x90, 0x90 });
+		if (FindSignature("Cheat (ignoreSkillVocation2)", sig2, &pOffset)) Set<BYTE>(pOffset, { 0x90, 0x90 });
+		if (FindSignature("Cheat (ignoreSkillVocation3)", sig3, &pOffset)) Set<BYTE>(pOffset, { 0x90, 0x90 });
+		if (FindSignature("Cheat (ignoreSkillVocation4)", sig4, &pOffset)) Set<BYTE>(pOffset, { 0x90, 0x90, 0x8B, 0xC1 });
 	}
 	else
-		logFile << "Cheat (timeInterval): disabled" << std::endl;
+		logFile << "Cheat (ignoreSkillVocation): disabled" << std::endl;
 }
