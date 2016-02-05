@@ -138,7 +138,7 @@ void addItemEditor(TwBar *bar)
 	if (Hooks::FindSignature("ItemEditor5", sig6, &pOffset))
 		Hooks::CreateHook("ItemEditor5", pOffset + 4, &HItemStringReadInStorage, &oItemStringReadInStorage);
 
-	TwAddVarCB(bar, "id", TwDefineEnum("ItemId", itemIdEV, 1509), setItemEditor, getItemEditor, (LPVOID)VAR_IID, "group='Item editor' hexa=true");
+	TwAddVarCB(bar, "id", TwDefineEnum("ItemId", itemIdEV, 1486), setItemEditor, getItemEditor, (LPVOID)VAR_IID, "group='Item editor' hexa=true");
 	TwAddVarCB(bar, "name", TW_TYPE_CSSTRING(0x58), nullptr, getItemEditor, (LPVOID)VAR_INAME, "group='Item editor'");
 	TwAddVarCB(bar, "quantity", TW_TYPE_UINT16, setItemEditor, getItemEditor, (LPVOID)VAR_IQUANTITY, "group='Item editor'");
 	TwAddVarCB(bar, "weight", TW_TYPE_FLOAT, setItemEditor, getItemEditor, (LPVOID)VAR_IWEIGHT, "group='Item editor' min=0 step=0.1");
