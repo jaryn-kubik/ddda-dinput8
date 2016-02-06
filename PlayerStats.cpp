@@ -2,6 +2,14 @@
 #include "PlayerStats.h"
 #include "TweakBar.h"
 
+LPVOID pSelectedSkill, oSelectedSkill;
+void __declspec(naked) HSelectedSkill()
+{
+	__asm	shr		eax, 5;
+	__asm	mov		pSelectedSkill, eax;
+	__asm	jmp		oSelectedSkill;
+}
+
 DWORD **pMainPointer;
 void setStats(const void *value, void *clientData)
 {
@@ -15,11 +23,24 @@ void getStats(void *value, void *clientData)
 		*(UINT32*)value = (*pMainPointer)[(DWORD)clientData / 4];
 }
 
+void addSkill(TwBar *bar, DWORD offset, string name)
+{
+	string var = "skills" + name;
+	string def = "group=" + name + " label='";
+	TwAddVarCB(bar, (var + "P1").c_str(), TW_TYPE_INT32, setStats, getStats, (LPVOID)(offset + 4 * 0), (def + "Primary 1'").c_str());
+	TwAddVarCB(bar, (var + "P2").c_str(), TW_TYPE_INT32, setStats, getStats, (LPVOID)(offset + 4 * 1), (def + "Primary 2'").c_str());
+	TwAddVarCB(bar, (var + "P3").c_str(), TW_TYPE_INT32, setStats, getStats, (LPVOID)(offset + 4 * 2), (def + "Primary 3'").c_str());
+	TwAddVarCB(bar, (var + "S1").c_str(), TW_TYPE_INT32, setStats, getStats, (LPVOID)(offset + 4 * 3), (def + "Secondary 1'").c_str());
+	TwAddVarCB(bar, (var + "S2").c_str(), TW_TYPE_INT32, setStats, getStats, (LPVOID)(offset + 4 * 4), (def + "Secondary 2'").c_str());
+	TwAddVarCB(bar, (var + "S3").c_str(), TW_TYPE_INT32, setStats, getStats, (LPVOID)(offset + 4 * 5), (def + "Secondary 3'").c_str());
+	TwDefine(("DDDAFix/" + name + " group='Equipped skills' opened=false").c_str());
+}
+
 void addPlayerStats(TwBar *bar)
 {
 	BYTE *pOffset;
-	BYTE sig[] = { 0x8B, 0x15, 0xCC, 0xCC, 0xCC, 0xCC, 0x33, 0xDB, 0x8B, 0xF8 };
-	if (!Hooks::FindSignature("PlayerStats", sig, &pOffset))
+	BYTE sig1[] = { 0x8B, 0x15, 0xCC, 0xCC, 0xCC, 0xCC, 0x33, 0xDB, 0x8B, 0xF8 };
+	if (!Hooks::FindSignature("PlayerStats", sig1, &pOffset))
 		return;
 	pMainPointer = (DWORD**)*(LPDWORD)(pOffset + 2);
 
@@ -50,8 +71,8 @@ void addPlayerStats(TwBar *bar)
 	TwAddVarCB(bar, "playerVocWar", TW_TYPE_UINT32, setStats, getStats, (LPVOID)0xA79B8, "group=PVocations label=Warrior max=9");
 	TwAddVarCB(bar, "playerVocRang", TW_TYPE_UINT32, setStats, getStats, (LPVOID)0xA79BC, "group=PVocations label=Ranger max=9");
 	TwAddVarCB(bar, "playerVocSorc", TW_TYPE_UINT32, setStats, getStats, (LPVOID)0xA79C0, "group=PVocations label=Sorcerer max=9");
-	TwDefine("DDDAFix/PStats  group=Player label=Stats opened=false");
-	TwDefine("DDDAFix/PVocations  group=Player label=Vocations opened=false");
+	TwDefine("DDDAFix/PStats group=Player label=Stats opened=false");
+	TwDefine("DDDAFix/PVocations group=Player label=Vocations opened=false");
 	TwDefine("DDDAFix/Player opened=false");
 
 	//main pawn
@@ -86,10 +107,30 @@ void addPlayerStats(TwBar *bar)
 	TwAddVarCB(bar, "pawnINexus", TW_TYPE_FLOAT, setStats, getStats, (LPVOID)0xA93C8, "group=MInclination label=Nexus");
 	TwAddVarCB(bar, "pawnIPioneer", TW_TYPE_FLOAT, setStats, getStats, (LPVOID)0xA93D4, "group=MInclination label=Pioneer");
 	TwAddVarCB(bar, "pawnIAcquisitor", TW_TYPE_FLOAT, setStats, getStats, (LPVOID)0xA93E0, "group=MInclination label=Acquisitor");
-	TwDefine("DDDAFix/MStats  group=Pawn label=Stats opened=false");
-	TwDefine("DDDAFix/MVocations  group=Pawn label=Vocations opened=false");
-	TwDefine("DDDAFix/MInclination  group=Pawn label=Inclinations opened=false");
+	TwDefine("DDDAFix/MStats group=Pawn label=Stats opened=false");
+	TwDefine("DDDAFix/MVocations group=Pawn label=Vocations opened=false");
+	TwDefine("DDDAFix/MInclination group=Pawn label=Inclinations opened=false");
 	TwDefine("DDDAFix/Pawn opened=false");
+
+	//skills
+	BYTE sig2[] = { 0x8B, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0x33, 0xC9, 0x33, 0xC0, 0x8B, 0xFF };
+	if (!Hooks::FindSignature("EquippedSkill", sig2, &pOffset))
+		return;
+	Hooks::CreateHook("EquippedSkill", pOffset + 6, &HSelectedSkill, &oSelectedSkill);
+
+	TwAddVarRO(bar, "skillsSelected", TW_TYPE_INT32, &pSelectedSkill, "group='Equipped skills' label=Selected");
+	addSkill(bar, 0xA7808 + 24 * 0, "Sword");
+	addSkill(bar, 0xA7808 + 24 * 1, "Mace");
+	addSkill(bar, 0xA7808 + 24 * 2, "Longsword");
+	addSkill(bar, 0xA7808 + 24 * 3, "Dagger");
+	addSkill(bar, 0xA7808 + 24 * 4, "Staff");
+	addSkill(bar, 0xA7808 + 24 * 5, "Archistaff");
+	addSkill(bar, 0xA7808 + 24 * 6, "Shield");
+	addSkill(bar, 0xA7808 + 24 * 7, "MagickShield");
+	addSkill(bar, 0xA7808 + 24 * 8, "Bow");
+	addSkill(bar, 0xA7808 + 24 * 9, "Longbow");
+	addSkill(bar, 0xA7808 + 24 * 10, "MagickBow");
+	TwDefine("DDDAFix/'Equipped skills' opened=false");
 }
 
 void Hooks::PlayerStats() { TweakBarAdd(addPlayerStats); }
