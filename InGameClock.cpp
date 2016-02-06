@@ -6,6 +6,7 @@
 DWORD **pClock;
 RECT outLeft, outTop, outRight, outBottom, rect;
 LPD3DXFONT pFont, pNewFont = nullptr;
+LPD3DXSPRITE pSprite;
 string clockFont;
 bool clockShow = true;
 DWORD clockTimebase, clockSize, clockColor, clockLeft, clockTop, clockRight, clockBottom, clockPositionV, clockPositionH;
@@ -23,35 +24,51 @@ void onCreateDevice(LPDIRECT3DDEVICE9 pD3DDevice, D3DPRESENT_PARAMETERS* pParams
 	setRectangles(pParams->BackBufferWidth, pParams->BackBufferHeight);
 	D3DXCreateFontA(pD3DDevice, clockSize, 0, FW_HEAVY, 1, FALSE, DEFAULT_CHARSET, OUT_TT_ONLY_PRECIS,
 		CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, clockFont.c_str(), &pFont);
+	D3DXCreateSprite(pD3DDevice, &pSprite);
 }
 
 void onLostDevice(LPDIRECT3DDEVICE9 pD3DDevice, D3DPRESENT_PARAMETERS* pParams)
 {
 	setRectangles(pParams->BackBufferWidth, pParams->BackBufferHeight);
 	pFont->OnLostDevice();
+	pSprite->OnLostDevice();
 }
 
 void onResetDevice(LPDIRECT3DDEVICE9 pD3DDevice, D3DPRESENT_PARAMETERS* pParams)
 {
 	setRectangles(pParams->BackBufferWidth, pParams->BackBufferHeight);
 	pFont->OnResetDevice();
+	pSprite->OnResetDevice();
 }
 
+WCHAR clockBuf[] = L"00:00";
 void onEndScene(LPDIRECT3DDEVICE9 pD3DDevice)
 {
 	if (clockShow && pClock && *pClock)
 	{
-		DWORD t = (*pClock)[0xB876C / 4] * 60 + (*pClock)[0xB8770 / 4];
-		t -= t % clockTimebase;
+		DWORD h = (*pClock)[0xB876C / 4];
+		DWORD m = (*pClock)[0xB8770 / 4];
+		if (clockTimebase != 1)
+		{
+			DWORD t = h * 60 + m;
+			t -= t % clockTimebase;
+			h = t / 60;
+			m = t % 60;
+		}
 
-		WCHAR buf[9];
-		wsprintf(buf, L"%02d:%02d", t / 60, t % 60);
+		clockBuf[0] = 0x30 + h / 10;
+		clockBuf[1] = 0x30 + h % 10;
+		clockBuf[3] = 0x30 + m / 10;
+		clockBuf[4] = 0x30 + m % 10;
 		DWORD format = DT_NOCLIP | clockPositionV | clockPositionH;
-		pFont->DrawText(nullptr, buf, -1, &outLeft, format, clockLeft);
-		pFont->DrawText(nullptr, buf, -1, &outTop, format, clockTop);
-		pFont->DrawText(nullptr, buf, -1, &outRight, format, clockRight);
-		pFont->DrawText(nullptr, buf, -1, &outBottom, format, clockBottom);
-		pFont->DrawText(nullptr, buf, -1, &rect, format, clockColor);
+
+		pSprite->Begin(D3DXSPRITE_ALPHABLEND | D3DXSPRITE_SORT_TEXTURE | D3DXSPRITE_DO_NOT_ADDREF_TEXTURE);
+		pFont->DrawText(pSprite, clockBuf, -1, &outLeft, format, clockLeft);
+		pFont->DrawText(pSprite, clockBuf, -1, &outTop, format, clockTop);
+		pFont->DrawText(pSprite, clockBuf, -1, &outRight, format, clockRight);
+		pFont->DrawText(pSprite, clockBuf, -1, &outBottom, format, clockBottom);
+		pFont->DrawText(pSprite, clockBuf, -1, &rect, format, clockColor);
+		pSprite->End();
 
 		if (pNewFont)
 		{
