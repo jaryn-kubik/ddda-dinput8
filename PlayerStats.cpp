@@ -2,13 +2,13 @@
 #include "PlayerStats.h"
 #include "TweakBar.h"
 
-LPVOID pSelectedSkill, oSelectedSkill;
+/*LPVOID pSelectedSkill, oSelectedSkill;
 void __declspec(naked) HSelectedSkill()
 {
 	__asm	shr		eax, 5;
 	__asm	mov		pSelectedSkill, eax;
 	__asm	jmp		oSelectedSkill;
-}
+}*/
 
 DWORD **pMainPointer;
 void setStats(const void *value, void *clientData)
@@ -23,19 +23,22 @@ void getStats(void *value, void *clientData)
 		*(UINT32*)value = (*pMainPointer)[(DWORD)clientData / 4];
 }
 
-void addSkill(TwBar *bar, DWORD offset, string name)
+void addSkill(TwBar *bar, DWORD offset, string name, TwEnumVal *enumVal, unsigned int valCount)
 {
 	string var = "skills" + name;
 	string def = "group=" + name + " label='";
-	TwAddVarCB(bar, (var + "P1").c_str(), TW_TYPE_INT32, setStats, getStats, (LPVOID)(offset + 4 * 0), (def + "Primary 1'").c_str());
-	TwAddVarCB(bar, (var + "P2").c_str(), TW_TYPE_INT32, setStats, getStats, (LPVOID)(offset + 4 * 1), (def + "Primary 2'").c_str());
-	TwAddVarCB(bar, (var + "P3").c_str(), TW_TYPE_INT32, setStats, getStats, (LPVOID)(offset + 4 * 2), (def + "Primary 3'").c_str());
-	TwAddVarCB(bar, (var + "S1").c_str(), TW_TYPE_INT32, setStats, getStats, (LPVOID)(offset + 4 * 3), (def + "Secondary 1'").c_str());
-	TwAddVarCB(bar, (var + "S2").c_str(), TW_TYPE_INT32, setStats, getStats, (LPVOID)(offset + 4 * 4), (def + "Secondary 2'").c_str());
-	TwAddVarCB(bar, (var + "S3").c_str(), TW_TYPE_INT32, setStats, getStats, (LPVOID)(offset + 4 * 5), (def + "Secondary 3'").c_str());
+	TwType type = TwDefineEnum((var + "Enum").c_str(), enumVal, valCount);
+	TwAddVarCB(bar, (var + "P1").c_str(), type, setStats, getStats, (LPVOID)(offset + 4 * 0), (def + "Primary 1'").c_str());
+	TwAddVarCB(bar, (var + "P2").c_str(), type, setStats, getStats, (LPVOID)(offset + 4 * 1), (def + "Primary 2'").c_str());
+	TwAddVarCB(bar, (var + "P3").c_str(), type, setStats, getStats, (LPVOID)(offset + 4 * 2), (def + "Primary 3'").c_str());
+	TwAddVarCB(bar, (var + "S1").c_str(), type, setStats, getStats, (LPVOID)(offset + 4 * 3), (def + "Secondary 1'").c_str());
+	TwAddVarCB(bar, (var + "S2").c_str(), type, setStats, getStats, (LPVOID)(offset + 4 * 4), (def + "Secondary 2'").c_str());
+	TwAddVarCB(bar, (var + "S3").c_str(), type, setStats, getStats, (LPVOID)(offset + 4 * 5), (def + "Secondary 3'").c_str());
 	TwDefine(("DDDAFix/" + name + " group='Equipped skills' opened=false").c_str());
 }
 
+TwEnumVal skillsSword[], skillsLongsword[], skillsDagger[], skillsStaves[];
+TwEnumVal skillsShield[], skillsMagickShield[], skillsBow[], skillsLongbow[], skillsMagickBow[];
 void addPlayerStats(TwBar *bar)
 {
 	BYTE *pOffset;
@@ -113,24 +116,255 @@ void addPlayerStats(TwBar *bar)
 	TwDefine("DDDAFix/Pawn opened=false");
 
 	//skills
-	BYTE sig2[] = { 0x8B, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0x33, 0xC9, 0x33, 0xC0, 0x8B, 0xFF };
+	/*BYTE sig2[] = { 0x8B, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0x33, 0xC9, 0x33, 0xC0, 0x8B, 0xFF };
 	if (!Hooks::FindSignature("EquippedSkill", sig2, &pOffset))
 		return;
 	Hooks::CreateHook("EquippedSkill", pOffset + 6, &HSelectedSkill, &oSelectedSkill);
 
-	TwAddVarRO(bar, "skillsSelected", TW_TYPE_INT32, &pSelectedSkill, "group='Equipped skills' label=Selected");
-	addSkill(bar, 0xA7808 + 24 * 0, "Sword");
-	addSkill(bar, 0xA7808 + 24 * 1, "Mace");
-	addSkill(bar, 0xA7808 + 24 * 2, "Longsword");
-	addSkill(bar, 0xA7808 + 24 * 3, "Dagger");
-	addSkill(bar, 0xA7808 + 24 * 4, "Staff");
-	addSkill(bar, 0xA7808 + 24 * 5, "Archistaff");
-	addSkill(bar, 0xA7808 + 24 * 6, "Shield");
-	addSkill(bar, 0xA7808 + 24 * 7, "MagickShield");
-	addSkill(bar, 0xA7808 + 24 * 8, "Bow");
-	addSkill(bar, 0xA7808 + 24 * 9, "Longbow");
-	addSkill(bar, 0xA7808 + 24 * 10, "MagickBow");
+	TwAddVarRO(bar, "skillsSelected", TW_TYPE_INT32, &pSelectedSkill, "group='Equipped skills' label=Selected");*/
+	addSkill(bar, 0xA7808 + 24 * 0, "Sword", skillsSword, 21);
+	addSkill(bar, 0xA7808 + 24 * 1, "Mace", skillsSword, 21);
+	addSkill(bar, 0xA7808 + 24 * 2, "Longsword", skillsLongsword, 11);
+	addSkill(bar, 0xA7808 + 24 * 6, "Warhammer", skillsLongsword, 11);
+	addSkill(bar, 0xA7808 + 24 * 3, "Dagger", skillsDagger, 21);
+	addSkill(bar, 0xA7808 + 24 * 4, "Staff", skillsStaves, 31);
+	addSkill(bar, 0xA7808 + 24 * 5, "Archistaff", skillsStaves, 31);
+	addSkill(bar, 0xA7808 + 24 * 7, "Shield", skillsShield, 10);
+	addSkill(bar, 0xA7808 + 24 * 8, "MagickShield", skillsMagickShield, 16);
+	addSkill(bar, 0xA7808 + 24 * 9, "Bow", skillsBow, 10);
+	addSkill(bar, 0xA7808 + 24 * 10, "Longbow", skillsLongbow, 10);
+	addSkill(bar, 0xA7808 + 24 * 11, "MagickBow", skillsMagickBow, 10);
 	TwDefine("DDDAFix/'Equipped skills' opened=false");
 }
 
 void Hooks::PlayerStats() { TweakBarAdd(addPlayerStats); }
+
+TwEnumVal skillsSword[] =
+{
+	{ -1, "Empty" },
+	{ 40, "Blink Strike | Burst Strike" },
+	{ 41, "Broad Cut | Broad Slash" },
+	{ 42, "Downthrust | Downcrack" },
+	{ 43, "Tusk Toss | Antler Toss" },
+	{ 44, "Compass Slash | Full Moon Slash" },
+	{ 45, "Skyward Lash | Heavenward Lash" },
+	{ 46, "Flesh Skewer | Soul Skewer" },
+	{ 47, "Hindsight Slash | Hindsight Sweep" },
+	{ 48, "Stone Will | Steel Will" },
+	{ 49, "Legion's Bite | Dragon's Maw" },
+	{ 50, "Perilous Sigil | Ruinous Sigil" },
+	{ 51, "Magick Cannon | Great Cannon" },
+	{ 52, "Funnel Sigil | Vortex Sigil" },
+	{ 53, "Sky Dance | Sky Rapture" },
+	{ 54, "Stone Grove | Stone Forest" },
+	{ 55, "Intimate Strike | Initimate Gambit" },
+	{ 56, "Windmill Slash | Great Windmill" },
+	{ 57, "Powder Charge | Powder Blast" },
+	{ 58, "Gouge | Dire Gouge" },
+	{ 59, "Clarity | Clairvoyance" }
+};
+
+TwEnumVal skillsLongsword[] =
+{
+	{ -1, "Empty" },
+	{ 100, "Upward Strike | Whirlwind Slash" },
+	{ 101, "Pommel Strike | Pommel Bash" },
+	{ 102, "Savage Lunge | Indomitable Lunge" },
+	{ 103, "Escape Slash | Exodus Slash" },
+	{ 104, "Savage Lash | Indomitable Lash" },
+	{ 105, "Ladder Blade | Catapult Blade" },
+	{ 106, "Spark Slash | Corona Slash" },
+	{ 107, "Act of Atonement | Act of Vengeance" },
+	{ 108, "Battle Cry | War Cry" },
+	{ 109, "Arc of Might | Arc of Deliverance" }
+};
+
+TwEnumVal skillsDagger[] =
+{
+	{ -1, "Empty" },
+	{ 150, "Biting Wind | Cutting Wind" },
+	{ 151, "Toss and Trigger | Advanced Trigger" },
+	{ 152, "Scarlet Kisses | Hundred Kisses" },
+	{ 153, "Dazzle Hold | Dazzle Blast" },
+	{ 154, "Sprint | Mad Dash" },
+	{ 155, "Helm Splitter | Skull Splitter" },
+	{ 156, "Ensnare | Implicate" },
+	{ 157, "Pilfer | Master Thief" },
+	{ 158, "Reset | Instant Reset" },
+	{ 159, "Stepping Stone | Leaping Stone" },
+	{ 160, "Sunburst | Sunflare" },
+	{ 161, "Shadowpin | Shadowshackle" },
+	{ 162, "Scension | Grand Scension" },
+	{ 163, "Magick Rebuffer | Magick Rebalancer" },
+	{ 164, "Wind Harness | Gale Harness" },
+	{ 165, "Back Kick | Escape Onslaught" },
+	{ 166, "Spiderbite | Snakebite" },
+	{ 167, "Backfire | Immolation" },
+	{ 168, "Stealth | Invisibility" },
+	{ 169, "Easy Kill | Masterful Kill" }
+};
+
+TwEnumVal skillsStaves[] =
+{
+	{ -1, "Empty" },
+	{ 210, "Ingle | High Ingle" },
+	{ 211, "Frazil | High Frazil" },
+	{ 212, "Levin | High Levin" },
+	{ 213, "Comestion | High Comestion" },
+	{ 214, "Frigor | High Frigor" },
+	{ 215, "Brontide | High Brontide" },
+	{ 216, "Grapnel | High Grapnel" },
+	{ 217, "Silentium | High Silentium" },
+	{ 218, "Blearing | High Blearing" },
+	{ 219, "Lassitude | High Lassitude" },
+	{ 220, "Anodyne | High Anodyne" },
+	{ 221, "Halidom | High Halidom" },
+	{ 222, "Fire Boon | Fire Affinity" },
+	{ 223, "Ice Boon | Ice Affinity" },
+	{ 224, "Thunder Boon | Thunder Affinity" },
+	{ 225, "Holy Boon | Holy Affinity" },
+	{ 226, "Dark Boon | Dark Affinity" },
+	{ 227, "Bolide | High Bolide" },
+	{ 228, "Gicel | High Gicel" },
+	{ 229, "Fulmination | High Fulmination" },
+	{ 230, "Seism | High Seism" },
+	{ 231, "Maelstrom | High Maelstrom" },
+	{ 232, "Exequy | High Exequy" },
+	{ 233, "Petrifaction | High Petrifaction" },
+	{ 234, "Miasma | High Miasma" },
+	{ 235, "Perdition | High Perdition" },
+	{ 236, "Sopor | High Sopor" },
+	{ 237, "Voidspell | High Voidspell" },
+	{ 238, "Spellscreen | High Spellscreen" },
+	{ 239, "Necromancy | High Necromancy" }
+};
+
+/*TwEnumVal skillsStaff[] =
+{
+	{ -1, "Empty" },
+	{ 210, "Ingle | High Ingle" },
+	{ 211, "Frazil | High Frazil" },
+	{ 212, "Levin | High Levin" },
+	{ 213, "Comestion | High Comestion" },
+	{ 214, "Frigor | High Frigor" },
+	{ 215, "Brontide | High Brontide" },
+	{ 216, "Grapnel | High Grapnel" },
+	{ 217, "Silentium | High Silentium" },
+	{ 218, "Blearing | High Blearing" },
+	{ 220, "Anodyne | High Anodyne" },
+	{ 221, "Halidom | High Halidom" },
+	{ 222, "Fire Boon | Fire Affinity" },
+	{ 223, "Ice Boon | Ice Affinity" },
+	{ 224, "Thunder Boon | Thunder Affinity" },
+	{ 225, "Holy Boon | Holy Affinity" },
+	{ 226, "Dark Boon | Dark Affinity" },
+	{ 227, "Bolide | High Bolide" },
+	{ 235, "Perdition | High Perdition" },
+	{ 236, "Sopor | High Sopor" },
+	{ 238, "Spellscreen | High Spellscreen" }
+};
+
+TwEnumVal skillsArchistaff[] =
+{
+	{ -1, "Empty" },
+	{ 210, "Ingle | High Ingle" },
+	{ 211, "Frazil | High Frazil" },
+	{ 212, "Levin | High Levin" },
+	{ 213, "Comestion | High Comestion" },
+	{ 214, "Frigor | High Frigor" },
+	{ 215, "Brontide | High Brontide" },
+	{ 217, "Silentium | High Silentium" },
+	{ 218, "Blearing | High Blearing" },
+	{ 219, "Lassitude | High Lassitude"},
+	{ 222, "Fire Boon | Fire Affinity" },
+	{ 223, "Ice Boon | Ice Affinity" },
+	{ 224, "Thunder Boon | Thunder Affinity" },
+	{ 225, "Holy Boon | Holy Affinity" },
+	{ 226, "Dark Boon | Dark Affinity" },
+	{ 227, "Bolide | High Bolide" },
+	{ 228, "Gicel | High Gicel" },
+	{ 229, "Fulmination | High Fulmination" },
+	{ 230, "Seism | High Seism" },
+	{ 231, "Maelstrom | High Maelstrom" },
+	{ 232, "Exequy | High Exequy" },
+	{ 233, "Petrifaction | High Petrifaction" },
+	{ 234, "Miasma | High Miasma" },
+	{ 237, "Voidspell | High Voidspell" },
+	{ 239, "Necromancy | High Necromancy" }
+};*/
+
+TwEnumVal skillsShield[] =
+{
+	{ -1, "Empty" },
+	{ 270, "Shield Strike | Shield Storm" },
+	{ 271, "Springboard | Launchboard" },
+	{ 272, "Shield Summons | Shield Drum" },
+	{ 273, "Cymbal Attack | Cymbal Onslaught" },
+	{ 274, "Sheltered Spike | Sheltered Assault" },
+	{ 275, "Perfect Defense | Divine Defense" },
+	{ 276, "Moving Castle | Swift Castle" },
+	{ 277, "Flight Response | Enhanced Response" },
+	{ 278, "Staredown | Showdown" }
+};
+
+TwEnumVal skillsMagickShield[] =
+{
+	{ -1, "Empty" },
+	{ 310, "Firecounter | Flame Riposte" },
+	{ 311, "Icecounter | Frost Riposte" },
+	{ 312, "Thundercounter | Thunder Riposte" },
+	{ 313, "Holycounter | Blessed Riposte" },
+	{ 314, "Darkcounter | Abyssal Riposte" },
+	{ 315, "Fire Enchanter | Flame Trance" },
+	{ 316, "Ice Enchanter | Ice Enchanter" },
+	{ 317, "Thunder Enchanter | Thunder Enchanter" },
+	{ 318, "Holy Enchanter | Blessed Trance" },
+	{ 319, "Dark Enchanter | Abyssal Trance" },
+	{ 320, "Holy Glare | Holy Furor" },
+	{ 321, "Dark Anguish | Abyssal Anguish" },
+	{ 322, "Holy Wall | Holy Fortress" },
+	{ 323, "Demonspite | Demonswrath" },
+	{ 324, "Holy Aid | Holy Grace" }
+};
+
+TwEnumVal skillsBow[] =
+{
+	{ -1, "Empty" },
+	{ 350, "Threefold Arrow | Fivefold Flurry" },
+	{ 351, "Triad Shot | Pentad Shot" },
+	{ 352, "Full Bend | Mighty Bend" },
+	{ 353, "Cloudburst Volley | Downpour Volley" },
+	{ 354, "Splinter Dart | Fracture Dart" },
+	{ 355, "Whistle Dart | Shriek Dart" },
+	{ 356, "Keen Sight | Lyncean Sight" },
+	{ 357, "Puncture Dart | Skewer Dart" },
+	{ 358, "Blunting Arrow | Plegic Arrow" }
+};
+
+TwEnumVal skillsLongbow[] =
+{
+	{ -1, "Empty" },
+	{ 400, "Sixfold Arrow | Tenfold Flurry" },
+	{ 401, "Heptad Shot | Endecad Shot" },
+	{ 402, "Dire Arrow | Deathly Arrow" },
+	{ 403, "Foot Binder | Body Binder" },
+	{ 404, "Invasive Arrow | Crippling Arrow" },
+	{ 405, "Flying Din | Fearful Din" },
+	{ 406, "Meteor Shot | Comet Shot" },
+	{ 407, "Whirling Arrow | Spiral Arrow" },
+	{ 408, "Gamble Draw | Great Gamble" }
+};
+
+TwEnumVal skillsMagickBow[] =
+{
+	{ -1, "Empty" },
+	{ 359, "Threefold Bolt | Sixfold Bolt" },
+	{ 360, "Seeker | True Seeker" },
+	{ 361, "Explosive Bolt | Explosive Rivet" },
+	{ 362, "Ricochet Seeker | Ricochet Hunter" },
+	{ 363, "Magickal Flare | Magickal Gleam" },
+	{ 364, "Funnel Trail | Vortex Trail" },
+	{ 365, "Ward Arrow | Great Ward Arrow" },
+	{ 366, "Bracer Arrow | Great Bracer Arrow" },
+	{ 367, "Sacrificial Bolt | Great Sacrifice" }
+};

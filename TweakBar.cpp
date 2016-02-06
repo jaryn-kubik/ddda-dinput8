@@ -8,7 +8,7 @@ void createTweakBar(LPDIRECT3DDEVICE9 pD3DDevice, D3DPRESENT_PARAMETERS* pParams
 {
 	TwInit(TW_DIRECT3D9, pD3DDevice);
 	TwBar *bar = TwNewBar("DDDAFix");
-	TwDefine("DDDAFix refresh=0.5 size='400 400' valueswidth=150");
+	TwDefine("DDDAFix refresh=0.5 size='400 400' valueswidth=225");
 	for (auto &func : functions)
 		func(bar);
 }
