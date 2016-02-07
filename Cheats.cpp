@@ -3,7 +3,10 @@
 
 #include "Cheats.h"
 #include "dinput8.h"
+#include "TweakBar.h"
 
+bool runAnimation;
+LPBYTE pRunAnimation;
 LPVOID oRunAnimation;
 void __declspec(naked) HRunAnimation()
 {
@@ -12,6 +15,7 @@ void __declspec(naked) HRunAnimation()
 }
 
 float mWeight = 1.0;
+LPBYTE pWeight;
 LPVOID oWeight;
 void __declspec(naked) HWeight()
 {
@@ -23,6 +27,7 @@ void __declspec(naked) HWeight()
 bool realTime;
 float mTimeInterval;
 UINT rTimeInterval;
+LPBYTE pTimeInterval;
 LPVOID oTimeInterval;
 void __declspec(naked) HTimeInterval()
 {
@@ -48,43 +53,73 @@ void __declspec(naked) HTimeInterval()
 	}
 }
 
+void getCheats(void *value, void *clientData)
+{
+	if (clientData == &runAnimation)
+		*(bool*)value = *(bool*)clientData;
+	else
+		*(float*)value = *(float*)clientData;
+}
+
+void setCheats(const void *value, void *clientData)
+{
+	if (clientData == &runAnimation)
+	{
+		config.setBool(L"cheats", L"useTownRun", runAnimation = *(bool*)value);
+		Hooks::SwitchHook("Cheat (useTownRun)", pRunAnimation, runAnimation);
+	}
+	else if (clientData == &mWeight)
+	{
+		bool prevState = mWeight >= 0;
+		config.setBool(L"cheats", L"weightMultiplicator", mWeight = *(float*)value);
+		bool newState = mWeight >= 0;
+
+		if (prevState != newState)
+			Hooks::SwitchHook("Cheat (weight)", pWeight, newState);
+	}
+	else if (clientData == &mTimeInterval)
+	{
+		bool prevState = mTimeInterval >= 0;
+		config.setBool(L"cheats", L"timeInterval", mTimeInterval = *(float*)value);
+		realTime = mTimeInterval == 0;
+		bool newState = mTimeInterval >= 0;
+
+		if (prevState != newState)
+			Hooks::SwitchHook("Cheat (timeInterval)", pTimeInterval, newState);
+	}
+}
+
 void Hooks::Cheats()
 {
+	BYTE sigRun[] = { 0x8B, 0x42, 0x40,			//mov	eax, [edx+40h]
+					0x53,						//push	ebx
+					0x8B, 0x5C, 0x24, 0x08 };	//mov	ebx, [esp+4+arg_0]
+	if (FindSignature("Cheat (useTownRun)", sigRun, &pRunAnimation))
+	{
+		runAnimation = config.getBool(L"cheats", L"useTownRun", false);
+		CreateHook("Cheat (useTownRun)", pRunAnimation += 3, &HRunAnimation, &oRunAnimation, runAnimation);
+		TweakBarAddCB("miscRun", TW_TYPE_BOOLCPP, setCheats, getCheats, &runAnimation, "group=Misc label='Use town run'");
+	}
+
+	BYTE sigWeight[] = { 0xF3, 0x0F, 0x58, 0xAB, 0x4C, 0x02, 0x00, 0x00,	//addss		xmm5, dword ptr [ebx+24Ch]
+							0x45 };											//inc		ebp
+	if (FindSignature("Cheat (weight)", sigWeight, &pWeight))
+	{
+		mWeight = config.getFloat(L"cheats", L"weightMultiplicator", -1);
+		CreateHook("Cheat (weight)", pWeight, &HWeight, &oWeight, mWeight >= 0);
+		TweakBarAddCB("miscWeight", TW_TYPE_FLOAT, setCheats, getCheats, &mWeight, "group=Misc label='Weight multiplicator' step=0.1 min=-1.0 max=1.0");
+	}
+
+	BYTE sigTime[] = { 0x8B, 0x44, 0x24, 0x08, 0x01, 0x86, 0x68, 0x87, 0x0B, 0x00 };
+	if (FindSignature("Cheat (timeInterval)", sigTime, &pTimeInterval))
+	{
+		mTimeInterval = config.getFloat(L"cheats", L"timeInterval", -1);
+		realTime = mTimeInterval == 0;
+		CreateHook("Cheat (timeInterval)", pTimeInterval, &HTimeInterval, &oTimeInterval, mTimeInterval >= 0);
+		TweakBarAddCB("miscTime", TW_TYPE_FLOAT, setCheats, getCheats, &mTimeInterval, "group=Misc label='Time speed' step=0.1 min=-1.0");
+	}
+
 	BYTE *pOffset;
-	if (config.getBool(L"cheats", L"useTownRun", false))
-	{
-		BYTE sig[] = { 0x8B, 0x42, 0x40,			//mov	eax, [edx+40h]
-						0x53,						//push	ebx
-						0x8B, 0x5C, 0x24, 0x08 };	//mov	ebx, [esp+4+arg_0]
-		if (FindSignature("Cheat (useTownRun)", sig, &pOffset))
-			CreateHook("Cheat (useTownRun)", pOffset + 3, &HRunAnimation, &oRunAnimation);
-	}
-	else
-		logFile << "Cheat (useTownRun): disabled" << std::endl;
-
-	mWeight = config.getFloat(L"cheats", L"weightMultiplicator", -1);
-	if (mWeight >= 0)
-	{
-		BYTE sig[] = { 0xF3, 0x0F, 0x58, 0xAB, 0x4C, 0x02, 0x00, 0x00,	//addss		xmm5, dword ptr [ebx+24Ch]
-						0x45 };											//inc		ebp
-		if (FindSignature("Cheat (weight)", sig, &pOffset))
-			CreateHook("Cheat (weight)", pOffset, &HWeight, &oWeight);
-	}
-	else
-		logFile << "Cheat (weight): disabled" << std::endl;
-
-	mTimeInterval = config.getFloat(L"cheats", L"timeInterval", -1);
-	if (mTimeInterval >= 0)
-	{
-		if (mTimeInterval == 0)
-			realTime = true;
-		BYTE sig[] = { 0x8B, 0x44, 0x24, 0x08, 0x01, 0x86, 0x68, 0x87, 0x0B, 0x00 };
-		if (FindSignature("Cheat (timeInterval)", sig, &pOffset))
-			CreateHook("Cheat (timeInterval)", pOffset, &HTimeInterval, &oTimeInterval);
-	}
-	else
-		logFile << "Cheat (timeInterval): disabled" << std::endl;
-
 	if (config.getBool(L"cheats", L"shareWeaponSkills", false))
 	{
 		BYTE sig1[] = { 0x0F,0x84,0x97,0x00,0x00,0x00,0x8B,0xCC,0xCC,0xCC,0x8B,0xCC,0x8B };
