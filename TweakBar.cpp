@@ -19,7 +19,6 @@ void resetTweakBar(LPDIRECT3DDEVICE9 pD3DDevice, D3DPRESENT_PARAMETERS* pParams)
 void drawTweakBar(LPDIRECT3DDEVICE9 pD3DDevice) { if (enabled) TwDraw(); }
 
 LRESULT Hooks::TweakBarEvent(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) { return enabled ? TwEventWin(hwnd, msg, wParam, lParam) : 0; }
-void Hooks::TweakBarAdd(std::function<void(TwBar*)> func) { functions.push_back(func); }
 void Hooks::TweakBarSwitch() { enabled = !enabled; }
 void Hooks::TweakBar()
 {
@@ -27,4 +26,24 @@ void Hooks::TweakBar()
 		D3D9Add(createTweakBar, lostTweakBar, resetTweakBar, drawTweakBar);
 	else
 		logFile << "TweakBar: disabled" << std::endl;
+}
+
+void Hooks::TweakBarAdd(std::function<void(TwBar*)> func) { functions.push_back(func); }
+void Hooks::TweakBarDefine(const char* def) { TweakBarAdd([def](TwBar *b) { TwDefine(def); }); }
+void Hooks::TweakBarAddRW(const char* name, TwType type, void* var, const char* def)
+{
+	TweakBarAdd([name, type, var, def](TwBar *b) { TwAddVarRW(b, name, type, var, def); });
+}
+
+void Hooks::TweakBarAddRO(const char* name, TwType type, const void* var, const char* def)
+{
+	TweakBarAdd([name, type, var, def](TwBar *b) { TwAddVarRO(b, name, type, var, def); });
+}
+
+void Hooks::TweakBarAddCB(const char* name, TwType type, TwSetVarCallback setCallback, TwGetVarCallback getCallback, void* clientData, const char* def)
+{
+	TweakBarAdd([name, type, setCallback, getCallback, clientData, def](TwBar *b)
+	{
+		TwAddVarCB(b, name, type, setCallback, getCallback, clientData, def);
+	});
 }

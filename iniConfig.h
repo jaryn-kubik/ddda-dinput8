@@ -1,27 +1,32 @@
 ﻿#pragma once
 #include <map>
+using std::string;
+using std::wstring;
 
 class iniConfig
 {
-#ifdef UNICODE
-	typedef std::wstring stringType;
-#else
-	typedef std::string stringType;
-#endif
+	WCHAR buffer[512];
+	LPCWSTR fileName;
 
-	TCHAR buffer[512];
-	LPCTSTR fileName;
-
-	bool get(LPCTSTR section, LPCTSTR key, bool allowEmpty = false);
+	bool get(LPCWSTR section, LPCWSTR key, bool allowEmpty = false);
 public:
-	iniConfig(LPCTSTR fileName);
+	iniConfig(LPCWSTR fileName);
 
-	std::string getStrA(LPCTSTR section, LPCTSTR key, std::string defValue);
-	std::wstring getStrW(LPCTSTR section, LPCTSTR key, std::wstring defValue);
-	int getInt(LPCTSTR section, LPCTSTR key, int defValue);
-	unsigned int getUInt(LPCTSTR section, LPCTSTR key, unsigned int defValue);
-	float getFloat(LPCTSTR section, LPCTSTR key, float defValue);
-	double getDouble(LPCTSTR section, LPCTSTR key, double defValue);
-	bool getBool(LPCTSTR section, LPCTSTR key, bool defValue);
-	int getEnum(LPCTSTR section, LPCTSTR key, int defValue, std::map<stringType, int> map);
+	string getStrA(LPCWSTR section, LPCWSTR key, string defValue);
+	wstring getStrW(LPCWSTR section, LPCWSTR key, wstring defValue);
+	int getInt(LPCWSTR section, LPCWSTR key, int defValue);
+	unsigned int getUInt(LPCWSTR section, LPCWSTR key, unsigned int defValue);
+	float getFloat(LPCWSTR section, LPCWSTR key, float defValue);
+	double getDouble(LPCWSTR section, LPCWSTR key, double defValue);
+	bool getBool(LPCWSTR section, LPCWSTR key, bool defValue);
+	int getEnum(LPCWSTR section, LPCWSTR key, int defValue, std::map<wstring, int> map);
+
+	void setStrA(LPCWSTR section, LPCWSTR key, string value) const;
+	void setStrW(LPCWSTR section, LPCWSTR key, wstring value) const;
+	void setInt(LPCWSTR section, LPCWSTR key, int value, bool hex = false) const;
+	void setUInt(LPCWSTR section, LPCWSTR key, unsigned int value, bool hex = false) const;
+	void setFloat(LPCWSTR section, LPCWSTR key, float value) const;
+	void setDouble(LPCWSTR section, LPCWSTR key, double value) const;
+	void setBool(LPCWSTR section, LPCWSTR key, bool value) const;
+	void setEnum(LPCWSTR section, LPCWSTR key, int value, std::map<wstring, int> map) const;
 };

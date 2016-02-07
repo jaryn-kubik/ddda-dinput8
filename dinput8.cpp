@@ -35,7 +35,7 @@ void Initialize()
 		Hooks::TweakBar();
 	}
 
-	std::wstring loadLibrary = config.getStrW(L"main", L"loadLibrary", std::wstring());
+	wstring loadLibrary = config.getStrW(L"main", L"loadLibrary", wstring());
 	if (!loadLibrary.empty())
 	{
 		HMODULE hMod = LoadLibrary(loadLibrary.c_str());
@@ -53,11 +53,21 @@ void Unitialize()
 		logFile.close();
 }
 
-void Hooks::CreateHook(LPCSTR msg, LPVOID pTarget, LPVOID pDetour, LPVOID* ppOriginal)
+void Hooks::CreateHook(LPCSTR msg, LPVOID pTarget, LPVOID pDetour, LPVOID* ppOriginal, bool enable)
 {
-	MH_STATUS create = MH_CreateHook(pTarget, pDetour, ppOriginal);
-	MH_STATUS enable = MH_EnableHook(pTarget);
-	logFile << msg << " hook: " << MH_StatusToString(create) << ", " << MH_StatusToString(enable) << std::endl;
+	logFile << msg << " hook: " << MH_StatusToString(MH_CreateHook(pTarget, pDetour, ppOriginal)) << ", ";
+	if (enable)
+		logFile << MH_StatusToString(MH_EnableHook(pTarget)) << std::endl;
+	else
+		logFile << "disabled" << std::endl;
+}
+
+void Hooks::SwitchHook(LPCSTR msg, LPVOID pTarget, bool enable)
+{
+	if (enable)
+		logFile << msg << " enable: " << MH_StatusToString(MH_EnableHook(pTarget)) << std::endl;
+	else
+		logFile << msg << " disable: " << MH_StatusToString(MH_DisableHook(pTarget)) << std::endl;
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
