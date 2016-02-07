@@ -5,7 +5,7 @@
 
 INPUT keyInput = { INPUT_KEYBOARD, {} };
 DWORD menuPause;
-UINT keyInventory, keySave, keyMap, keyJournal, keyEquipment, keyStatus;
+UINT keySave, keyMap, keyJournal, keyEquipment, keyStatus;
 UINT keyClock, keyClockHourInc, keyClockHourDec, keyClockMinInc, keyClockMinDec;
 UINT keyConfig;
 void SendKeyPress(WORD vKey)
@@ -15,15 +15,6 @@ void SendKeyPress(WORD vKey)
 	SendInput(1, &keyInput, sizeof(INPUT));
 	keyInput.ki.dwFlags = KEYEVENTF_KEYUP;
 	SendInput(1, &keyInput, sizeof(INPUT));
-}
-
-DWORD WINAPI hotkeySave(LPVOID lpThreadParameter)
-{
-	Sleep(menuPause);
-	SendKeyPress(keyInventory);
-	Sleep(menuPause / 5 * 4);
-	SendKeyPress(VK_RETURN);
-	return 0;
 }
 
 DWORD WINAPI hotkeyMap(LPVOID lpThreadParameter)
@@ -63,6 +54,7 @@ void hotkeyMenu(LPTHREAD_START_ROUTINE func)
 	QueueUserWorkItem(func, nullptr, WT_EXECUTEDEFAULT);
 }
 
+BYTE **pSave = nullptr;
 WNDPROC oWndProc;
 LRESULT CALLBACK HWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -72,7 +64,10 @@ LRESULT CALLBACK HWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		return oWndProc(hwnd, msg, wParam, lParam);
 
 	if (wParam == keySave)
-		hotkeyMenu(hotkeySave);
+	{
+		if (pSave && *pSave)
+			(*pSave)[0x21AFD5] = 1;
+	}
 	else if (wParam == keyMap)
 		hotkeyMenu(hotkeyMap);
 	else if (wParam == keyJournal)
@@ -104,7 +99,6 @@ void Hooks::Hotkeys()
 	{
 		menuPause = config.getUInt(L"hotkeys", L"menuPause", 500);
 		keyConfig = config.getUInt(L"hotkeys", L"keyTweakBar", VK_OEM_3);
-		keyInventory = config.getUInt(L"hotkeys", L"keyInventory", 'I');
 		keySave = config.getUInt(L"hotkeys", L"keySave", VK_F5);
 		keyMap = config.getUInt(L"hotkeys", L"keyMap", 'M');
 		keyJournal = config.getUInt(L"hotkeys", L"keyJournal", 'J');
@@ -124,6 +118,13 @@ void Hooks::Hotkeys()
 		BYTE *pOffset;
 		if (FindSignature("Hotkeys", sig, &pOffset))
 			CreateHook("Hotkeys", pOffset, &HWndProc, &oWndProc);
+
+		BYTE sigSave[] = { 0x8B, 0x15, 0xCC, 0xCC, 0xCC, 0xCC,	//mov	edx, savePointer
+							0x0F, 0x95, 0xC0,					//setnz	al
+							0x83, 0xC9, 0xFF };					//or	ecx, 0FFFFFFFFh
+
+		if (FindSignature("HotkeysSave", sigSave, &pOffset))
+			pSave = (BYTE**)*(LPDWORD)(pOffset + 2);
 	}
 	else
 		logFile << "Hotkeys: disabled" << std::endl;
