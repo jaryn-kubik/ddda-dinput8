@@ -5,13 +5,22 @@
 #include "dinput8.h"
 #include "TweakBar.h"
 
-bool runAnimation;
-LPBYTE pRunAnimation;
-LPVOID oRunAnimation;
-void __declspec(naked) HRunAnimation()
+int runType;
+LPBYTE pRunType;
+LPVOID oRunType;
+void __declspec(naked) HRunType()
 {
-	__asm	mov		eax, 0x20;
-	__asm	jmp		oRunAnimation;
+	__asm
+	{
+		cmp		runType, 0;
+		je		animOnly;
+		mov		eax, 0x20;
+		jmp		oRunType;
+
+	animOnly:
+		and		eax, 0x20;
+		jmp		oRunType;
+	}
 }
 
 float mWeight = 1.0;
@@ -53,20 +62,17 @@ void __declspec(naked) HTimeInterval()
 	}
 }
 
-void getCheats(void *value, void *clientData)
-{
-	if (clientData == &runAnimation)
-		*(bool*)value = *(bool*)clientData;
-	else
-		*(float*)value = *(float*)clientData;
-}
-
+void getCheats(void *value, void *clientData) { *(UINT32*)value = *(UINT32*)clientData; }
 void setCheats(const void *value, void *clientData)
 {
-	if (clientData == &runAnimation)
+	if (clientData == &runType)
 	{
-		config.setBool(L"cheats", L"useTownRun", runAnimation = *(bool*)value);
-		Hooks::SwitchHook("Cheat (useTownRun)", pRunAnimation, runAnimation);
+		bool prevState = runType >= 0;
+		config.setInt(L"cheats", L"runType", runType = *(INT32*)value);
+		bool newState = runType >= 0;
+
+		if (prevState != newState)
+			Hooks::SwitchHook("Cheat (useTownRun)", pRunType, newState);
 	}
 	else if (clientData == &mWeight)
 	{
@@ -94,11 +100,18 @@ void Hooks::Cheats()
 	BYTE sigRun[] = { 0x8B, 0x42, 0x40,			//mov	eax, [edx+40h]
 					0x53,						//push	ebx
 					0x8B, 0x5C, 0x24, 0x08 };	//mov	ebx, [esp+4+arg_0]
-	if (FindSignature("Cheat (useTownRun)", sigRun, &pRunAnimation))
+	if (FindSignature("Cheat (runType)", sigRun, &pRunType))
 	{
-		runAnimation = config.getBool(L"cheats", L"useTownRun", false);
-		CreateHook("Cheat (useTownRun)", pRunAnimation += 3, &HRunAnimation, &oRunAnimation, runAnimation);
-		TweakBarAddCB("miscRun", TW_TYPE_BOOLCPP, setCheats, getCheats, &runAnimation, "group=Misc label='Use town run'");
+		runType = config.getInt(L"cheats", L"runType", false);
+		if (runType > 1 || runType < -1)
+			runType = -1;
+		CreateHook("Cheat (runType)", pRunType += 3, &HRunType, &oRunType, runType >= 0);
+		TweakBarAdd([](TwBar *b)
+		{
+			TwEnumVal runTypeMapEV[] = { { -1, "disabled" }, { 0, "town animation" }, { 1, "town animation + stamina" } };
+			TwType runTypeEnum = TwDefineEnum("RunTypeEnum", runTypeMapEV, 3);
+			TwAddVarCB(b, "miscRun", runTypeEnum, setCheats, getCheats, &runType, "group=Misc label='Outside run type'");
+		});
 	}
 
 	BYTE sigWeight[] = { 0xF3, 0x0F, 0x58, 0xAB, 0x4C, 0x02, 0x00, 0x00,	//addss		xmm5, dword ptr [ebx+24Ch]
