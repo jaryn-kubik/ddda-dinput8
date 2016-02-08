@@ -11,6 +11,7 @@
 #include "ItemEditor.h"
 #include "PlayerStats.h"
 #include "Affinity.h"
+#include "Server.h"
 
 typedef HRESULT(WINAPI *tDirectInput8Create)(HINSTANCE inst_handle, DWORD version, const IID& r_iid, LPVOID* out_wrapper, LPUNKNOWN p_unk);
 tDirectInput8Create oDirectInput8Create;
@@ -27,6 +28,7 @@ void Initialize()
 	Hooks::Misc();
 	Hooks::Cheats();
 	Hooks::Affinity();
+	Hooks::Server();
 	if (Hooks::D3D9())
 	{
 		Hooks::PlayerStats();
