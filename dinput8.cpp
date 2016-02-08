@@ -26,11 +26,11 @@ void Initialize()
 	Hooks::Hotkeys();
 	Hooks::Misc();
 	Hooks::Cheats();
+	Hooks::Affinity();
 	if (Hooks::D3D9())
 	{
 		Hooks::PlayerStats();
 		Hooks::ItemEditor();
-		Hooks::Affinity();
 		Hooks::InGameClock();
 		Hooks::TweakBar();
 	}

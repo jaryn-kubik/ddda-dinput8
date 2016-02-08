@@ -2,12 +2,11 @@
 #include "dinput8.h"
 #include "InGameClock.h"
 #include "TweakBar.h"
+#include <unordered_map>
 
 INPUT keyInput = { INPUT_KEYBOARD, {} };
 DWORD menuPause;
-UINT keySave, keyMap, keyJournal, keyEquipment, keyStatus;
-UINT keyClock, keyClockHourInc, keyClockHourDec, keyClockMinInc, keyClockMinDec;
-UINT keyConfig;
+std::unordered_map<WPARAM, std::function<void()>> keys;
 void SendKeyPress(WORD vKey)
 {
 	keyInput.ki.wVk = vKey;
@@ -63,33 +62,10 @@ LRESULT CALLBACK HWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	if (msg != WM_KEYDOWN || (HIWORD(lParam) & KF_REPEAT) != 0)
 		return oWndProc(hwnd, msg, wParam, lParam);
 
-	if (wParam == keySave)
-	{
-		if (pSave && *pSave)
-			(*pSave)[0x21AFD5] = 1;
-	}
-	else if (wParam == keyMap)
-		hotkeyMenu(hotkeyMap);
-	else if (wParam == keyJournal)
-		hotkeyMenu(hotkeyJournal);
-	else if (wParam == keyEquipment)
-		hotkeyMenu(hotkeyEquipment);
-	else if (wParam == keyStatus)
-		hotkeyMenu(hotkeyStatus);
-	else if (wParam == keyClock)
-		Hooks::InGameClockSwitch();
-	else if (wParam == keyClockMinDec)
-		Hooks::InGameClockDec(1);
-	else if (wParam == keyClockMinInc)
-		Hooks::InGameClockInc(1);
-	else if (wParam == keyClockHourDec)
-		Hooks::InGameClockDec(60);
-	else if (wParam == keyClockHourInc)
-		Hooks::InGameClockInc(60);
-	else if (wParam == keyConfig)
-		Hooks::TweakBarSwitch();
-	else
+	auto key = keys.find(wParam);
+	if (key == keys.end())
 		return oWndProc(hwnd, msg, wParam, lParam);
+	key->second();
 	return 0;
 }
 
@@ -98,17 +74,18 @@ void Hooks::Hotkeys()
 	if (config.getBool(L"hotkeys", L"enabled", false))
 	{
 		menuPause = config.getUInt(L"hotkeys", L"menuPause", 500);
-		keyConfig = config.getUInt(L"hotkeys", L"keyTweakBar", VK_OEM_3);
-		keySave = config.getUInt(L"hotkeys", L"keySave", VK_F5);
-		keyMap = config.getUInt(L"hotkeys", L"keyMap", 'M');
-		keyJournal = config.getUInt(L"hotkeys", L"keyJournal", 'J');
-		keyEquipment = config.getUInt(L"hotkeys", L"keyEquipment", 'U');
-		keyStatus = config.getUInt(L"hotkeys", L"keyStatus", 'K');
-		keyClock = config.getUInt(L"hotkeys", L"keyClock", VK_NUMPAD5);
-		keyClockMinDec = config.getUInt(L"hotkeys", L"keyClockMinDec", VK_NUMPAD4);
-		keyClockMinInc = config.getUInt(L"hotkeys", L"keyClockMinInc", VK_NUMPAD6);
-		keyClockHourDec = config.getUInt(L"hotkeys", L"keyClockHourDec", VK_NUMPAD2);
-		keyClockHourInc = config.getUInt(L"hotkeys", L"keyClockHourInc", VK_NUMPAD8);
+		keys[config.getUInt(L"hotkeys", L"keyTweakBar", VK_F12)] = []() { TweakBarSwitch(); };
+		keys[config.getUInt(L"hotkeys", L"keySave", VK_F5)] = []() { if (pSave && *pSave) (*pSave)[0x21AFD6] = 1; };
+		keys[config.getUInt(L"hotkeys", L"keyCheckpoint", VK_F9)] = []() { if (pSave && *pSave) (*pSave)[0x21AFD5] = 1; };
+		keys[config.getUInt(L"hotkeys", L"keyMap", 'M')] = []() { hotkeyMenu(hotkeyMap); };
+		keys[config.getUInt(L"hotkeys", L"keyJournal", 'J')] = []() { hotkeyMenu(hotkeyJournal); };
+		keys[config.getUInt(L"hotkeys", L"keyEquipment", 'U')] = []() { hotkeyMenu(hotkeyEquipment); };
+		keys[config.getUInt(L"hotkeys", L"keyStatus", 'K')] = []() { hotkeyMenu(hotkeyStatus); };
+		keys[config.getUInt(L"hotkeys", L"keyClock", VK_NUMPAD5)] = []() { InGameClockSwitch(); };
+		keys[config.getUInt(L"hotkeys", L"keyClockMinDec", VK_NUMPAD4)] = []() { InGameClockDec(1); };
+		keys[config.getUInt(L"hotkeys", L"keyClockMinInc", VK_NUMPAD6)] = []() { InGameClockInc(1); };
+		keys[config.getUInt(L"hotkeys", L"keyClockHourDec", VK_NUMPAD2)] = []() { InGameClockDec(60); };
+		keys[config.getUInt(L"hotkeys", L"keyClockHourInc", VK_NUMPAD8)] = []() { InGameClockInc(60); };
 
 		BYTE sig[] = { 0x83, 0xEC, 0x50,			//sub	esp, 50h
 						0x53,						//push	ebx
