@@ -2,14 +2,6 @@
 #include "PlayerStats.h"
 #include "TweakBar.h"
 
-/*LPVOID pSelectedSkill, oSelectedSkill;
-void __declspec(naked) HSelectedSkill()
-{
-	__asm	shr		eax, 5;
-	__asm	mov		pSelectedSkill, eax;
-	__asm	jmp		oSelectedSkill;
-}*/
-
 DWORD **pMainPointer;
 void setStats(const void *value, void *clientData)
 {
@@ -116,12 +108,6 @@ void addPlayerStats(TwBar *bar)
 	TwDefine("DDDAFix/Pawn opened=false");
 
 	//skills
-	/*BYTE sig2[] = { 0x8B, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0x33, 0xC9, 0x33, 0xC0, 0x8B, 0xFF };
-	if (!Hooks::FindSignature("EquippedSkill", sig2, &pOffset))
-		return;
-	Hooks::CreateHook("EquippedSkill", pOffset + 6, &HSelectedSkill, &oSelectedSkill);
-
-	TwAddVarRO(bar, "skillsSelected", TW_TYPE_INT32, &pSelectedSkill, "group='Equipped skills' label=Selected");*/
 	addSkill(bar, 0xA7808 + 24 * 0, "Sword", skillsSword, 21);
 	addSkill(bar, 0xA7808 + 24 * 1, "Mace", skillsSword, 21);
 	addSkill(bar, 0xA7808 + 24 * 2, "Longsword", skillsLongsword, 11);
@@ -134,7 +120,24 @@ void addPlayerStats(TwBar *bar)
 	addSkill(bar, 0xA7808 + 24 * 9, "Bow", skillsBow, 10);
 	addSkill(bar, 0xA7808 + 24 * 10, "Longbow", skillsLongbow, 10);
 	addSkill(bar, 0xA7808 + 24 * 11, "MagickBow", skillsMagickBow, 10);
+
+	TwAddVarCB(bar, "skillsAugment1", TW_TYPE_INT32, setStats, getStats, (LPVOID)(0xA7928 + 4 * 0), "group=Augments label=1");
+	TwAddVarCB(bar, "skillsAugment2", TW_TYPE_INT32, setStats, getStats, (LPVOID)(0xA7928 + 4 * 1), "group=Augments label=2");
+	TwAddVarCB(bar, "skillsAugment3", TW_TYPE_INT32, setStats, getStats, (LPVOID)(0xA7928 + 4 * 2), "group=Augments label=3");
+	TwAddVarCB(bar, "skillsAugment4", TW_TYPE_INT32, setStats, getStats, (LPVOID)(0xA7928 + 4 * 3), "group=Augments label=4");
+	TwAddVarCB(bar, "skillsAugment5", TW_TYPE_INT32, setStats, getStats, (LPVOID)(0xA7928 + 4 * 4), "group=Augments label=5");
+	TwAddVarCB(bar, "skillsAugment6", TW_TYPE_INT32, setStats, getStats, (LPVOID)(0xA7928 + 4 * 5), "group=Augments label=6");
+	TwDefine("DDDAFix/Augments group='Equipped skills' opened=false");
 	TwDefine("DDDAFix/'Equipped skills' opened=false");
+
+	//a7940 - current primary 1
+	//a7944 - current primary 2
+	//a7948 - current primary 3
+	//a794C - current secondary 1
+	//a7950 - current secondary 2
+	//a7954 - current secondary 3
+	//a76e4 - current primary weapon
+	//a76e8 - current secondary weapon
 }
 
 void Hooks::PlayerStats() { TweakBarAdd(addPlayerStats); }

@@ -14,11 +14,17 @@ void __declspec(naked) HRunType()
 	{
 		cmp		runType, 0;
 		je		animOnly;
+		cmp		runType, 2;
+		je		stamOnly;
 		mov		eax, 0x20;
 		jmp		oRunType;
 
 	animOnly:
 		and		eax, 0x20;
+		jmp		oRunType;
+
+	stamOnly:
+		or		eax, 0x20;
 		jmp		oRunType;
 	}
 }
@@ -77,7 +83,7 @@ void setCheats(const void *value, void *clientData)
 	else if (clientData == &mWeight)
 	{
 		bool prevState = mWeight >= 0;
-		config.setBool(L"cheats", L"weightMultiplicator", mWeight = *(float*)value);
+		config.setFloat(L"cheats", L"weightMultiplicator", mWeight = *(float*)value);
 		bool newState = mWeight >= 0;
 
 		if (prevState != newState)
@@ -86,7 +92,7 @@ void setCheats(const void *value, void *clientData)
 	else if (clientData == &mTimeInterval)
 	{
 		bool prevState = mTimeInterval >= 0;
-		config.setBool(L"cheats", L"timeInterval", mTimeInterval = *(float*)value);
+		config.setFloat(L"cheats", L"timeInterval", mTimeInterval = *(float*)value);
 		realTime = mTimeInterval == 0;
 		bool newState = mTimeInterval >= 0;
 
@@ -103,13 +109,13 @@ void Hooks::Cheats()
 	if (FindSignature("Cheat (runType)", sigRun, &pRunType))
 	{
 		runType = config.getInt(L"cheats", L"runType", false);
-		if (runType > 1 || runType < -1)
+		if (runType > 2 || runType < -1)
 			runType = -1;
 		CreateHook("Cheat (runType)", pRunType += 3, &HRunType, &oRunType, runType >= 0);
 		TweakBarAdd([](TwBar *b)
 		{
-			TwEnumVal runTypeMapEV[] = { { -1, "disabled" }, { 0, "town animation" }, { 1, "town animation + stamina" } };
-			TwType runTypeEnum = TwDefineEnum("RunTypeEnum", runTypeMapEV, 3);
+			TwEnumVal runTypeMapEV[] = { { -1, "disabled" }, { 0, "town animation" }, { 1, "town animation + stamina" }, { 2, "stamina" } };
+			TwType runTypeEnum = TwDefineEnum("RunTypeEnum", runTypeMapEV, 4);
 			TwAddVarCB(b, "miscRun", runTypeEnum, setCheats, getCheats, &runType, "group=Misc label='Outside run type'");
 		});
 	}
@@ -120,7 +126,7 @@ void Hooks::Cheats()
 	{
 		mWeight = config.getFloat(L"cheats", L"weightMultiplicator", -1);
 		CreateHook("Cheat (weight)", pWeight, &HWeight, &oWeight, mWeight >= 0);
-		TweakBarAddCB("miscWeight", TW_TYPE_FLOAT, setCheats, getCheats, &mWeight, "group=Misc label='Weight multiplicator' step=0.1 min=-1.0 max=1.0");
+		TweakBarAddCB("miscWeight", TW_TYPE_FLOAT, setCheats, getCheats, &mWeight, "group=Misc label='Weight multiplicator' step=0.01 min=-1.0 max=1.0 precision=4");
 	}
 
 	BYTE sigTime[] = { 0x8B, 0x44, 0x24, 0x08, 0x01, 0x86, 0x68, 0x87, 0x0B, 0x00 };

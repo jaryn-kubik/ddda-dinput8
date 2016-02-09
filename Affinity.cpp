@@ -2,11 +2,11 @@
 #include "Affinity.h"
 #include "TweakBar.h"
 
-enum AffinityMod { Disabled = -1, NoNegative, AllPositive, InstantFriend = 850, InstantMax = 900 } iAffinityMod;
+enum AffinityMod { Disabled = -1, NoNegative, AllPositive, NoChange, InstantFriend = 850, InstantMax = 900 } iAffinityMod;
 TwEnumVal affinityModEV[] =
 {
-	{ Disabled, "Disabled" }, { NoNegative, "No negative changes" },{ AllPositive, "All changes are positive" },
-	{ InstantFriend, "Instant friend (850)" }, { InstantMax, "Instant max (900)" }
+	{ Disabled, "Disabled" }, { NoNegative, "No negative changes" }, { AllPositive, "All changes are positive" },
+	{ NoChange, "No changes at all" }, { InstantFriend, "Instant friend (850)" }, { InstantMax, "Instant max (900)" }
 };
 
 UINT16 *pAffinityLast;
@@ -20,6 +20,8 @@ void __declspec(naked) HAffinity()
 		jle		getBack;
 		cmp		iAffinityMod, AllPositive;
 		jle		notInstant;
+		cmp		iAffinityMod, NoChange;
+		je		noNegative;
 		movzx	eax, word ptr[esi + 0x8B8];
 		cmp		eax, [iAffinityMod];
 		jae		notInstant;
@@ -32,12 +34,12 @@ void __declspec(naked) HAffinity()
 		test	ebp, ebp;
 		jns		getBack;
 		cmp		dword ptr[iAffinityMod], NoNegative;
-		jne		allPositive;
-		xor		ebp, ebp;
+		je		noNegative;
+		neg		ebp;
 		jmp		getBack;
 
-	allPositive:
-		neg		ebp;
+	noNegative:
+		xor		ebp, ebp;
 
 	getBack:
 		jmp		oAffinity;
@@ -63,7 +65,7 @@ void getAffinity(void *value, void *clientData)
 void addAffinity(TwBar *bar)
 {
 	iAffinityMod = (AffinityMod)config.getInt(L"cheats", L"affinityMod", Disabled);
-	TwAddVarCB(bar, "affinityMod", TwDefineEnum("AffinityMod", affinityModEV, 5),setAffinity, getAffinity, &iAffinityMod, "group=Affinity label=Mode");
+	TwAddVarCB(bar, "affinityMod", TwDefineEnum("AffinityMod", affinityModEV, 6), setAffinity, getAffinity, &iAffinityMod, "group=Affinity label=Mode");
 	TwAddVarCB(bar, "affinityLast", TW_TYPE_UINT16, setAffinity, getAffinity, (LPVOID)0x8B8, "group=Affinity label='Last changed' max=900");
 	TwAddVarCB(bar, "affinityAtt", TW_TYPE_UINT16, setAffinity, getAffinity, (LPVOID)0x8BA, "group=Affinity label=Attitude hexa=true");
 	TwDefine("DDDAFix/Affinity group=Misc opened=false");
