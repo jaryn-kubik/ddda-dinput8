@@ -1,8 +1,6 @@
-﻿#include "Hotkeys.h"
-#include "dinput8.h"
+﻿#include "stdafx.h"
+#include "Hotkeys.h"
 #include "InGameClock.h"
-#include "TweakBar.h"
-#include <unordered_map>
 
 INPUT keyInput = { INPUT_KEYBOARD, {} };
 DWORD menuPause;

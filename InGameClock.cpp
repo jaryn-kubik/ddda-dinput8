@@ -1,7 +1,6 @@
-﻿#include "dinput8.h"
+﻿#include "stdafx.h"
 #include "InGameClock.h"
 #include "d3d9.h"
-#include "TweakBar.h"
 
 DWORD **pClock;
 RECT outLeft, outTop, outRight, outBottom, rect;

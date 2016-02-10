@@ -1,8 +1,5 @@
-﻿#include "dinput8.h"
+﻿#include "stdafx.h"
 #include "d3d9.h"
-#include <vector>
-#pragma comment(lib, "d3d9.lib")
-#pragma comment(lib, "d3dx9.lib")
 
 typedef LPDIRECT3D9(WINAPI *tDirect3DCreate9)(UINT SDKVersion);
 tDirect3DCreate9 oDirect3DCreate9;

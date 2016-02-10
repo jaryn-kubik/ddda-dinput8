@@ -1,6 +1,5 @@
-﻿#include "dinput8.h"
+﻿#include "stdafx.h"
 #include "Affinity.h"
-#include "TweakBar.h"
 
 enum AffinityMod { Disabled = -1, NoNegative, AllPositive, NoChange, InstantFriend = 850, InstantMax = 900 } iAffinityMod;
 TwEnumVal affinityModEV[] =

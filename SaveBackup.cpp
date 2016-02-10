@@ -1,9 +1,5 @@
-﻿#include "SaveBackup.h"
-#include "dinput8.h"
-#include <locale>
-#include "steam_api.h"
-#include <vector>
-#include <algorithm>
+﻿#include "stdafx.h"
+#include "SaveBackup.h"
 
 std::wstring saveDir, savePath;
 int saveLimit;

@@ -1,9 +1,54 @@
 ﻿// taken from CheatEngine table by Cielos
 // http://forum.cheatengine.org/viewtopic.php?p=5641841#5641841
 
+#include "stdafx.h"
 #include "Cheats.h"
-#include "dinput8.h"
-#include "TweakBar.h"
+
+std::unordered_set<UINT16> skillsThirdTier =
+{
+	40, 42, 46, 47, 52, 54, 57, 58,
+	102, 104, 106, 109,
+	150, 152, 155, 159, 161, 164, 165, 167,
+	210, 212, 214, 215, 220, 222, 223, 224, 225, 226, 227, 228, 229, 230, 236,
+	270, 274, 278,
+	310, 311, 312, 313, 314, 315, 316, 317, 318, 319, 320,
+	352, 353, 356, 359, 361, 363,
+	402, 403, 407
+};
+
+DWORD *pSomeBase;
+int __stdcall GetSkillTier(UINT16 skill, DWORD address)
+{
+	if (!skillsThirdTier.count(skill))
+		return 0;
+
+	address -= *pSomeBase;
+	return address == 0xA7DFC ||	//player
+		address == 0xA85EC ||		//main pawn
+		address == 0xA9C4C ||		//pawn 1
+		address == 0xAB2AC;			//pawn 2
+}
+
+bool skillTier;
+LPBYTE pSkillTier, oSkillTier;
+void __declspec(naked) HSkillTier()
+{
+	__asm
+	{
+		pushad;
+		push	edi;
+		push	esi;
+		call	GetSkillTier;
+		cmp		eax, 0;
+		popad;
+
+		jne		getBack;
+		test	dword ptr[edi + ecx * 4 + 0x74], eax;
+	getBack:
+		setnz	dl;
+		jmp		oSkillTier;
+	}
+}
 
 int runType;
 LPBYTE pRunType;
@@ -24,7 +69,7 @@ void __declspec(naked) HRunType()
 		jmp		oRunType;
 
 	stamOnly:
-		or		eax, 0x20;
+		or eax, 0x20;
 		jmp		oRunType;
 	}
 }
@@ -68,36 +113,33 @@ void __declspec(naked) HTimeInterval()
 	}
 }
 
+template<typename T>
+T switchCheats(LPCVOID value, T &var, LPCSTR msg, LPVOID pTarget)
+{
+	bool prevState = var >= 0;
+	var = *(T*)value;
+	bool newState = var >= 0;
+	if (prevState != newState)
+		Hooks::SwitchHook(msg, pTarget, newState);
+	return var;
+}
+
 void getCheats(void *value, void *clientData) { *(UINT32*)value = *(UINT32*)clientData; }
 void setCheats(const void *value, void *clientData)
 {
 	if (clientData == &runType)
-	{
-		bool prevState = runType >= 0;
-		config.setInt(L"cheats", L"runType", runType = *(INT32*)value);
-		bool newState = runType >= 0;
-
-		if (prevState != newState)
-			Hooks::SwitchHook("Cheat (useTownRun)", pRunType, newState);
-	}
+		config.setInt(L"cheats", L"runType", switchCheats(value, runType, "Cheat (runType)", pRunType));
 	else if (clientData == &mWeight)
-	{
-		bool prevState = mWeight >= 0;
-		config.setFloat(L"cheats", L"weightMultiplicator", mWeight = *(float*)value);
-		bool newState = mWeight >= 0;
-
-		if (prevState != newState)
-			Hooks::SwitchHook("Cheat (weight)", pWeight, newState);
-	}
+		config.setFloat(L"cheats", L"weightMultiplicator", switchCheats(value, mWeight, "Cheat (weight)", pWeight));
 	else if (clientData == &mTimeInterval)
 	{
-		bool prevState = mTimeInterval >= 0;
-		config.setFloat(L"cheats", L"timeInterval", mTimeInterval = *(float*)value);
+		config.setFloat(L"cheats", L"timeInterval", switchCheats(value, mTimeInterval, "Cheat (timeInterval)", pTimeInterval));
 		realTime = mTimeInterval == 0;
-		bool newState = mTimeInterval >= 0;
-
-		if (prevState != newState)
-			Hooks::SwitchHook("Cheat (timeInterval)", pTimeInterval, newState);
+	}
+	else if (clientData == &skillTier)
+	{
+		config.setBool(L"cheats", L"skillLevel", skillTier = *(bool*)value);
+		Hooks::SwitchHook("SkillLevel", pSkillTier, skillTier);
 	}
 }
 
@@ -136,6 +178,21 @@ void Hooks::Cheats()
 		realTime = mTimeInterval == 0;
 		CreateHook("Cheat (timeInterval)", pTimeInterval, &HTimeInterval, &oTimeInterval, mTimeInterval >= 0);
 		TweakBarAddCB("miscTime", TW_TYPE_FLOAT, setCheats, getCheats, &mTimeInterval, "group=Misc label='Time speed' step=0.1 min=-1.0");
+	}
+
+	BYTE sigSkill[] = { 0x85, 0x44, 0x8F, 0x74, 0x0F, 0x95, 0xC2 };
+	if (FindSignature("Cheat (skillLevel)", sigSkill, &pSkillTier))
+	{
+		BYTE *pOffset;
+		BYTE sig1[] = { 0x8B, 0x15, 0xCC, 0xCC, 0xCC, 0xCC, 0x33, 0xDB, 0x8B, 0xF8 };
+		if (!FindSignature("Cheat (skillLevel)", sig1, &pOffset))
+			return;
+		pSomeBase = *(DWORD**)(pOffset + 2);
+
+		skillTier = config.getBool(L"cheats", L"skillLevel", false);
+		CreateHook("Cheat (skillLevel)", pSkillTier, &HSkillTier, &oSkillTier, skillTier);
+		oSkillTier += 7;
+		TweakBarAddCB("miscSkills", TW_TYPE_BOOLCPP, setCheats, getCheats, &skillTier, "group=Misc label='3rd level skills'");
 	}
 
 	BYTE *pOffset;

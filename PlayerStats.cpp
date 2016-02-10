@@ -1,35 +1,44 @@
-﻿#include "dinput8.h"
+﻿#include "stdafx.h"
 #include "PlayerStats.h"
-#include "TweakBar.h"
 
 DWORD **pMainPointer;
 void setStats(const void *value, void *clientData)
 {
-	if (pMainPointer || *pMainPointer)
-		(*pMainPointer)[(DWORD)clientData / 4] = *(UINT32*)value;
+	if (pMainPointer && *pMainPointer)
+	{
+		DWORD offset = (DWORD)clientData;
+		size_t size = (offset >= 0xA7808 || offset <= 0xA7808 + 24 * 11) ? 24 : 4;
+		memcpy(*pMainPointer + offset / 4, value, size);
+	}
 }
 
 void getStats(void *value, void *clientData)
 {
-	if (pMainPointer || *pMainPointer)
-		*(UINT32*)value = (*pMainPointer)[(DWORD)clientData / 4];
+	if (pMainPointer && *pMainPointer)
+	{
+		DWORD offset = (DWORD)clientData;
+		size_t size = (offset >= 0xA7808 || offset <= 0xA7808 + 24 * 11) ? 24 : 4;
+		memcpy(value, *pMainPointer + offset / 4, size);
+	}
 }
 
-void addSkill(TwBar *bar, DWORD offset, string name, TwEnumVal *enumVal, unsigned int valCount)
+void skillSummary(char *str, size_t len, const void *val, void *data) { str[0] = '\0'; }
+void addSkill(TwBar *bar, DWORD offset, int count, string name, TwEnumVal *enumVal, unsigned int valCount)
 {
 	string var = "skills" + name;
-	string def = "group=" + name + " label='";
+	string def = "group=Skills label='" + name + "'";
 	TwType type = TwDefineEnum((var + "Enum").c_str(), enumVal, valCount);
-	TwAddVarCB(bar, (var + "P1").c_str(), type, setStats, getStats, (LPVOID)(offset + 4 * 0), (def + "Primary 1'").c_str());
-	TwAddVarCB(bar, (var + "P2").c_str(), type, setStats, getStats, (LPVOID)(offset + 4 * 1), (def + "Primary 2'").c_str());
-	TwAddVarCB(bar, (var + "P3").c_str(), type, setStats, getStats, (LPVOID)(offset + 4 * 2), (def + "Primary 3'").c_str());
-	TwAddVarCB(bar, (var + "S1").c_str(), type, setStats, getStats, (LPVOID)(offset + 4 * 3), (def + "Secondary 1'").c_str());
-	TwAddVarCB(bar, (var + "S2").c_str(), type, setStats, getStats, (LPVOID)(offset + 4 * 4), (def + "Secondary 2'").c_str());
-	TwAddVarCB(bar, (var + "S3").c_str(), type, setStats, getStats, (LPVOID)(offset + 4 * 5), (def + "Secondary 3'").c_str());
-	TwDefine(("DDDAFix/" + name + " group='Equipped skills' opened=false").c_str());
+
+	TwStructMember skillStruct[] =
+	{
+		{ "1", type, 4 * 0, "" }, { "2", type, 4 * 1, "" }, { "3", type, 4 * 2, "" },
+		{ "4", type, 4 * 3, "" }, { "5", type, 4 * 4, "" }, { "6", type, 4 * 5, "" }
+	};
+	TwType skillType = TwDefineStruct((var + "Struct").c_str(), skillStruct, count, 4 * 6, skillSummary, nullptr);
+	TwAddVarCB(bar, var.c_str(), skillType, setStats, getStats, (LPVOID)offset, def.c_str());
 }
 
-TwEnumVal skillsSword[], skillsLongsword[], skillsDagger[], skillsStaves[];
+TwEnumVal skillsAugments[], skillsSword[], skillsLongsword[], skillsDagger[], skillsStaves[];
 TwEnumVal skillsShield[], skillsMagickShield[], skillsBow[], skillsLongbow[], skillsMagickBow[];
 void addPlayerStats(TwBar *bar)
 {
@@ -108,27 +117,20 @@ void addPlayerStats(TwBar *bar)
 	TwDefine("DDDAFix/Pawn opened=false");
 
 	//skills
-	addSkill(bar, 0xA7808 + 24 * 0, "Sword", skillsSword, 21);
-	addSkill(bar, 0xA7808 + 24 * 1, "Mace", skillsSword, 21);
-	addSkill(bar, 0xA7808 + 24 * 2, "Longsword", skillsLongsword, 11);
-	addSkill(bar, 0xA7808 + 24 * 6, "Warhammer", skillsLongsword, 11);
-	addSkill(bar, 0xA7808 + 24 * 3, "Dagger", skillsDagger, 21);
-	addSkill(bar, 0xA7808 + 24 * 4, "Staff", skillsStaves, 31);
-	addSkill(bar, 0xA7808 + 24 * 5, "Archistaff", skillsStaves, 31);
-	addSkill(bar, 0xA7808 + 24 * 7, "Shield", skillsShield, 10);
-	addSkill(bar, 0xA7808 + 24 * 8, "MagickShield", skillsMagickShield, 16);
-	addSkill(bar, 0xA7808 + 24 * 9, "Bow", skillsBow, 10);
-	addSkill(bar, 0xA7808 + 24 * 10, "Longbow", skillsLongbow, 10);
-	addSkill(bar, 0xA7808 + 24 * 11, "MagickBow", skillsMagickBow, 10);
-
-	TwAddVarCB(bar, "skillsAugment1", TW_TYPE_INT32, setStats, getStats, (LPVOID)(0xA7928 + 4 * 0), "group=Augments label=1");
-	TwAddVarCB(bar, "skillsAugment2", TW_TYPE_INT32, setStats, getStats, (LPVOID)(0xA7928 + 4 * 1), "group=Augments label=2");
-	TwAddVarCB(bar, "skillsAugment3", TW_TYPE_INT32, setStats, getStats, (LPVOID)(0xA7928 + 4 * 2), "group=Augments label=3");
-	TwAddVarCB(bar, "skillsAugment4", TW_TYPE_INT32, setStats, getStats, (LPVOID)(0xA7928 + 4 * 3), "group=Augments label=4");
-	TwAddVarCB(bar, "skillsAugment5", TW_TYPE_INT32, setStats, getStats, (LPVOID)(0xA7928 + 4 * 4), "group=Augments label=5");
-	TwAddVarCB(bar, "skillsAugment6", TW_TYPE_INT32, setStats, getStats, (LPVOID)(0xA7928 + 4 * 5), "group=Augments label=6");
-	TwDefine("DDDAFix/Augments group='Equipped skills' opened=false");
-	TwDefine("DDDAFix/'Equipped skills' opened=false");
+	addSkill(bar, 0xA7808 + 24 * 0, 3, "Sword", skillsSword, 21);
+	addSkill(bar, 0xA7808 + 24 * 1, 3, "Mace", skillsSword, 21);
+	addSkill(bar, 0xA7808 + 24 * 2, 3, "Longsword", skillsLongsword, 11);
+	addSkill(bar, 0xA7808 + 24 * 6, 3, "Warhammer", skillsLongsword, 11);
+	addSkill(bar, 0xA7808 + 24 * 3, 3, "Dagger", skillsDagger, 21);
+	addSkill(bar, 0xA7808 + 24 * 4, 6, "Staff", skillsStaves, 31);
+	addSkill(bar, 0xA7808 + 24 * 5, 6, "Archistaff", skillsStaves, 31);
+	addSkill(bar, 0xA7808 + 24 * 7, 3, "Shield", skillsShield, 10);
+	addSkill(bar, 0xA7808 + 24 * 8, 3, "MagickShield", skillsMagickShield, 16);
+	addSkill(bar, 0xA7808 + 24 * 9, 3, "Bow", skillsBow, 10);
+	addSkill(bar, 0xA7808 + 24 * 10, 3, "Longbow", skillsLongbow, 10);
+	addSkill(bar, 0xA7808 + 24 * 11, 3, "MagickBow", skillsMagickBow, 10);
+	addSkill(bar, 0xA7928, 6, "Augments", skillsAugments, 83);
+	TwDefine("DDDAFix/Skills opened=false");
 
 	//a7940 - current primary 1
 	//a7944 - current primary 2
@@ -370,4 +372,91 @@ TwEnumVal skillsMagickBow[] =
 	{ 365, "Ward Arrow | Great Ward Arrow" },
 	{ 366, "Bracer Arrow | Great Bracer Arrow" },
 	{ 367, "Sacrificial Bolt | Great Sacrifice" }
+};
+
+TwEnumVal skillsAugments[] =
+{
+	{ -1, "Empty" },
+	{ 0, "Fitness" },
+	{ 1, "Sinew" },
+	{ 2, "Egression" },
+	{ 3, "Prescience" },
+	{ 4, "Exhilaration" },
+	{ 5, "Vehemence" },
+	{ 6, "Vigilance" },
+	{ 10, "Leg-Strength" },
+	{ 11, "Arm-Strength" },
+	{ 12, "Grit" },
+	{ 13, "Damping" },
+	{ 14, "Dexterity" },
+	{ 15, "Eminence" },
+	{ 16, "Endurance" },
+	{ 20, "Infection" },
+	{ 21, "Equanimity" },
+	{ 22, "Beatitude" },
+	{ 23, "Perpetuation" },
+	{ 24, "Intervention" },
+	{ 25, "Attunement" },
+	{ 26, "Apotropaism" },
+	{ 30, "Adamance" },
+	{ 31, "Periphery" },
+	{ 32, "Sanctuary" },
+	{ 33, "Restoration" },
+	{ 34, "Retribution" },
+	{ 35, "Reinforcement" },
+	{ 36, "Fortitude" },
+	{ 40, "Watchfulness" },
+	{ 41, "Preemption" },
+	{ 42, "Autonomy" },
+	{ 43, "Bloodlust" },
+	{ 44, "Entrancement" },
+	{ 45, "Sanguinity" },
+	{ 46, "Toxicity" },
+	{ 50, "Resilience" },
+	{ 51, "Resistance" },
+	{ 52, "Detection" },
+	{ 53, "Regeneration" },
+	{ 54, "Allure" },
+	{ 55, "Potential" },
+	{ 56, "Magnitude" },
+	{ 60, "Temerity" },
+	{ 61, "Audacity" },
+	{ 62, "Proficiency" },
+	{ 63, "Ferocity" },
+	{ 64, "Impact" },
+	{ 65, "Bastion" },
+	{ 66, "Clout" },
+	{ 70, "Trajectory" },
+	{ 71, "Morbidity" },
+	{ 72, "Precision" },
+	{ 73, "Stability" },
+	{ 74, "Efficacy" },
+	{ 75, "Radiance" },
+	{ 76, "Longevity" },
+	{ 80, "Gravitas" },
+	{ 81, "Articulacy" },
+	{ 82, "Conservation" },
+	{ 83, "Emphasis" },
+	{ 84, "Suasion" },
+	{ 85, "Acuity" },
+	{ 86, "Awareness" },
+	{ 91, "Suasion" },
+	{ 92, "Thrift" },
+	{ 93, "Weal" },
+	{ 94, "Renown" },
+	{ 100, "Predation" },
+	{ 101, "Fortune" },
+	{ 102, "Tenacity" },
+	{ 103, "Conveyance" },
+	{ 104, "Acquisition" },
+	{ 105, "Acquisition" },
+	{ 106, "Prolongation" },
+	{ 107, "Mettle" },
+	{ 108, "Athleticism" },
+	{ 109, "Recuperation" },
+	{ 110, "Adhesion" },
+	{ 111, "Opportunism" },
+	{ 112, "Flow" },
+	{ 113, "Grace" },
+	{ 114, "Facility" }
 };

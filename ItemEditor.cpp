@@ -1,6 +1,5 @@
-﻿#include "dinput8.h"
+﻿#include "stdafx.h"
 #include "ItemEditor.h"
-#include "TweakBar.h"
 
 LPBYTE pItem;
 LPVOID oItemIDRead;

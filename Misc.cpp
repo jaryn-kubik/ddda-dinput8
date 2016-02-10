@@ -1,9 +1,8 @@
 ﻿// taken from CheatEngine table by Cielos
 // http://forum.cheatengine.org/viewtopic.php?p=5641841#5641841
 
+#include "stdafx.h"
 #include "Misc.h"
-#include "dinput8.h"
-#include "TweakBar.h"
 
 LPBYTE pCharCustomization;
 LPVOID oCharCustomization;

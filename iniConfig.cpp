@@ -1,10 +1,5 @@
-﻿#include "dinput8.h"
+﻿#include "stdafx.h"
 #include "iniConfig.h"
-#include <algorithm>
-#include <string>
-#include <locale>
-#include <sstream>
-#include <iomanip>
 
 iniConfig::iniConfig(LPCWSTR fileName)
 {

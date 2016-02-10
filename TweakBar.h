@@ -1,6 +1,4 @@
 ﻿#pragma once
-#include "include/AntTweakBar.h"
-#include <functional>
 
 namespace Hooks
 {

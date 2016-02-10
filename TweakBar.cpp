@@ -1,7 +1,5 @@
-﻿#include "dinput8.h"
-#include "TweakBar.h"
+﻿#include "stdafx.h"
 #include "d3d9.h"
-#include <vector>
 
 std::vector<std::function<void(TwBar*)>> functions;
 void createTweakBar(LPDIRECT3DDEVICE9 pD3DDevice, D3DPRESENT_PARAMETERS* pParams)

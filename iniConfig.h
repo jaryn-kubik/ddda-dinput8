@@ -1,7 +1,4 @@
 ﻿#pragma once
-#include <map>
-using std::string;
-using std::wstring;
 
 class iniConfig
 {
