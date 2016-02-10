@@ -110,6 +110,7 @@
     <ClCompile Include="iniConfig.cpp" />
     <ClCompile Include="PlayerStats.cpp" />
     <ClCompile Include="SaveBackup.cpp" />
+    <ClCompile Include="Server.cpp" />
     <ClCompile Include="TweakBar.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -128,6 +129,7 @@
     <ClInclude Include="README.md" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SaveBackup.h" />
+    <ClInclude Include="Server.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="steam_api.h" />
     <ClInclude Include="TweakBar.h" />

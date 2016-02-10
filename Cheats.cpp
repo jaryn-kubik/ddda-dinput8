@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include "Cheats.h"
 
-std::unordered_set<UINT16> skillsThirdTier =
+std::unordered_set<UINT16> thirdSkillLevels =
 {
 	40, 42, 46, 47, 52, 54, 57, 58,
 	102, 104, 106, 109,
@@ -19,7 +19,7 @@ std::unordered_set<UINT16> skillsThirdTier =
 DWORD *pSomeBase;
 int __stdcall GetSkillTier(UINT16 skill, DWORD address)
 {
-	if (!skillsThirdTier.count(skill))
+	if (!thirdSkillLevels.count(skill))
 		return 0;
 
 	address -= *pSomeBase;
@@ -29,9 +29,9 @@ int __stdcall GetSkillTier(UINT16 skill, DWORD address)
 		address == 0xAB2AC;			//pawn 2
 }
 
-bool skillTier;
-LPBYTE pSkillTier, oSkillTier;
-void __declspec(naked) HSkillTier()
+bool skillLevel;
+LPBYTE pSkillLevel, oSkillLevel;
+void __declspec(naked) HSkillLevel()
 {
 	__asm
 	{
@@ -46,7 +46,7 @@ void __declspec(naked) HSkillTier()
 		test	dword ptr[edi + ecx * 4 + 0x74], eax;
 	getBack:
 		setnz	dl;
-		jmp		oSkillTier;
+		jmp		oSkillLevel;
 	}
 }
 
@@ -136,10 +136,10 @@ void setCheats(const void *value, void *clientData)
 		config.setFloat(L"cheats", L"timeInterval", switchCheats(value, mTimeInterval, "Cheat (timeInterval)", pTimeInterval));
 		realTime = mTimeInterval == 0;
 	}
-	else if (clientData == &skillTier)
+	else if (clientData == &skillLevel)
 	{
-		config.setBool(L"cheats", L"skillLevel", skillTier = *(bool*)value);
-		Hooks::SwitchHook("SkillLevel", pSkillTier, skillTier);
+		config.setBool(L"cheats", L"skillLevel", skillLevel = *(bool*)value);
+		Hooks::SwitchHook("SkillLevel", pSkillLevel, skillLevel);
 	}
 }
 
@@ -181,18 +181,18 @@ void Hooks::Cheats()
 	}
 
 	BYTE sigSkill[] = { 0x85, 0x44, 0x8F, 0x74, 0x0F, 0x95, 0xC2 };
-	if (FindSignature("Cheat (skillLevel)", sigSkill, &pSkillTier))
+	if (FindSignature("Cheat (thirdSkillLevel)", sigSkill, &pSkillLevel))
 	{
 		BYTE *pOffset;
 		BYTE sig1[] = { 0x8B, 0x15, 0xCC, 0xCC, 0xCC, 0xCC, 0x33, 0xDB, 0x8B, 0xF8 };
-		if (!FindSignature("Cheat (skillLevel)", sig1, &pOffset))
+		if (!FindSignature("Cheat (thirdSkillLevel)", sig1, &pOffset))
 			return;
 		pSomeBase = *(DWORD**)(pOffset + 2);
 
-		skillTier = config.getBool(L"cheats", L"skillLevel", false);
-		CreateHook("Cheat (skillLevel)", pSkillTier, &HSkillTier, &oSkillTier, skillTier);
-		oSkillTier += 7;
-		TweakBarAddCB("miscSkills", TW_TYPE_BOOLCPP, setCheats, getCheats, &skillTier, "group=Misc label='3rd level skills'");
+		skillLevel = config.getBool(L"cheats", L"thirdSkillLevel", false);
+		CreateHook("Cheat (thirdSkillLevel)", pSkillLevel, &HSkillLevel, &oSkillLevel, skillLevel);
+		oSkillLevel += 7;
+		TweakBarAddCB("miscSkills", TW_TYPE_BOOLCPP, setCheats, getCheats, &skillLevel, "group=Misc label='3rd level skills'");
 	}
 
 	BYTE *pOffset;

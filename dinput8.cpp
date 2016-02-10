@@ -18,18 +18,8 @@ BYTE *codeBase, *codeEnd, *dataBase, *dataEnd;
 std::wofstream logFile("dinput8.log", std::ios_base::out);
 iniConfig config(L".\\dinput8.ini");
 
-void Initialize()
+void InitHooks()
 {
-	DWORD base = (DWORD)GetModuleHandle(nullptr);
-	auto idh = (PIMAGE_DOS_HEADER)base;
-	auto inh = (PIMAGE_NT_HEADERS)(base + idh->e_lfanew);
-	auto ioh = &inh->OptionalHeader;
-	codeBase = (BYTE*)(base + ioh->BaseOfCode);
-	codeEnd = codeBase + ioh->SizeOfCode;
-	dataBase = (BYTE*)(base + ioh->BaseOfData);
-	dataEnd = dataBase + ioh->SizeOfInitializedData;
-
-	logFile << "MH_Initialize: " << MH_StatusToString(MH_Initialize()) << std::endl;
 	Hooks::SaveBackup();
 	Hooks::Hotkeys();
 	Hooks::Misc();
@@ -43,6 +33,21 @@ void Initialize()
 		Hooks::InGameClock();
 		Hooks::TweakBar();
 	}
+}
+
+void Initialize()
+{
+	DWORD base = (DWORD)GetModuleHandle(nullptr);
+	auto idh = (PIMAGE_DOS_HEADER)base;
+	auto inh = (PIMAGE_NT_HEADERS)(base + idh->e_lfanew);
+	auto ioh = &inh->OptionalHeader;
+	codeBase = (BYTE*)(base + ioh->BaseOfCode);
+	codeEnd = codeBase + ioh->SizeOfCode;
+	dataBase = (BYTE*)(base + ioh->BaseOfData);
+	dataEnd = dataBase + ioh->SizeOfInitializedData;
+
+	logFile << "MH_Initialize: " << MH_StatusToString(MH_Initialize()) << std::endl;
+	InitHooks();
 
 	wstring loadLibrary = config.getStrW(L"main", L"loadLibrary", wstring());
 	if (!loadLibrary.empty())
