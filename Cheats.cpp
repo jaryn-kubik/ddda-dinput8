@@ -138,8 +138,8 @@ void setCheats(const void *value, void *clientData)
 	}
 	else if (clientData == &skillLevel)
 	{
-		config.setBool(L"cheats", L"skillLevel", skillLevel = *(bool*)value);
-		Hooks::SwitchHook("SkillLevel", pSkillLevel, skillLevel);
+		config.setBool(L"cheats", L"thirdSkillLevel", skillLevel = *(bool*)value);
+		Hooks::SwitchHook("Cheat (thirdSkillLevel)", pSkillLevel, skillLevel);
 	}
 }
 
