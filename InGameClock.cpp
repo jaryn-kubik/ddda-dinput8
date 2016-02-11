@@ -40,7 +40,7 @@ void onResetDevice(LPDIRECT3DDEVICE9 pD3DDevice, D3DPRESENT_PARAMETERS* pParams)
 	pSprite->OnResetDevice();
 }
 
-WCHAR clockBuf[] = L"00:00";
+CHAR clockBuf[] = "00:00";
 void onEndScene(LPDIRECT3DDEVICE9 pD3DDevice)
 {
 	if (clockEnabled && pClock && *pClock)
@@ -55,10 +55,10 @@ void onEndScene(LPDIRECT3DDEVICE9 pD3DDevice)
 			m = t % 60;
 		}
 
-		clockBuf[0] = 0x30 + h / 10;
-		clockBuf[1] = 0x30 + h % 10;
-		clockBuf[3] = 0x30 + m / 10;
-		clockBuf[4] = 0x30 + m % 10;
+		clockBuf[0] = (CHAR)(0x30 + h / 10);
+		clockBuf[1] = (CHAR)(0x30 + h % 10);
+		clockBuf[3] = (CHAR)(0x30 + m / 10);
+		clockBuf[4] = (CHAR)(0x30 + m % 10);
 		DWORD format = DT_NOCLIP | clockPositionV | clockPositionH;
 
 		pSprite->Begin(D3DXSPRITE_ALPHABLEND | D3DXSPRITE_SORT_TEXTURE | D3DXSPRITE_DO_NOT_ADDREF_TEXTURE);
@@ -90,7 +90,7 @@ void Hooks::InGameClockDec(BYTE minutes)
 	if (pClock && *pClock)
 	{
 		DWORD time = (*pClock)[0xB8768 / 4];
-		if (time < minutes * 60000)
+		if (time < minutes * 60000U)
 		{
 			if ((*pClock)[0xB8760 / 4] > 0)
 				(*pClock)[0xB8760 / 4]--;
@@ -100,32 +100,32 @@ void Hooks::InGameClockDec(BYTE minutes)
 	}
 }
 
-std::map<wstring, int> clockPosVMap = { { L"top", DT_TOP }, { L"bottom", DT_BOTTOM } };
-std::map<wstring, int> clockPosHMap = { { L"left", DT_LEFT }, { L"center", DT_CENTER }, { L"right", DT_RIGHT } };
+std::pair<int, LPCSTR> clockPosVMap[] = { { DT_TOP, "top"}, { DT_BOTTOM, "bottom" } };
+std::pair<int, LPCSTR> clockPosHMap[] = { { DT_LEFT, "left" }, { DT_CENTER, "center" }, { DT_RIGHT, "right" } };
 void setClock(const void *value, void *clientData)
 {
 	if (clientData == &clockEnabled)
-		config.setBool(L"d3d9", L"inGameClock", clockEnabled = *(bool*)value);
+		config.setBool("d3d9", "inGameClock", clockEnabled = *(bool*)value);
 	else if (clientData == &clockSize)
-		config.setUInt(L"d3d9", L"inGameClockSize", clockSize = *(UINT32*)value);
+		config.setUInt("d3d9", "inGameClockSize", clockSize = *(UINT32*)value);
 	else if (clientData == &clockFont)
-		config.setStrA(L"d3d9", L"inGameClockFont", clockFont = *static_cast<const string*>(value));
+		config.setStr("d3d9", "inGameClockFont", clockFont = *static_cast<const string*>(value));
 	else if (clientData == &clockTimebase)
-		config.setUInt(L"d3d9", L"inGameClockTimebase", clockTimebase = *(UINT32*)value);
+		config.setUInt("d3d9", "inGameClockTimebase", clockTimebase = *(UINT32*)value);
 	else if (clientData == &clockPositionV)
-		config.setEnum(L"d3d9", L"inGameClockPositionVertical", clockPositionV = *(UINT32*)value, clockPosVMap);
+		config.setEnum("d3d9", "inGameClockPositionVertical", clockPositionV = *(UINT32*)value, clockPosVMap, 2);
 	else if (clientData == &clockPositionH)
-		config.setEnum(L"d3d9", L"inGameClockPositionHorizontal", clockPositionH = *(UINT32*)value, clockPosHMap);
+		config.setEnum("d3d9", "inGameClockPositionHorizontal", clockPositionH = *(UINT32*)value, clockPosHMap, 3);
 	else if (clientData == &clockColor)
-		config.setUInt(L"d3d9", L"inGameClockColor", clockColor = *(UINT32*)value, true);
+		config.setUInt("d3d9", "inGameClockColor", clockColor = *(UINT32*)value, true);
 	else if (clientData == &clockLeft)
-		config.setUInt(L"d3d9", L"inGameClockOutlineLeft", clockLeft = *(UINT32*)value, true);
+		config.setUInt("d3d9", "inGameClockOutlineLeft", clockLeft = *(UINT32*)value, true);
 	else if (clientData == &clockTop)
-		config.setUInt(L"d3d9", L"inGameClockOutlineTop", clockTop = *(UINT32*)value, true);
+		config.setUInt("d3d9", "inGameClockOutlineTop", clockTop = *(UINT32*)value, true);
 	else if (clientData == &clockRight)
-		config.setUInt(L"d3d9", L"inGameClockOutlineRight", clockRight = *(UINT32*)value, true);
+		config.setUInt("d3d9", "inGameClockOutlineRight", clockRight = *(UINT32*)value, true);
 	else if (clientData == &clockBottom)
-		config.setUInt(L"d3d9", L"inGameClockOutlineBottom", clockBottom = *(UINT32*)value, true);
+		config.setUInt("d3d9", "inGameClockOutlineBottom", clockBottom = *(UINT32*)value, true);
 
 	if (clientData == &clockSize || clientData == &clockFont)
 	{
@@ -169,20 +169,20 @@ void addInGameClock(TwBar *bar)
 
 void Hooks::InGameClock()
 {
-	clockFont = config.getStrA(L"d3d9", L"inGameClockFont", "Arial");
-	clockSize = config.getUInt(L"d3d9", L"inGameClockSize", 30);
-	clockTimebase = config.getUInt(L"d3d9", L"inGameClockTimebase", 1);
+	clockFont = config.getStr("d3d9", "inGameClockFont", "Arial");
+	clockSize = config.getUInt("d3d9", "inGameClockSize", 30);
+	clockTimebase = config.getUInt("d3d9", "inGameClockTimebase", 1);
 	if (clockTimebase < 1)
 		clockTimebase = 1;
 
-	clockColor = config.getUInt(L"d3d9", L"inGameClockColor", 0xFF050505);
-	clockLeft = config.getUInt(L"d3d9", L"inGameClockOutlineLeft", 0xFF222222);
-	clockTop = config.getUInt(L"d3d9", L"inGameClockOutlineTop", 0xFF444444);
-	clockRight = config.getUInt(L"d3d9", L"inGameClockOutlineRight", 0xFF666666);
-	clockBottom = config.getUInt(L"d3d9", L"inGameClockOutlineBottom", 0xFF888888);
+	clockColor = config.getUInt("d3d9", "inGameClockColor", 0xFF050505);
+	clockLeft = config.getUInt("d3d9", "inGameClockOutlineLeft", 0xFF222222);
+	clockTop = config.getUInt("d3d9", "inGameClockOutlineTop", 0xFF444444);
+	clockRight = config.getUInt("d3d9", "inGameClockOutlineRight", 0xFF666666);
+	clockBottom = config.getUInt("d3d9", "inGameClockOutlineBottom", 0xFF888888);
 
-	clockPositionV = config.getEnum(L"d3d9", L"inGameClockPositionVertical", DT_TOP, clockPosVMap);
-	clockPositionH = config.getEnum(L"d3d9", L"inGameClockPositionHorizontal", DT_RIGHT, clockPosHMap);
+	clockPositionV = config.getEnum("d3d9", "inGameClockPositionVertical", DT_TOP, clockPosVMap, 2);
+	clockPositionH = config.getEnum("d3d9", "inGameClockPositionHorizontal", DT_RIGHT, clockPosHMap, 3);
 
 	BYTE sig[] = { 0x8B, 0x15, 0xCC, 0xCC, 0xCC, 0xCC, 0x33, 0xDB, 0x8B, 0xF8 };
 	BYTE *pOffset;
@@ -193,7 +193,7 @@ void Hooks::InGameClock()
 	D3D9Add(onCreateDevice, onLostDevice, onResetDevice, onEndScene);
 	TweakBarAdd(addInGameClock);
 
-	clockEnabled = config.getBool(L"d3d9", L"inGameClock", false);
+	clockEnabled = config.getBool("d3d9", "inGameClock", false);
 	if (!clockEnabled)
 		logFile << "InGameClock: disabled" << std::endl;
 }

@@ -4,22 +4,29 @@
 #include "stdafx.h"
 #include "Cheats.h"
 
-std::unordered_set<UINT16> thirdSkillLevels =
+bool thirdSkillLevels[0x200] = { false };
+void thirdSkillLevelsInit()
 {
-	40, 42, 46, 47, 52, 54, 57, 58,
-	102, 104, 106, 109,
-	150, 152, 155, 159, 161, 164, 165, 167,
-	210, 212, 214, 215, 220, 222, 223, 224, 225, 226, 227, 228, 229, 230, 236,
-	270, 274, 278,
-	310, 311, 312, 313, 314, 315, 316, 317, 318, 319, 320,
-	352, 353, 356, 359, 361, 363,
-	402, 403, 407
-};
+	int temp[] =
+	{
+		40, 42, 46, 47, 52, 54, 57, 58,
+		102, 104, 106, 109,
+		150, 152, 155, 159, 161, 164, 165, 167,
+		210, 212, 214, 215, 220, 222, 223, 224, 225, 226, 227, 228, 229, 230, 236,
+		270, 274, 278,
+		310, 311, 312, 313, 314, 315, 316, 317, 318, 319, 320,
+		352, 353, 356, 359, 361, 363,
+		402, 403, 407
+	};
+
+	for (int i = 0; i < sizeof(temp) / sizeof(int); i++)
+		thirdSkillLevels[temp[i]] = true;
+}
 
 DWORD *pSomeBase;
 int __stdcall GetSkillTier(UINT16 skill, DWORD address)
 {
-	if (!thirdSkillLevels.count(skill))
+	if (!thirdSkillLevels[skill & 0x1FF])
 		return 0;
 
 	address -= *pSomeBase;
@@ -128,17 +135,17 @@ void getCheats(void *value, void *clientData) { *(UINT32*)value = *(UINT32*)clie
 void setCheats(const void *value, void *clientData)
 {
 	if (clientData == &runType)
-		config.setInt(L"cheats", L"runType", switchCheats(value, runType, "Cheat (runType)", pRunType));
+		config.setInt("cheats", "runType", switchCheats(value, runType, "Cheat (runType)", pRunType));
 	else if (clientData == &mWeight)
-		config.setFloat(L"cheats", L"weightMultiplicator", switchCheats(value, mWeight, "Cheat (weight)", pWeight));
+		config.setFloat("cheats", "weightMultiplicator", switchCheats(value, mWeight, "Cheat (weight)", pWeight));
 	else if (clientData == &mTimeInterval)
 	{
-		config.setFloat(L"cheats", L"timeInterval", switchCheats(value, mTimeInterval, "Cheat (timeInterval)", pTimeInterval));
+		config.setFloat("cheats", "timeInterval", switchCheats(value, mTimeInterval, "Cheat (timeInterval)", pTimeInterval));
 		realTime = mTimeInterval == 0;
 	}
 	else if (clientData == &skillLevel)
 	{
-		config.setBool(L"cheats", L"thirdSkillLevel", skillLevel = *(bool*)value);
+		config.setBool("cheats", "thirdSkillLevel", skillLevel = *(bool*)value);
 		Hooks::SwitchHook("Cheat (thirdSkillLevel)", pSkillLevel, skillLevel);
 	}
 }
@@ -150,7 +157,7 @@ void Hooks::Cheats()
 					0x8B, 0x5C, 0x24, 0x08 };	//mov	ebx, [esp+4+arg_0]
 	if (FindSignature("Cheat (runType)", sigRun, &pRunType))
 	{
-		runType = config.getInt(L"cheats", L"runType", false);
+		runType = config.getInt("cheats", "runType", false);
 		if (runType > 2 || runType < -1)
 			runType = -1;
 		CreateHook("Cheat (runType)", pRunType += 3, &HRunType, &oRunType, runType >= 0);
@@ -166,7 +173,7 @@ void Hooks::Cheats()
 							0x45 };											//inc		ebp
 	if (FindSignature("Cheat (weight)", sigWeight, &pWeight))
 	{
-		mWeight = config.getFloat(L"cheats", L"weightMultiplicator", -1);
+		mWeight = config.getFloat("cheats", "weightMultiplicator", -1);
 		CreateHook("Cheat (weight)", pWeight, &HWeight, &oWeight, mWeight >= 0);
 		TweakBarAddCB("miscWeight", TW_TYPE_FLOAT, setCheats, getCheats, &mWeight, "group=Misc label='Weight multiplicator' step=0.01 min=-1.0 max=1.0 precision=4");
 	}
@@ -174,7 +181,7 @@ void Hooks::Cheats()
 	BYTE sigTime[] = { 0x8B, 0x44, 0x24, 0x08, 0x01, 0x86, 0x68, 0x87, 0x0B, 0x00 };
 	if (FindSignature("Cheat (timeInterval)", sigTime, &pTimeInterval))
 	{
-		mTimeInterval = config.getFloat(L"cheats", L"timeInterval", -1);
+		mTimeInterval = config.getFloat("cheats", "timeInterval", -1);
 		realTime = mTimeInterval == 0;
 		CreateHook("Cheat (timeInterval)", pTimeInterval, &HTimeInterval, &oTimeInterval, mTimeInterval >= 0);
 		TweakBarAddCB("miscTime", TW_TYPE_FLOAT, setCheats, getCheats, &mTimeInterval, "group=Misc label='Time speed' step=0.1 min=-1.0");
@@ -189,14 +196,16 @@ void Hooks::Cheats()
 			return;
 		pSomeBase = *(DWORD**)(pOffset + 2);
 
-		skillLevel = config.getBool(L"cheats", L"thirdSkillLevel", false);
+		skillLevel = config.getBool("cheats", "thirdSkillLevel", false);
 		CreateHook("Cheat (thirdSkillLevel)", pSkillLevel, &HSkillLevel, &oSkillLevel, skillLevel);
-		oSkillLevel += 7;
 		TweakBarAddCB("miscSkills", TW_TYPE_BOOLCPP, setCheats, getCheats, &skillLevel, "group=Misc label='3rd level skills'");
+
+		oSkillLevel += 7;
+		thirdSkillLevelsInit();
 	}
 
 	BYTE *pOffset;
-	if (config.getBool(L"cheats", L"shareWeaponSkills", false))
+	if (config.getBool("cheats", "shareWeaponSkills", false))
 	{
 		BYTE sig1[] = { 0x0F,0x84,0x97,0x00,0x00,0x00,0x8B,0xCC,0xCC,0xCC,0x8B,0xCC,0x8B };
 		BYTE sig2[] = { 0x75,0x06,0xC7,0x02,0xFF,0xFF,0xFF,0xFF,0x8B,0xCC,0xCC,0x83 };
@@ -221,7 +230,7 @@ void Hooks::Cheats()
 	else
 		logFile << "Cheat (shareWeaponSkills): disabled" << std::endl;
 
-	if (config.getBool(L"cheats", L"ignoreEquipVocation", false))
+	if (config.getBool("cheats", "ignoreEquipVocation", false))
 	{
 		BYTE sig1[] = { 0x0F, 0x94, 0xC0, 0xC2, 0x0C, 0x00 };
 		BYTE sig2[] = { 0x74, 0x0F, 0x3B, 0xC2, 0x74, 0x0E, 0x8B, 0x41, 0x04, 0x83 };
@@ -244,7 +253,7 @@ void Hooks::Cheats()
 	else
 		logFile << "Cheat (ignoreEquipVocation): disabled" << std::endl;
 
-	if (config.getBool(L"cheats", L"ignoreSkillVocation", false))
+	if (config.getBool("cheats", "ignoreSkillVocation", false))
 	{
 		BYTE sig1[] = { 0x74, 0x2F, 0x8B, 0x47, 0x10 };
 		BYTE sig2[] = { 0x74, 0x74, 0x8B, 0x44, 0x24, 0x1C };

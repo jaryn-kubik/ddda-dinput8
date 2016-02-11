@@ -7,13 +7,13 @@ LPDIRECT3D9 WINAPI HDirect3DCreate9(UINT SDKVersion) { return new fIDirect3D9(oD
 
 bool Hooks::D3D9()
 {
-	if (!config.getBool(L"d3d9", L"enabled", false))
+	if (!config.getBool("d3d9", "enabled", false))
 	{
 		logFile << "D3D9: disabled" << std::endl;
 		return false;
 	}
 
-	HMODULE hMod = LoadLibrary(L"d3d9.dll");
+	HMODULE hMod = LoadLibrary("d3d9.dll");
 	oDirect3DCreate9 = (tDirect3DCreate9)GetProcAddress(hMod, "Direct3DCreate9");
 	CreateHook("D3D9", Direct3DCreate9, &HDirect3DCreate9, &oDirect3DCreate9);
 	return true;

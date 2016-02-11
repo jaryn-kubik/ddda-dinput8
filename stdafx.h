@@ -7,17 +7,10 @@
 
 #include <fstream>
 #include <functional>
-#include <map>
 #include <vector>
-#include <unordered_map>
-#include <unordered_set>
 #include <algorithm>
-#include <locale>
-#include <sstream>
-#include <iomanip>
 
 using std::string;
-using std::wstring;
 #pragma comment(lib, "d3d9.lib")
 #pragma comment(lib, "d3dx9.lib")
 

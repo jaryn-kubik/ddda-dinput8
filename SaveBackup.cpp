@@ -1,7 +1,7 @@
 ﻿#include "stdafx.h"
 #include "SaveBackup.h"
 
-std::wstring saveDir, savePath;
+string saveDir, savePath;
 int saveLimit;
 void printError(LPCSTR msg, DWORD error)
 {
@@ -20,15 +20,15 @@ void printError(LPCSTR msg, DWORD error)
 void clearBackups()
 {
 	WIN32_FIND_DATA ffd;
-	HANDLE hFind = FindFirstFile((saveDir + L"*_*.sav").c_str(), &ffd);
+	HANDLE hFind = FindFirstFile((saveDir + "ddda_*.sav").c_str(), &ffd);
 	if (hFind == INVALID_HANDLE_VALUE)
 		return;
 
-	std::vector<std::pair<UINT64, std::wstring>> files;
+	std::vector<std::pair<UINT64, string>> files;
 	do
 	{
 		SYSTEMTIME t;
-		if (swscanf_s(ffd.cFileName, L"ddda_%04hd-%02hd-%02hd_%02hd-%02hd-%02hd.sav",
+		if (sscanf_s(ffd.cFileName, "ddda_%04hd-%02hd-%02hd_%02hd-%02hd-%02hd.sav",
 			&t.wYear, &t.wMonth, &t.wDay, &t.wHour, &t.wMinute, &t.wSecond) == 6)
 		{
 			UINT64 time;
@@ -41,7 +41,7 @@ void clearBackups()
 	sort(files.begin(), files.end());
 	for (int i = 0; i < (int)files.size() - saveLimit; i++)
 	{
-		std::wstring file = saveDir + files[i].second;
+		string file = saveDir + files[i].second;
 		DeleteFile(file.c_str());
 		logFile << "Backup deleted: " << file << std::endl;
 	}
@@ -56,9 +56,9 @@ void __stdcall handleSave()
 		FileTimeToSystemTime(&fileData.ftLastWriteTime, &systemTime);
 		SystemTimeToTzSpecificLocalTime(nullptr, &systemTime, &t);
 
-		WCHAR str[64];
-		swprintf_s(str, L"ddda_%04hd-%02hd-%02hd_%02hd-%02hd-%02hd.sav", t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond);
-		std::wstring backupPath = saveDir + str;
+		CHAR str[64];
+		sprintf_s(str, "ddda_%04hd-%02hd-%02hd_%02hd-%02hd-%02hd.sav", t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond);
+		string backupPath = saveDir + str;
 
 		if (CopyFile(savePath.c_str(), backupPath.c_str(), FALSE))
 		{
@@ -87,22 +87,22 @@ void __declspec(naked) HSaveGame()
 
 bool findSavePath()
 {
-	std::wstring configDir = config.getStrW(L"main", L"savePath", std::wstring());
+	string configDir = config.getStr("main", "savePath");
 	if (configDir.empty())
 	{
-		HMODULE hModule = GetModuleHandle(L"steam_api.dll");
+		HMODULE hModule = GetModuleHandle("steam_api.dll");
 		if (hModule)
 		{
 			char buf[1024];
 			tSteamUser pSteamUser = (tSteamUser)GetProcAddress(hModule, "SteamUser");
 			if (pSteamUser && pSteamUser() && pSteamUser()->GetUserDataFolder(buf, 1024))
 			{
-				saveDir = std::wstring_convert<std::codecvt<wchar_t, char, mbstate_t>>().from_bytes(buf);
-				size_t index = saveDir.rfind(L"local");
-				if (index != std::string::npos)
+				saveDir = string(buf);
+				size_t index = saveDir.rfind("local");
+				if (index != string::npos)
 				{
 					saveDir.erase(index);
-					saveDir += L"remote";
+					saveDir += "remote";
 				}
 			}
 		}
@@ -122,20 +122,20 @@ bool findSavePath()
 	}
 
 	saveDir.push_back('\\');
-	savePath = saveDir + L"ddda.sav";
+	savePath = saveDir + "ddda.sav";
 	logFile << "SaveBackup path: " << savePath << std::endl;
 	return true;
 }
 
 void Hooks::SaveBackup()
 {
-	if (!config.getBool(L"main", L"backupSaves", false) || !findSavePath())
+	if (!config.getBool("main", "backupSaves", false) || !findSavePath())
 	{
 		logFile << "SaveBackup: disabled" << std::endl;
 		return;
 	}
 
-	saveLimit = config.getInt(L"main", L"saveLimit", -1);
+	saveLimit = config.getInt("main", "saveLimit", -1);
 
 	BYTE *pSaveName;
 	BYTE saveName[] = "DDDA.sav";

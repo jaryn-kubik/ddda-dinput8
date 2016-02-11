@@ -20,7 +20,7 @@ LRESULT Hooks::TweakBarEvent(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 void Hooks::TweakBarSwitch() { enabled = !enabled; }
 void Hooks::TweakBar()
 {
-	if (config.getBool(L"d3d9", L"tweakBar", false))
+	if (config.getBool("d3d9", "tweakBar", false))
 		D3D9Add(createTweakBar, lostTweakBar, resetTweakBar, drawTweakBar);
 	else
 		logFile << "TweakBar: disabled" << std::endl;

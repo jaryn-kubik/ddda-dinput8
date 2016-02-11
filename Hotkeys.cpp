@@ -4,51 +4,29 @@
 
 INPUT keyInput = { INPUT_KEYBOARD, {} };
 DWORD menuPause;
-std::unordered_map<WPARAM, std::function<void()>> keys;
-void SendKeyPress(WORD vKey)
+std::function<void()> keys[0x100] = { nullptr };
+void SendKeyPress(DWORD vKey)
 {
-	keyInput.ki.wVk = vKey;
+	keyInput.ki.wVk = (WORD)vKey;
 	keyInput.ki.dwFlags = 0;
 	SendInput(1, &keyInput, sizeof(INPUT));
 	keyInput.ki.dwFlags = KEYEVENTF_KEYUP;
 	SendInput(1, &keyInput, sizeof(INPUT));
 }
 
-DWORD WINAPI hotkeyMap(LPVOID lpThreadParameter)
+DWORD WINAPI hotkeyProc(LPVOID vKey)
 {
 	Sleep(menuPause);
+	if ((DWORD)vKey)
+		SendKeyPress((DWORD)vKey);
 	SendKeyPress(VK_RETURN);
 	return 0;
 }
 
-DWORD WINAPI hotkeyJournal(LPVOID lpThreadParameter)
-{
-	Sleep(menuPause);
-	SendKeyPress(VK_LEFT);
-	SendKeyPress(VK_RETURN);
-	return 0;
-}
-
-DWORD WINAPI hotkeyEquipment(LPVOID lpThreadParameter)
-{
-	Sleep(menuPause);
-	SendKeyPress(VK_RIGHT);
-	SendKeyPress(VK_RETURN);
-	return 0;
-}
-
-DWORD WINAPI hotkeyStatus(LPVOID lpThreadParameter)
-{
-	Sleep(menuPause);
-	SendKeyPress(VK_DOWN);
-	SendKeyPress(VK_RETURN);
-	return 0;
-}
-
-void hotkeyMenu(LPTHREAD_START_ROUTINE func)
+void hotkeyStart(DWORD vKey)
 {
 	SendKeyPress(VK_ESCAPE);
-	QueueUserWorkItem(func, nullptr, WT_EXECUTEDEFAULT);
+	QueueUserWorkItem(hotkeyProc, (LPVOID)vKey, WT_EXECUTEDEFAULT);
 }
 
 BYTE **pSave = nullptr;
@@ -60,30 +38,34 @@ LRESULT CALLBACK HWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	if (msg != WM_KEYDOWN || (HIWORD(lParam) & KF_REPEAT) != 0)
 		return oWndProc(hwnd, msg, wParam, lParam);
 
-	auto key = keys.find(wParam);
-	if (key == keys.end())
+	if (wParam > 0xFF || keys[wParam] == nullptr)
 		return oWndProc(hwnd, msg, wParam, lParam);
-	key->second();
+	keys[wParam]();
 	return 0;
+}
+
+void loadHotkey(LPCSTR name, WORD defVal, std::function<void()> func)
+{
+	keys[config.getUInt("hotkeys", name, defVal) & 0xFF] = func;
 }
 
 void Hooks::Hotkeys()
 {
-	if (config.getBool(L"hotkeys", L"enabled", false))
+	if (config.getBool("hotkeys", "enabled", false))
 	{
-		menuPause = config.getUInt(L"hotkeys", L"menuPause", 500);
-		keys[config.getUInt(L"hotkeys", L"keyTweakBar", VK_F12)] = []() { TweakBarSwitch(); };
-		keys[config.getUInt(L"hotkeys", L"keySave", VK_F5)] = []() { if (pSave && *pSave) (*pSave)[0x21AFD6] = 1; };
-		keys[config.getUInt(L"hotkeys", L"keyCheckpoint", VK_F9)] = []() { if (pSave && *pSave) (*pSave)[0x21AFD5] = 1; };
-		keys[config.getUInt(L"hotkeys", L"keyMap", 'M')] = []() { hotkeyMenu(hotkeyMap); };
-		keys[config.getUInt(L"hotkeys", L"keyJournal", 'J')] = []() { hotkeyMenu(hotkeyJournal); };
-		keys[config.getUInt(L"hotkeys", L"keyEquipment", 'U')] = []() { hotkeyMenu(hotkeyEquipment); };
-		keys[config.getUInt(L"hotkeys", L"keyStatus", 'K')] = []() { hotkeyMenu(hotkeyStatus); };
-		keys[config.getUInt(L"hotkeys", L"keyClock", VK_NUMPAD5)] = []() { InGameClockSwitch(); };
-		keys[config.getUInt(L"hotkeys", L"keyClockMinDec", VK_NUMPAD4)] = []() { InGameClockDec(1); };
-		keys[config.getUInt(L"hotkeys", L"keyClockMinInc", VK_NUMPAD6)] = []() { InGameClockInc(1); };
-		keys[config.getUInt(L"hotkeys", L"keyClockHourDec", VK_NUMPAD2)] = []() { InGameClockDec(60); };
-		keys[config.getUInt(L"hotkeys", L"keyClockHourInc", VK_NUMPAD8)] = []() { InGameClockInc(60); };
+		menuPause = config.getUInt("hotkeys", "menuPause", 500);
+		loadHotkey("keyTweakBar", VK_F12, []() { TweakBarSwitch(); });
+		loadHotkey("keySave", VK_F5, []() { if (pSave && *pSave) (*pSave)[0x21AFD6] = 1; });
+		loadHotkey("keyCheckpoint", VK_F9, []() { if (pSave && *pSave) (*pSave)[0x21AFD5] = 1; });
+		loadHotkey("keyMap", 'M', []() { hotkeyStart(0); });
+		loadHotkey("keyJournal", 'J', []() { hotkeyStart(VK_LEFT); });
+		loadHotkey("keyEquipment", 'U', []() { hotkeyStart(VK_RIGHT); });
+		loadHotkey("keyStatus", 'K', []() { hotkeyStart(VK_DOWN); });
+		loadHotkey("keyClock", VK_NUMPAD5, []() { InGameClockSwitch(); });
+		loadHotkey("keyClockMinDec", VK_NUMPAD4, []() { InGameClockDec(1); });
+		loadHotkey("keyClockMinInc", VK_NUMPAD6, []() { InGameClockInc(1); });
+		loadHotkey("keyClockHourDec", VK_NUMPAD2, []() { InGameClockDec(60); });
+		loadHotkey("keyClockHourInc", VK_NUMPAD8, []() { InGameClockInc(60); });
 
 		BYTE sig[] = { 0x83, 0xEC, 0x50,			//sub	esp, 50h
 						0x53,						//push	ebx

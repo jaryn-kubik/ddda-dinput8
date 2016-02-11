@@ -15,8 +15,8 @@ typedef HRESULT(WINAPI *tDirectInput8Create)(HINSTANCE inst_handle, DWORD versio
 tDirectInput8Create oDirectInput8Create = nullptr;
 
 BYTE *codeBase, *codeEnd, *dataBase, *dataEnd;
-std::wofstream logFile("dinput8.log", std::ios_base::out);
-iniConfig config(L".\\dinput8.ini");
+std::ofstream logFile("dinput8.log", std::ios_base::out);
+iniConfig config(".\\dinput8.ini");
 
 void InitHooks()
 {
@@ -49,7 +49,7 @@ void Initialize()
 	logFile << "MH_Initialize: " << MH_StatusToString(MH_Initialize()) << std::endl;
 	InitHooks();
 
-	wstring loadLibrary = config.getStrW(L"main", L"loadLibrary", wstring());
+	string loadLibrary = config.getStr("main", "loadLibrary");
 	if (!loadLibrary.empty())
 	{
 		HMODULE hMod = LoadLibrary(loadLibrary.c_str());
@@ -58,9 +58,9 @@ void Initialize()
 
 	if (!oDirectInput8Create)
 	{
-		WCHAR syspath[512];
-		GetSystemDirectory(syspath, 512);
-		wcscat_s(syspath, L"\\dinput8.dll");
+		CHAR syspath[MAX_PATH];
+		GetSystemDirectory(syspath, MAX_PATH);
+		strcat_s(syspath, "\\dinput8.dll");
 		HMODULE hMod = LoadLibrary(syspath);
 		oDirectInput8Create = (tDirectInput8Create)GetProcAddress(hMod, "DirectInput8Create");
 	}
@@ -103,7 +103,7 @@ bool Hooks::Find(LPCSTR msg, BYTE* start, BYTE* end, BYTE *signature, size_t len
 				break;
 			if (i == len - 1)
 			{
-				logFile << msg << " pointer: " << *offset << std::endl;
+				logFile << msg << " pointer: " << (LPVOID)*offset << std::endl;
 				return true;
 			}
 		}

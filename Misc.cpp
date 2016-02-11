@@ -66,12 +66,12 @@ void setMisc(const void *value, void *clientData)
 	*(bool*)clientData = *(bool*)value;
 	if (clientData == &charCustomization)
 	{
-		config.setBool(L"main", L"charCustomization", charCustomization);
+		config.setBool("main", "charCustomization", charCustomization);
 		Hooks::SwitchHook("CharCustomization", pCharCustomization, charCustomization);
 	}
 	else if (clientData == &extendVerticalCam)
 	{
-		config.setBool(L"main", L"extendVerticalCam", extendVerticalCam);
+		config.setBool("main", "extendVerticalCam", extendVerticalCam);
 		Hooks::SwitchHook("ExtendVerticalCam1", pExtendVerticalCam1, extendVerticalCam);
 		Hooks::SwitchHook("ExtendVerticalCam2", pExtendVerticalCam2, extendVerticalCam);
 		Hooks::SwitchHook("ExtendVerticalCamBow1", pExtendVerticalBow1, extendVerticalCam);
@@ -79,7 +79,7 @@ void setMisc(const void *value, void *clientData)
 	}
 	else if (clientData == &disableAutoCam)
 	{
-		config.setBool(L"main", L"disableAutoCam", disableAutoCam);
+		config.setBool("main", "disableAutoCam", disableAutoCam);
 		Hooks::SwitchHook("DisableAutoCamV", pAutoCamV, disableAutoCam);
 		Hooks::SwitchHook("DisableAutoCamH", pAutoCamH, disableAutoCam);
 	}
@@ -90,7 +90,7 @@ void Hooks::Misc()
 	BYTE sigChar[] = { 0x83, 0xBB, 0x84, 0x02, 0x00, 0x00, 0x0B };	//cmp	dword ptr [ebx+284h], 0Bh
 	if (FindSignature("CharCustomization", sigChar, &pCharCustomization))
 	{
-		charCustomization = config.getBool(L"main", L"charCustomization", false);
+		charCustomization = config.getBool("main", "charCustomization", false);
 		CreateHook("CharCustomization", pCharCustomization, &HCharCustomization, &oCharCustomization, charCustomization);
 		TweakBarAddCB("miscChar", TW_TYPE_BOOLCPP, setMisc, getMisc, &charCustomization, "group=Misc label='Char customization'");
 	}
@@ -111,7 +111,7 @@ void Hooks::Misc()
 		pExtendVerticalBow1 += 8;
 		pExtendVerticalBow2 = pExtendVerticalBow1 + 0x27;
 
-		extendVerticalCam = config.getBool(L"main", L"extendVerticalCam", false);
+		extendVerticalCam = config.getBool("main", "extendVerticalCam", false);
 		CreateHook("ExtendVerticalCam1", pExtendVerticalCam1, &HExtendVerticalCam1, &oExtendVerticalCam1, extendVerticalCam);
 		CreateHook("ExtendVerticalCam2", pExtendVerticalCam2, &HExtendVerticalCam2, &oExtendVerticalCam2, extendVerticalCam);
 		CreateHook("ExtendVerticalCamBow1", pExtendVerticalBow1, &HExtendVerticalBow1, &oExtendVerticalBow1, extendVerticalCam);
@@ -126,7 +126,7 @@ void Hooks::Misc()
 	if (FindSignature("DisableAutoCamV", sigV, &pAutoCamV) && 
 		FindSignature("DisableAutoCamH", sigH, &pAutoCamH))
 	{
-		disableAutoCam = config.getBool(L"main", L"disableAutoCam", false);
+		disableAutoCam = config.getBool("main", "disableAutoCam", false);
 		CreateHook("DisableAutoCamV", pAutoCamV, &HAutoCamV, nullptr, disableAutoCam);
 		CreateHook("DisableAutoCamH", pAutoCamH, &HAutoCamH, nullptr, disableAutoCam);
 		oAutoCamV = pAutoCamV + 7;

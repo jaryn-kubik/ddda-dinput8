@@ -48,7 +48,7 @@ void __declspec(naked) HAffinity()
 void setAffinity(const void *value, void *clientData)
 {
 	if (clientData == &iAffinityMod)
-		config.setInt(L"cheats", L"affinityMod", iAffinityMod = *(AffinityMod*)value);
+		config.setInt("cheats", "affinityMod", iAffinityMod = *(AffinityMod*)value);
 	else if (pAffinityLast)
 		pAffinityLast[(DWORD)clientData / 2] = *(UINT16*)value;
 }
@@ -63,7 +63,7 @@ void getAffinity(void *value, void *clientData)
 
 void addAffinity(TwBar *bar)
 {
-	iAffinityMod = (AffinityMod)config.getInt(L"cheats", L"affinityMod", Disabled);
+	iAffinityMod = (AffinityMod)config.getInt("cheats", "affinityMod", Disabled);
 	TwAddVarCB(bar, "affinityMod", TwDefineEnum("AffinityMod", affinityModEV, 6), setAffinity, getAffinity, &iAffinityMod, "group=Affinity label=Mode");
 	TwAddVarCB(bar, "affinityLast", TW_TYPE_UINT16, setAffinity, getAffinity, (LPVOID)0x8B8, "group=Affinity label='Last changed' max=900");
 	TwAddVarCB(bar, "affinityAtt", TW_TYPE_UINT16, setAffinity, getAffinity, (LPVOID)0x8BA, "group=Affinity label=Attitude hexa=true");

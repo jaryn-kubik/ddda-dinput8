@@ -1,6 +1,6 @@
 #pragma once
 
-extern std::wofstream logFile;
+extern std::ofstream logFile;
 extern iniConfig config;
 
 namespace Hooks

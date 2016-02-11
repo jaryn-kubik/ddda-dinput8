@@ -1,52 +1,38 @@
 ﻿#include "stdafx.h"
 #include "iniConfig.h"
 
-iniConfig::iniConfig(LPCWSTR fileName)
+iniConfig::iniConfig(LPCSTR fileName)
 {
 	this->fileName = fileName;
 
 	SetLastError(ERROR_SUCCESS);
-	GetPrivateProfileSectionNamesW(buffer, 512, fileName);
+	GetPrivateProfileSectionNamesA(buffer, 512, fileName);
 	if (GetLastError() == ERROR_FILE_NOT_FOUND)
 		logFile << "Config: file not found!" << std::endl;
 }
 
-bool iniConfig::get(LPCWSTR section, LPCWSTR key, bool allowEmpty)
+bool iniConfig::get(LPCSTR section, LPCSTR key, bool allowEmpty)
 {
 	SetLastError(ERROR_SUCCESS);
-	DWORD result = GetPrivateProfileStringW(section, key, nullptr, buffer, 512, fileName);
+	DWORD result = GetPrivateProfileStringA(section, key, nullptr, buffer, 512, fileName);
 	return GetLastError() != ERROR_FILE_NOT_FOUND && (allowEmpty || result > 0);
 }
 
 template <typename T>
-T printError(LPCWSTR section, LPCWSTR key, T defValue)
+T printError(LPCSTR section, LPCSTR key, T defValue)
 {
 	logFile << "Config: " << section << "->" << key << " has invalid value, using default (" << defValue << ")" << std::endl;
 	return defValue;
 }
 
-template <typename T>
-std::basic_string<T> printError(LPCWSTR section, LPCWSTR key, std::basic_string<T> defValue)
+string iniConfig::getStr(LPCSTR section, LPCSTR key, string defValue)
 {
-	logFile << "Config: " << section << "->" << key << " has invalid value, using default (" << defValue.c_str() << ")" << std::endl;
-	return defValue;
-}
-
-string iniConfig::getStrA(LPCWSTR section, LPCWSTR key, string defValue)
-{
-	if (get(section, key, true))
-		return std::wstring_convert<std::codecvt<wchar_t, char, mbstate_t>>().to_bytes(buffer);
-	return printError(section, key, defValue);
-}
-
-wstring iniConfig::getStrW(LPCWSTR section, LPCWSTR key, wstring defValue)
-{
-	if (get(section, key, true))
+	if (get(section, key, defValue.empty()))
 		return buffer;
 	return printError(section, key, defValue);
 }
 
-int iniConfig::getInt(LPCWSTR section, LPCWSTR key, int defValue)
+int iniConfig::getInt(LPCSTR section, LPCSTR key, int defValue)
 {
 	try
 	{
@@ -57,7 +43,7 @@ int iniConfig::getInt(LPCWSTR section, LPCWSTR key, int defValue)
 	return printError(section, key, defValue);
 }
 
-unsigned int iniConfig::getUInt(LPCWSTR section, LPCWSTR key, unsigned defValue)
+unsigned int iniConfig::getUInt(LPCSTR section, LPCSTR key, unsigned defValue)
 {
 	try
 	{
@@ -68,7 +54,7 @@ unsigned int iniConfig::getUInt(LPCWSTR section, LPCWSTR key, unsigned defValue)
 	return printError(section, key, defValue);
 }
 
-float iniConfig::getFloat(LPCWSTR section, LPCWSTR key, float defValue)
+float iniConfig::getFloat(LPCSTR section, LPCSTR key, float defValue)
 {
 	try
 	{
@@ -79,7 +65,7 @@ float iniConfig::getFloat(LPCWSTR section, LPCWSTR key, float defValue)
 	return printError(section, key, defValue);
 }
 
-double iniConfig::getDouble(LPCWSTR section, LPCWSTR key, double defValue)
+double iniConfig::getDouble(LPCSTR section, LPCSTR key, double defValue)
 {
 	try
 	{
@@ -90,17 +76,15 @@ double iniConfig::getDouble(LPCWSTR section, LPCWSTR key, double defValue)
 	return printError(section, key, defValue);
 }
 
-bool iniConfig::getBool(LPCWSTR section, LPCWSTR key, bool defValue)
+bool iniConfig::getBool(LPCSTR section, LPCSTR key, bool defValue)
 {
 	try
 	{
 		if (get(section, key))
 		{
-			wstring str(buffer);
-			transform(str.begin(), str.end(), str.begin(), tolower);
-			if (str == L"true" || str == L"yes" || str == L"on")
+			if (_stricmp("true", buffer) == 0 || _stricmp("on", buffer) == 0)
 				return true;
-			if (str == L"false" || str == L"no" || str == L"off")
+			if (_stricmp("false", buffer) == 0 || _stricmp("off", buffer) == 0)
 				return false;
 		}
 	}
@@ -108,50 +92,49 @@ bool iniConfig::getBool(LPCWSTR section, LPCWSTR key, bool defValue)
 	return printError(section, key, defValue);
 }
 
-int iniConfig::getEnum(LPCWSTR section, LPCWSTR key, int defValue, std::map<wstring, int> map)
+int iniConfig::getEnum(LPCSTR section, LPCSTR key, int defValue, std::pair<int, LPCSTR> map[], int size)
 {
 	try
 	{
 		if (get(section, key))
 		{
-			wstring str(buffer);
-			transform(str.begin(), str.end(), str.begin(), tolower);
-			return map.at(str);
+			for (int i = 0; i < size; i++)
+				if (_stricmp(map[i].second, buffer) == 0)
+					return map[i].first;
 		}
 	}
 	catch (...) {}
 	return printError(section, key, defValue);
 }
 
-void iniConfig::setStrA(LPCWSTR section, LPCWSTR key, string value) const
+void iniConfig::setStr(LPCSTR section, LPCSTR key, string value) const
 {
-	wstring str = std::wstring_convert<std::codecvt<wchar_t, char, mbstate_t>>().from_bytes(value);
-	WritePrivateProfileString(section, key, (L" " + str).c_str(), fileName);
+	WritePrivateProfileStringA(section, key, (" " + value).c_str(), fileName);
 }
 
-void iniConfig::setStrW(LPCWSTR section, LPCWSTR key, wstring value) const
+void iniConfig::setInt(LPCSTR section, LPCSTR key, int value) const { setStr(section, key, std::to_string(value)); }
+void iniConfig::setUInt(LPCSTR section, LPCSTR key, unsigned value, bool hex) const
 {
-	WritePrivateProfileString(section, key, (L" " + value).c_str(), fileName);
+	if (hex)
+	{
+		char buf[16];
+		snprintf(buf, sizeof buf, "0x%X8", value);
+		setStr(section, key, buf);
+	}
+	else
+		setStr(section, key, std::to_string(value));
 }
 
-template<typename T> wstring intToHex(T value)
+void iniConfig::setFloat(LPCSTR section, LPCSTR key, float value) const { setStr(section, key, std::to_string(value)); }
+void iniConfig::setDouble(LPCSTR section, LPCSTR key, double value) const { setStr(section, key, std::to_string(value)); }
+void iniConfig::setBool(LPCSTR section, LPCSTR key, bool value) const { setStr(section, key, value ? "on" : "off"); };
+void iniConfig::setEnum(LPCSTR section, LPCSTR key, int value, std::pair<int, LPCSTR> map[], int size) const
 {
-	std::wstringstream stream;
-	stream << std::showbase << std::setfill(L'0') << std::setw(sizeof(T) * 2) << std::hex << value;
-	return stream.str();
+	for (int i = 0; i < size; i++)
+		if (map[i].first == value)
+		{
+			setStr(section, key, map[i].second);
+			return;
+		}
+	setStr(section, key, std::to_string(value));
 }
-
-wstring enumToString(int value, std::map<wstring, int> map)
-{
-	for (auto &v : map)
-		if (v.second == value)
-			return v.first;
-	return std::to_wstring(value);
-}
-
-void iniConfig::setInt(LPCWSTR section, LPCWSTR key, int value, bool hex) const { setStrW(section, key, hex ? intToHex(value) : std::to_wstring(value)); }
-void iniConfig::setUInt(LPCWSTR section, LPCWSTR key, unsigned value, bool hex) const { setStrW(section, key, hex ? intToHex(value) : std::to_wstring(value)); }
-void iniConfig::setFloat(LPCWSTR section, LPCWSTR key, float value) const { setStrW(section, key, std::to_wstring(value)); }
-void iniConfig::setDouble(LPCWSTR section, LPCWSTR key, double value) const { setStrW(section, key, std::to_wstring(value)); }
-void iniConfig::setBool(LPCWSTR section, LPCWSTR key, bool value) const { setStrW(section, key, value ? L"on" : L"off"); };
-void iniConfig::setEnum(LPCWSTR section, LPCWSTR key, int value, std::map<wstring, int> map) const { setStrW(section, key, enumToString(value, map)); }

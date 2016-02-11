@@ -20,11 +20,11 @@ void __declspec(naked) HConnect()
 
 void Hooks::Server()
 {
-	if (config.getBool(L"server", L"enabled", false))
+	if (config.getBool("server", "enabled", false))
 	{
-		host = config.getStrA(L"server", L"host", "dune.dragonsdogma.com");
+		host = config.getStr("server", "host", "dune.dragonsdogma.com");
 		hostPtr = host.c_str();
-		port = config.getUInt(L"server", L"port", 12501);
+		port = config.getUInt("server", "port", 12501);
 		logFile << "Server: using " << host.c_str() << ":" << port << std::endl;
 
 		BYTE signature[] =
