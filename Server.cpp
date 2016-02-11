@@ -2,35 +2,19 @@
 #include "Server.h"
 
 string host;
+const char *hostPtr;
 UINT16 port;
+LPVOID oConnect;
 
-typedef UINT32(*tConnnect)(void* pProto, char* host, UINT16 port);
-tConnnect oConnect;
-
-UINT32 __declspec(naked) HConnect()
+void __declspec(naked) HConnect()
 {
 	__asm
 	{
-		push	ebp;
-		mov		ebp, esp;
-		sub		esp, __LOCAL_SIZE;
-	}
-
-	const char* hostArg;
-	hostArg = host.c_str();
-
-	_asm
-	{
-		push	port;		// push dword ptr[ebp + 0x04] // port		
-		push	hostArg;	// push dword ptr[ebp + 0x08] // host
-		call	oConnect;
-	}
-
-	_asm
-	{
-		mov		esp, ebp;
-		pop		ebp;
-		ret		8;
+		add		esp, 12;
+		push	port;
+		push	hostPtr;
+		sub		esp, 4;
+		jmp		oConnect;
 	}
 }
 
@@ -38,10 +22,10 @@ void Hooks::Server()
 {
 	if (config.getBool(L"server", L"enabled", false))
 	{
-		logFile << "Server: enabled" << std::endl;
-
 		host = config.getStrA(L"server", L"host", "dune.dragonsdogma.com");
+		hostPtr = host.c_str();
 		port = config.getUInt(L"server", L"port", 12501);
+		logFile << "Server: using " << host.c_str() << ":" << port << std::endl;
 
 		BYTE signature[] =
 		{
