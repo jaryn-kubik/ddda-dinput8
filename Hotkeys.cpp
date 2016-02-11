@@ -29,10 +29,32 @@ void hotkeyStart(DWORD vKey)
 	QueueUserWorkItem(hotkeyProc, (LPVOID)vKey, WT_EXECUTEDEFAULT);
 }
 
+bool borderlessFullscreen = false;
+void setBorderlessFullscreen(HWND hwnd)
+{
+	LONG lStyle = GetWindowLong(hwnd, GWL_STYLE);
+	lStyle &= ~(WS_CAPTION | WS_THICKFRAME | WS_SYSMENU | WS_MAXIMIZE | WS_MINIMIZE);
+	SetWindowLong(hwnd, GWL_STYLE, lStyle);
+	LONG lExStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+	lExStyle &= ~(WS_EX_DLGMODALFRAME | WS_EX_COMPOSITED | WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE | WS_EX_LAYERED | WS_EX_STATICEDGE | WS_EX_TOOLWINDOW | WS_EX_APPWINDOW);
+	SetWindowLong(hwnd, GWL_EXSTYLE, lExStyle);
+
+	HMONITOR monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+	MONITORINFO info;
+	info.cbSize = sizeof(MONITORINFO);
+	GetMonitorInfo(monitor, &info);
+	int width = info.rcMonitor.right - info.rcMonitor.left;
+	int height = info.rcMonitor.bottom - info.rcMonitor.top;
+	SetWindowPos(hwnd, nullptr, info.rcMonitor.left, info.rcMonitor.top, width, height, SWP_NOSENDCHANGING | SWP_NOZORDER | SWP_NOOWNERZORDER);
+}
+
 BYTE **pSave = nullptr;
 WNDPROC oWndProc;
 LRESULT CALLBACK HWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+	if (msg == WM_SIZE && borderlessFullscreen)
+		setBorderlessFullscreen(hwnd);
+
 	if (Hooks::TweakBarEvent(hwnd, msg, wParam, lParam))
 		return 0;
 	if (msg != WM_KEYDOWN || (HIWORD(lParam) & KF_REPEAT) != 0)
@@ -53,6 +75,7 @@ void Hooks::Hotkeys()
 {
 	if (config.getBool("hotkeys", "enabled", false))
 	{
+		borderlessFullscreen = config.getBool("main", "borderlessFullscreen", false);
 		menuPause = config.getUInt("hotkeys", "menuPause", 500);
 		loadHotkey("keyTweakBar", VK_F12, []() { TweakBarSwitch(); });
 		loadHotkey("keySave", VK_F5, []() { if (pSave && *pSave) (*pSave)[0x21AFD6] = 1; });
