@@ -2,7 +2,6 @@
 #include "InGameClock.h"
 #include "d3d9.h"
 
-DWORD **pClock;
 RECT outLeft, outTop, outRight, outBottom, rect;
 LPD3DXFONT pFont, pNewFont = nullptr;
 LPD3DXSPRITE pSprite;
@@ -43,10 +42,10 @@ void onResetDevice(LPDIRECT3DDEVICE9 pD3DDevice, D3DPRESENT_PARAMETERS* pParams)
 CHAR clockBuf[] = "00:00";
 void onEndScene(LPDIRECT3DDEVICE9 pD3DDevice)
 {
-	if (clockEnabled && pClock && *pClock)
+	if (clockEnabled && pBase && *pBase)
 	{
-		DWORD h = (*pClock)[0xB876C / 4];
-		DWORD m = (*pClock)[0xB8770 / 4];
+		DWORD h = (*pBase)[0xB876C / 4];
+		DWORD m = (*pBase)[0xB8770 / 4];
 		if (clockTimebase != 1)
 		{
 			DWORD t = h * 60 + m;
@@ -81,22 +80,22 @@ void onEndScene(LPDIRECT3DDEVICE9 pD3DDevice)
 void Hooks::InGameClockSwitch() { clockEnabled = !clockEnabled; }
 void Hooks::InGameClockInc(BYTE minutes)
 {
-	if (pClock && *pClock)
-		(*pClock)[0xB8768 / 4] += minutes * 60000;
+	if (pBase && *pBase)
+		(*pBase)[0xB8768 / 4] += minutes * 60000;
 }
 
 void Hooks::InGameClockDec(BYTE minutes)
 {
-	if (pClock && *pClock)
+	if (pBase && *pBase)
 	{
-		DWORD time = (*pClock)[0xB8768 / 4];
+		DWORD time = (*pBase)[0xB8768 / 4];
 		if (time < minutes * 60000U)
 		{
-			if ((*pClock)[0xB8760 / 4] > 0)
-				(*pClock)[0xB8760 / 4]--;
+			if ((*pBase)[0xB8760 / 4] > 0)
+				(*pBase)[0xB8760 / 4]--;
 			time += 3600000 * 24;
 		}
-		(*pClock)[0xB8768 / 4] = time - minutes * 60000;
+		(*pBase)[0xB8768 / 4] = time - minutes * 60000;
 	}
 }
 
@@ -184,12 +183,6 @@ void Hooks::InGameClock()
 	clockPositionV = config.getEnum("d3d9", "inGameClockPositionVertical", DT_TOP, clockPosVMap, 2);
 	clockPositionH = config.getEnum("d3d9", "inGameClockPositionHorizontal", DT_RIGHT, clockPosHMap, 3);
 
-	BYTE sig[] = { 0x8B, 0x15, 0xCC, 0xCC, 0xCC, 0xCC, 0x33, 0xDB, 0x8B, 0xF8 };
-	BYTE *pOffset;
-	if (!FindSignature("InGameClock", sig, &pOffset))
-		return;
-
-	pClock = (DWORD**)*(LPDWORD)(pOffset + 2);
 	D3D9Add(onCreateDevice, onLostDevice, onResetDevice, onEndScene);
 	TweakBarAdd(addInGameClock);
 

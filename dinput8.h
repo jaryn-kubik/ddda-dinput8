@@ -2,6 +2,7 @@
 
 extern std::ofstream logFile;
 extern iniConfig config;
+extern DWORD **pBase;
 
 namespace Hooks
 {

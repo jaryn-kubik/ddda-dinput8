@@ -10,6 +10,7 @@
 #include "PlayerStats.h"
 #include "Affinity.h"
 #include "Server.h"
+#include "Portcrystals.h"
 
 typedef HRESULT(WINAPI *tDirectInput8Create)(HINSTANCE inst_handle, DWORD version, const IID& r_iid, LPVOID* out_wrapper, LPUNKNOWN p_unk);
 tDirectInput8Create oDirectInput8Create = nullptr;
@@ -17,9 +18,15 @@ tDirectInput8Create oDirectInput8Create = nullptr;
 BYTE *codeBase, *codeEnd, *dataBase, *dataEnd;
 std::ofstream logFile("dinput8.log", std::ios_base::out);
 iniConfig config(".\\dinput8.ini");
+DWORD **pBase;
 
 void InitHooks()
 {
+	BYTE sig[] = { 0x8B, 0x15, 0xCC, 0xCC, 0xCC, 0xCC, 0x33, 0xDB, 0x8B, 0xF8 };
+	BYTE *pOffset;
+	if (Hooks::FindSignature("BasePointer", sig, &pOffset))
+		pBase = *(DWORD***)(pOffset + 2);
+
 	Hooks::SaveBackup();
 	Hooks::Hotkeys();
 	Hooks::Misc();
@@ -28,6 +35,7 @@ void InitHooks()
 	Hooks::Server();
 	if (Hooks::D3D9())
 	{
+		Hooks::Portcrystals();
 		Hooks::PlayerStats();
 		Hooks::ItemEditor();
 		Hooks::InGameClock();

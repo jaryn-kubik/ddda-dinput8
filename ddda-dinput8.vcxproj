@@ -109,6 +109,7 @@
     <ClCompile Include="dinput8.cpp" />
     <ClCompile Include="iniConfig.cpp" />
     <ClCompile Include="PlayerStats.cpp" />
+    <ClCompile Include="Portcrystals.cpp" />
     <ClCompile Include="SaveBackup.cpp" />
     <ClCompile Include="Server.cpp" />
     <ClCompile Include="stdafx.cpp">
@@ -129,6 +130,7 @@
     <ClInclude Include="include\MinHook.h" />
     <ClInclude Include="iniConfig.h" />
     <ClInclude Include="PlayerStats.h" />
+    <ClInclude Include="Portcrystals.h" />
     <ClInclude Include="README.md" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SaveBackup.h" />

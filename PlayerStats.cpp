@@ -1,24 +1,23 @@
 ﻿#include "stdafx.h"
 #include "PlayerStats.h"
 
-DWORD **pMainPointer;
 void setStats(const void *value, void *clientData)
 {
-	if (pMainPointer && *pMainPointer)
+	if (pBase && *pBase)
 	{
 		DWORD offset = (DWORD)clientData;
 		size_t size = (offset >= 0xA7808 || offset <= 0xA7808 + 24 * 11) ? 24 : 4;
-		memcpy(*pMainPointer + offset / 4, value, size);
+		memcpy(*pBase + offset / 4, value, size);
 	}
 }
 
 void getStats(void *value, void *clientData)
 {
-	if (pMainPointer && *pMainPointer)
+	if (pBase && *pBase)
 	{
 		DWORD offset = (DWORD)clientData;
 		size_t size = (offset >= 0xA7808 || offset <= 0xA7808 + 24 * 11) ? 24 : 4;
-		memcpy(value, *pMainPointer + offset / 4, size);
+		memcpy(value, *pBase + offset / 4, size);
 	}
 }
 
@@ -42,12 +41,6 @@ TwEnumVal skillsAugments[], skillsSword[], skillsLongsword[], skillsDagger[], sk
 TwEnumVal skillsShield[], skillsMagickShield[], skillsBow[], skillsLongbow[], skillsMagickBow[];
 void addPlayerStats(TwBar *bar)
 {
-	BYTE *pOffset;
-	BYTE sig1[] = { 0x8B, 0x15, 0xCC, 0xCC, 0xCC, 0xCC, 0x33, 0xDB, 0x8B, 0xF8 };
-	if (!Hooks::FindSignature("PlayerStats", sig1, &pOffset))
-		return;
-	pMainPointer = (DWORD**)*(LPDWORD)(pOffset + 2);
-
 	//player
 	TwAddVarCB(bar, "playerLevel", TW_TYPE_UINT32, setStats, getStats, (LPVOID)0xA7DD0, "group=Player label=Level");
 	TwAddVarCB(bar, "playerRC", TW_TYPE_UINT32, setStats, getStats, (LPVOID)0xA7A1C, "group=Player label=Rift Crystals");

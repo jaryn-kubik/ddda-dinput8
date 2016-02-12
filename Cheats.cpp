@@ -23,17 +23,17 @@ void thirdSkillLevelsInit()
 		thirdSkillLevels[temp[i]] = true;
 }
 
-DWORD *pSomeBase;
 int __stdcall GetSkillTier(UINT16 skill, DWORD address)
 {
-	if (!thirdSkillLevels[skill & 0x1FF])
-		return 0;
-
-	address -= *pSomeBase;
-	return address == 0xA7DFC ||	//player
-		address == 0xA85EC ||		//main pawn
-		address == 0xA9C4C ||		//pawn 1
-		address == 0xAB2AC;			//pawn 2
+	if (thirdSkillLevels[skill & 0x1FF] && pBase && *pBase)
+	{
+		address -= (DWORD)*pBase;
+		return address == 0xA7DFC ||	//player
+			address == 0xA85EC ||		//main pawn
+			address == 0xA9C4C ||		//pawn 1
+			address == 0xAB2AC;			//pawn 2
+	}
+	return 0;
 }
 
 bool skillLevel;
@@ -190,12 +190,6 @@ void Hooks::Cheats()
 	BYTE sigSkill[] = { 0x85, 0x44, 0x8F, 0x74, 0x0F, 0x95, 0xC2 };
 	if (FindSignature("Cheat (thirdSkillLevel)", sigSkill, &pSkillLevel))
 	{
-		BYTE *pOffset;
-		BYTE sig1[] = { 0x8B, 0x15, 0xCC, 0xCC, 0xCC, 0xCC, 0x33, 0xDB, 0x8B, 0xF8 };
-		if (!FindSignature("Cheat (thirdSkillLevel)", sig1, &pOffset))
-			return;
-		pSomeBase = *(DWORD**)(pOffset + 2);
-
 		skillLevel = config.getBool("cheats", "thirdSkillLevel", false);
 		CreateHook("Cheat (thirdSkillLevel)", pSkillLevel, &HSkillLevel, &oSkillLevel, skillLevel);
 		TweakBarAddCB("miscSkills", TW_TYPE_BOOLCPP, setCheats, getCheats, &skillLevel, "group=Misc label='3rd level skills'");
