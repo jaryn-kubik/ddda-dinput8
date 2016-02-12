@@ -6,7 +6,7 @@ void setStats(const void *value, void *clientData)
 	if (pBase && *pBase)
 	{
 		DWORD offset = (DWORD)clientData;
-		size_t size = (offset >= 0xA7808 || offset <= 0xA7808 + 24 * 11) ? 24 : 4;
+		size_t size = (offset >= 0xA7808 && offset <= 0xA7808 + 24 * 11) ? 24 : 4;
 		memcpy(*pBase + offset / 4, value, size);
 	}
 }
@@ -16,7 +16,7 @@ void getStats(void *value, void *clientData)
 	if (pBase && *pBase)
 	{
 		DWORD offset = (DWORD)clientData;
-		size_t size = (offset >= 0xA7808 || offset <= 0xA7808 + 24 * 11) ? 24 : 4;
+		size_t size = (offset >= 0xA7808 && offset <= 0xA7808 + 24 * 11) ? 24 : 4;
 		memcpy(value, *pBase + offset / 4, size);
 	}
 }
@@ -43,9 +43,9 @@ void addPlayerStats(TwBar *bar)
 {
 	//player
 	TwAddVarCB(bar, "playerLevel", TW_TYPE_UINT32, setStats, getStats, (LPVOID)0xA7DD0, "group=Player label=Level");
-	TwAddVarCB(bar, "playerRC", TW_TYPE_UINT32, setStats, getStats, (LPVOID)0xA7A1C, "group=Player label=Rift Crystals");
+	TwAddVarCB(bar, "playerRC", TW_TYPE_UINT32, setStats, getStats, (LPVOID)0xA7A1C, "group=Player label='Rift Crystals'");
 	TwAddVarCB(bar, "playerGold", TW_TYPE_UINT32, setStats, getStats, (LPVOID)0xA7A18, "group=Player label=Gold");
-	TwAddVarCB(bar, "playerDCP", TW_TYPE_UINT32, setStats, getStats, (LPVOID)0xA7A14, "group=Player label=Discipline Points");
+	TwAddVarCB(bar, "playerDCP", TW_TYPE_UINT32, setStats, getStats, (LPVOID)0xA7A14, "group=Player label='Discipline Points'");
 	TwAddVarCB(bar, "playerXP", TW_TYPE_UINT32, setStats, getStats, (LPVOID)0xA7994, "group=Player label=XP");
 
 	TwAddVarCB(bar, "playerHPC", TW_TYPE_FLOAT, setStats, getStats, (LPVOID)0xA796C, "group=PStats label='HP Current'");

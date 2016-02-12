@@ -2,7 +2,7 @@
 #include "Portcrystals.h"
 
 LPVOID oMapClosest, oMapCursor;
-float pMapClosest[3] = { 0 }, pMapCursor[3] = { 0 };
+DWORD pMapClosest[3] = { 0 }, pMapCursor[3] = { 0 };
 void __declspec(naked) HMapClosest()
 {
 	__asm	mov		edx, [eax];
@@ -37,7 +37,7 @@ void getPorts(void *value, void *clientData)
 		memcpy(value, *pBase + (DWORD)clientData / 4, 4 * 3);
 }
 
-void setPort(void *clientData, float *target)
+void setPort(void *clientData, DWORD *target)
 {
 	if (pBase && *pBase)
 	{
