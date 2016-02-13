@@ -85,6 +85,40 @@ void setMisc(const void *value, void *clientData)
 	}
 }
 
+LPVOID oWeather;
+void __declspec(naked) HWeather()
+{
+	__asm
+	{
+		cmp		byte ptr[ecx + 0xB33A8], 0;
+		je		flagZero;
+		cmp		word ptr[ecx + 0x34], 0xDC;
+		jmp		oWeather;
+
+	flagZero:
+		cmp		word ptr[ecx + 0x34], 0xE6;
+		je		unsetZero;
+		cmp		ecx, ecx;
+		jmp		oWeather;
+
+	unsetZero:
+		cmp		ecx, 0;
+		jmp		oWeather;
+	}
+}
+
+void getWeather(void *value, void *clientData)
+{
+	if (pBase && *pBase)
+		*(DWORD*)value = (*pBase)[(DWORD)clientData / 4];
+}
+
+void setWeather(const void *value, void *clientData)
+{
+	if (pBase && *pBase)
+		(*pBase)[(DWORD)clientData / 4] = *(DWORD*)value;
+}
+
 void Hooks::Misc()
 {
 	BYTE sigChar[] = { 0x83, 0xBB, 0x84, 0x02, 0x00, 0x00, 0x0B };	//cmp	dword ptr [ebx+284h], 0Bh
@@ -123,7 +157,7 @@ void Hooks::Misc()
 					0x0F, 0x85, 0xCC, 0xCC, 0x00, 0x00 };		//jnz
 	BYTE sigH[] = { 0x80, 0xBA, 0xF1, 0x02, 0x00, 0x00, 0x00,	//cmp	byte ptr [edx+2F1h], 0
 					0x0F, 0x85, 0xCC, 0xCC, 0x00, 0x00 };		//jnz
-	if (FindSignature("DisableAutoCamV", sigV, &pAutoCamV) && 
+	if (FindSignature("DisableAutoCamV", sigV, &pAutoCamV) &&
 		FindSignature("DisableAutoCamH", sigH, &pAutoCamH))
 	{
 		disableAutoCam = config.getBool("main", "disableAutoCam", false);
@@ -133,5 +167,22 @@ void Hooks::Misc()
 		oAutoCamH = pAutoCamH + 7;
 		TweakBarAddCB("miscAutoCam", TW_TYPE_BOOLCPP, setMisc, getMisc, &disableAutoCam, "group=Misc label='Disable autocam'");
 	}
+
+	BYTE *pOffset;
+	BYTE sigWeather[] = { 0x80, 0xB9, 0xA8, 0x33, 0x0B, 0x00, 0x00, 0x74, 0x15 };
+	if (FindSignature("Weather", sigWeather, &pOffset))
+	{
+		CreateHook("Weather", pOffset, &HWeather, nullptr);
+		oWeather = pOffset + 7;
+	}
+
+	TweakBarAdd([](TwBar *b)
+	{
+		TwEnumVal weatherEV[] = { { 0, "Clear sky" },{ 1, "Cloudy" },{ 2, "Foggy" },{ 3, "Vulcanic (post-game)" } };
+		TwType weatherEnum = TwDefineEnum("weatherEnum", weatherEV, 4);
+		TwAddVarCB(b, "miscWeather", weatherEnum, setWeather, getWeather, (LPVOID)0xB8780, "group=Misc label=Weather");
+		TwAddVarCB(b, "miscWeatherExtra", TW_TYPE_BOOL32, setWeather, getWeather, (LPVOID)0xB33A8, "group=Misc label='Post-game weather'");
+	});
+
 	TweakBarDefine("DDDAFix/Misc opened=false");
 }
