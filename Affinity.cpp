@@ -67,7 +67,7 @@ void addAffinity(TwBar *bar)
 	TwAddVarCB(bar, "affinityMod", TwDefineEnum("AffinityMod", affinityModEV, 6), setAffinity, getAffinity, &iAffinityMod, "group=Affinity label=Mode");
 	TwAddVarCB(bar, "affinityLast", TW_TYPE_UINT16, setAffinity, getAffinity, (LPVOID)0x8B8, "group=Affinity label='Last changed' max=900");
 	TwAddVarCB(bar, "affinityAtt", TW_TYPE_UINT16, setAffinity, getAffinity, (LPVOID)0x8BA, "group=Affinity label=Attitude hexa=true");
-	TwDefine("DDDAFix/Affinity group=Misc opened=false");
+	TwDefine("DDDAFix/Affinity group=Main opened=false");
 }
 
 void Hooks::Affinity()

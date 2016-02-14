@@ -10,4 +10,7 @@ namespace Hooks
 	void TweakBarAddRO(const char* name, TwType type, const void *var, const char* def);
 	void TweakBarAddCB(const char* name, TwType type, TwSetVarCallback setCallback, TwGetVarCallback getCallback, void* clientData, const char* def);
 	void TweakBarDefine(const char *def);
+
+	void setBase(const void *value, void *clientData);
+	void getBase(void *value, void *clientData);
 };

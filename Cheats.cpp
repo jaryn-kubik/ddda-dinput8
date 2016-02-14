@@ -58,8 +58,7 @@ void __declspec(naked) HSkillLevel()
 }
 
 int runType;
-LPBYTE pRunType;
-LPVOID oRunType;
+LPBYTE pRunType, oRunType;
 void __declspec(naked) HRunType()
 {
 	__asm
@@ -81,9 +80,8 @@ void __declspec(naked) HRunType()
 	}
 }
 
-float mWeight = 1.0;
-LPBYTE pWeight;
-LPVOID oWeight;
+float mWeight;
+LPBYTE pWeight, oWeight;
 void __declspec(naked) HWeight()
 {
 	__asm	movss	xmm0, mWeight;
@@ -94,8 +92,7 @@ void __declspec(naked) HWeight()
 bool realTime;
 float mTimeInterval;
 UINT rTimeInterval;
-LPBYTE pTimeInterval;
-LPVOID oTimeInterval;
+LPBYTE pTimeInterval, oTimeInterval;
 void __declspec(naked) HTimeInterval()
 {
 	__asm
@@ -116,7 +113,51 @@ void __declspec(naked) HTimeInterval()
 		mov		dword ptr[esp + 8], eax;
 
 	getBack:
-		jmp oTimeInterval;
+		jmp		oTimeInterval;
+	}
+}
+
+const float floatZeroConstant = 0.0f;
+float augmentModsValues[0x80];
+bool augmentMods;
+LPBYTE pAugmentMods, oAugmentMods;
+void __declspec(naked) HAugmentMods()
+{
+	__asm
+	{
+		//cmp		edx, 0x51; //0x4B;// 0x51;
+		lea		eax, [augmentModsValues + edx * 4];
+		movss	xmm0, [eax];
+		comiss	xmm0, floatZeroConstant;
+		jae		modValue;
+		jmp		oAugmentMods;
+
+	modValue:
+		mov		eax, pBase;
+		mov		eax, [eax];
+
+		add		eax, 0xA76D0;	//player
+		cmp		eax, ecx;
+		je		isParty;
+
+		add		eax, 0x7F0;		//main Pawn
+		cmp		eax, ecx;
+		je		isParty;
+
+		add		eax, 0x1660;	//pawn 2
+		cmp		eax, ecx;
+		je		isParty;
+
+		add		eax, 0x1660;	//pawn 3
+		cmp		eax, ecx;
+		je		isParty;
+
+		jmp		oAugmentMods;
+
+	isParty:
+		movss	dword ptr[esi], xmm0;
+		mov		eax, 1;
+		retn	4;
 	}
 }
 
@@ -131,7 +172,14 @@ T switchCheats(LPCVOID value, T &var, LPCSTR msg, LPVOID pTarget)
 	return var;
 }
 
-void getCheats(void *value, void *clientData) { *(UINT32*)value = *(UINT32*)clientData; }
+void getCheats(void *value, void *clientData)
+{
+	if (clientData == &skillLevel || clientData == &augmentMods)
+		*(bool*)value = *(bool*)clientData;
+	else
+		*(UINT32*)value = *(UINT32*)clientData;
+}
+
 void setCheats(const void *value, void *clientData)
 {
 	if (clientData == &runType)
@@ -148,6 +196,15 @@ void setCheats(const void *value, void *clientData)
 		config.setBool("cheats", "thirdSkillLevel", skillLevel = *(bool*)value);
 		Hooks::SwitchHook("Cheat (thirdSkillLevel)", pSkillLevel, skillLevel);
 	}
+	else if (clientData == &augmentMods)
+	{
+		config.setBool("cheats", "augmentMods", augmentMods = *(bool*)value);
+		Hooks::SwitchHook("Cheat (augmentMods)", pAugmentMods, augmentMods);
+	}
+	else if (clientData == augmentModsValues + 0x51)
+		config.setFloat("cheats", "augmentArticulacy", augmentModsValues[0x51] = *(float*)value);
+	else if (clientData == augmentModsValues + 0x4B)
+		config.setFloat("cheats", "augmentRadiance", augmentModsValues[0x4B] = *(float*)value);
 }
 
 void Hooks::Cheats()
@@ -165,7 +222,7 @@ void Hooks::Cheats()
 		{
 			TwEnumVal runTypeMapEV[] = { { -1, "disabled" }, { 0, "town animation" }, { 1, "town animation + stamina" }, { 2, "stamina" } };
 			TwType runTypeEnum = TwDefineEnum("RunTypeEnum", runTypeMapEV, 4);
-			TwAddVarCB(b, "miscRun", runTypeEnum, setCheats, getCheats, &runType, "group=Misc label='Outside run type'");
+			TwAddVarCB(b, "miscRun", runTypeEnum, setCheats, getCheats, &runType, "group=Main label='Outside run type'");
 		});
 	}
 
@@ -175,7 +232,7 @@ void Hooks::Cheats()
 	{
 		mWeight = config.getFloat("cheats", "weightMultiplicator", -1);
 		CreateHook("Cheat (weight)", pWeight, &HWeight, &oWeight, mWeight >= 0);
-		TweakBarAddCB("miscWeight", TW_TYPE_FLOAT, setCheats, getCheats, &mWeight, "group=Misc label='Weight multiplicator' step=0.01 min=-1.0 max=1.0 precision=4");
+		TweakBarAddCB("miscWeight", TW_TYPE_FLOAT, setCheats, getCheats, &mWeight, "group=Main label='Weight multiplicator' step=0.01 min=-1.0 max=1.0 precision=4");
 	}
 
 	BYTE sigTime[] = { 0x8B, 0x44, 0x24, 0x08, 0x01, 0x86, 0x68, 0x87, 0x0B, 0x00 };
@@ -184,7 +241,7 @@ void Hooks::Cheats()
 		mTimeInterval = config.getFloat("cheats", "timeInterval", -1);
 		realTime = mTimeInterval == 0;
 		CreateHook("Cheat (timeInterval)", pTimeInterval, &HTimeInterval, &oTimeInterval, mTimeInterval >= 0);
-		TweakBarAddCB("miscTime", TW_TYPE_FLOAT, setCheats, getCheats, &mTimeInterval, "group=Misc label='Time speed' step=0.1 min=-1.0");
+		TweakBarAddCB("miscTime", TW_TYPE_FLOAT, setCheats, getCheats, &mTimeInterval, "group=Main label='Time speed' step=0.1 min=-1.0");
 	}
 
 	BYTE sigSkill[] = { 0x85, 0x44, 0x8F, 0x74, 0x0F, 0x95, 0xC2 };
@@ -192,10 +249,25 @@ void Hooks::Cheats()
 	{
 		skillLevel = config.getBool("cheats", "thirdSkillLevel", false);
 		CreateHook("Cheat (thirdSkillLevel)", pSkillLevel, &HSkillLevel, &oSkillLevel, skillLevel);
-		TweakBarAddCB("miscSkills", TW_TYPE_BOOLCPP, setCheats, getCheats, &skillLevel, "group=Misc label='3rd level skills'");
+		TweakBarAddCB("miscSkills", TW_TYPE_BOOLCPP, setCheats, getCheats, &skillLevel, "group=Main label='3rd level skills'");
 
 		oSkillLevel += 7;
 		thirdSkillLevelsInit();
+	}
+
+	BYTE sigSpell[] = { 0x33, 0xC0, 0x81, 0xC1, 0x58, 0x02, 0x00, 0x00, 0x39, 0x11, 0x74, 0x34 };
+	if (FindSignature("Cheat (augmentMods)", sigSpell, &pAugmentMods))
+	{
+		std::fill_n(augmentModsValues, 0x80, -1.0f);
+		augmentMods = config.getBool("cheats", "augmentMods", false);
+		augmentModsValues[0x51] = config.getFloat("cheats", "augmentArticulacy", -1);
+		augmentModsValues[0x4B] = config.getFloat("cheats", "augmentRadiance", -1);
+
+		CreateHook("Cheat (augmentMods)", pAugmentMods, &HAugmentMods, &oAugmentMods, augmentMods);
+		TweakBarAddCB("augmentMods", TW_TYPE_BOOLCPP, setCheats, getCheats, &augmentMods, "group='Augment mods' label=Enabled");
+		TweakBarAddCB("augmentArticulacy", TW_TYPE_FLOAT, setCheats, getCheats, augmentModsValues + 0x51, "group='Augment mods' label='Spell casting time' step=1.0 min=-1.0 precision=1 max=100.0");
+		TweakBarAddCB("augmentRadiance", TW_TYPE_FLOAT, setCheats, getCheats, augmentModsValues + 0x4B, "group='Augment mods' label='Lantern power' step=1.0 min=-1.0 precision=1");
+		TweakBarDefine("DDDAFix/'Augment mods' group=Main opened=false");
 	}
 
 	BYTE *pOffset;

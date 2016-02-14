@@ -107,18 +107,6 @@ void __declspec(naked) HWeather()
 	}
 }
 
-void getWeather(void *value, void *clientData)
-{
-	if (pBase && *pBase)
-		*(DWORD*)value = (*pBase)[(DWORD)clientData / 4];
-}
-
-void setWeather(const void *value, void *clientData)
-{
-	if (pBase && *pBase)
-		(*pBase)[(DWORD)clientData / 4] = *(DWORD*)value;
-}
-
 void Hooks::Misc()
 {
 	BYTE sigChar[] = { 0x83, 0xBB, 0x84, 0x02, 0x00, 0x00, 0x0B };	//cmp	dword ptr [ebx+284h], 0Bh
@@ -126,7 +114,7 @@ void Hooks::Misc()
 	{
 		charCustomization = config.getBool("main", "charCustomization", false);
 		CreateHook("CharCustomization", pCharCustomization, &HCharCustomization, &oCharCustomization, charCustomization);
-		TweakBarAddCB("miscChar", TW_TYPE_BOOLCPP, setMisc, getMisc, &charCustomization, "group=Misc label='Char customization'");
+		TweakBarAddCB("miscChar", TW_TYPE_BOOLCPP, setMisc, getMisc, &charCustomization, "group=Main label='Char customization'");
 	}
 
 	BYTE sigCam[] = { 0xF3, 0x0F, 0x10, 0x80, 0x8C, 0x00, 0x00, 0x00,	//movss	xmm0, dword ptr [eax+8Ch]
@@ -150,7 +138,7 @@ void Hooks::Misc()
 		CreateHook("ExtendVerticalCam2", pExtendVerticalCam2, &HExtendVerticalCam2, &oExtendVerticalCam2, extendVerticalCam);
 		CreateHook("ExtendVerticalCamBow1", pExtendVerticalBow1, &HExtendVerticalBow1, &oExtendVerticalBow1, extendVerticalCam);
 		CreateHook("ExtendVerticalCamBow2", pExtendVerticalBow2, &HExtendVerticalBow2, &oExtendVerticalBow2, extendVerticalCam);
-		TweakBarAddCB("miscExtendCam", TW_TYPE_BOOLCPP, setMisc, getMisc, &extendVerticalCam, "group=Misc label='Camera extend'");
+		TweakBarAddCB("miscExtendCam", TW_TYPE_BOOLCPP, setMisc, getMisc, &extendVerticalCam, "group=Main label='Camera extend'");
 	}
 
 	BYTE sigV[] = { 0x80, 0xBE, 0xF0, 0x02, 0x00, 0x00, 0x00,	//cmp	byte ptr [esi+2F0h], 0
@@ -165,7 +153,7 @@ void Hooks::Misc()
 		CreateHook("DisableAutoCamH", pAutoCamH, &HAutoCamH, nullptr, disableAutoCam);
 		oAutoCamV = pAutoCamV + 7;
 		oAutoCamH = pAutoCamH + 7;
-		TweakBarAddCB("miscAutoCam", TW_TYPE_BOOLCPP, setMisc, getMisc, &disableAutoCam, "group=Misc label='Disable autocam'");
+		TweakBarAddCB("miscAutoCam", TW_TYPE_BOOLCPP, setMisc, getMisc, &disableAutoCam, "group=Main label='Disable autocam'");
 	}
 
 	BYTE *pOffset;
@@ -180,9 +168,10 @@ void Hooks::Misc()
 	{
 		TwEnumVal weatherEV[] = { { 0, "Clear sky" },{ 1, "Cloudy" },{ 2, "Foggy" },{ 3, "Vulcanic (post-game)" } };
 		TwType weatherEnum = TwDefineEnum("weatherEnum", weatherEV, 4);
-		TwAddVarCB(b, "miscWeather", weatherEnum, setWeather, getWeather, (LPVOID)0xB8780, "group=Misc label=Weather");
-		TwAddVarCB(b, "miscWeatherExtra", TW_TYPE_BOOL32, setWeather, getWeather, (LPVOID)0xB33A8, "group=Misc label='Post-game weather'");
+		TwAddVarCB(b, "miscWeather", weatherEnum, setBase, getBase, (LPVOID)0xB8780, "group=Main label=Weather");
+		TwAddVarCB(b, "miscWeatherExtra", TW_TYPE_BOOL32, setBase, getBase, (LPVOID)0xB33A8, "group=Main label='Post-game weather'");
+		TwAddSeparator(b, "mainSeparator", "group=Main");
 	});
 
-	TweakBarDefine("DDDAFix/Misc opened=false");
+	TweakBarDefine("DDDAFix/Main opened=false");
 }

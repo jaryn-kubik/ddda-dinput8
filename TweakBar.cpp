@@ -45,3 +45,15 @@ void Hooks::TweakBarAddCB(const char* name, TwType type, TwSetVarCallback setCal
 		TwAddVarCB(b, name, type, setCallback, getCallback, clientData, def);
 	});
 }
+
+void Hooks::setBase(const void *value, void *clientData)
+{
+	if (pBase && *pBase)
+		(*pBase)[(DWORD)clientData / 4] = *(DWORD*)value;
+}
+
+void Hooks::getBase(void *value, void *clientData)
+{
+	if (pBase && *pBase)
+		*(DWORD*)value = (*pBase)[(DWORD)clientData / 4];
+}
