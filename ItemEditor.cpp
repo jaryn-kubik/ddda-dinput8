@@ -106,6 +106,7 @@ TwEnumVal itemEnchantEV[]
 	{ 57, "57: Powder Blitz" },
 	{ 58, "58: Deadly Gouge" },
 	{ 102, "102: Calamitous Lunge" },
+	{ 104, "104: Calamitous Lash" },
 	{ 106, "106: Ecliptic Slash" },
 	{ 109, "109: Arc of Obliteration" },
 	{ 150, "150: Shearing Wind" },

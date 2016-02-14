@@ -6,7 +6,7 @@ iniConfig::iniConfig(LPCSTR fileName)
 	this->fileName = fileName;
 
 	SetLastError(ERROR_SUCCESS);
-	GetPrivateProfileSectionNamesA(buffer, 512, fileName);
+	GetPrivateProfileSectionNamesA(buffer, sizeof buffer, fileName);
 	if (GetLastError() == ERROR_FILE_NOT_FOUND)
 		logFile << "Config: file not found!" << std::endl;
 }
@@ -14,7 +14,7 @@ iniConfig::iniConfig(LPCSTR fileName)
 bool iniConfig::get(LPCSTR section, LPCSTR key, bool allowEmpty)
 {
 	SetLastError(ERROR_SUCCESS);
-	DWORD result = GetPrivateProfileStringA(section, key, nullptr, buffer, 512, fileName);
+	DWORD result = GetPrivateProfileStringA(section, key, nullptr, buffer, sizeof buffer, fileName);
 	return GetLastError() != ERROR_FILE_NOT_FOUND && (allowEmpty || result > 0);
 }
 
@@ -107,6 +107,27 @@ int iniConfig::getEnum(LPCSTR section, LPCSTR key, int defValue, std::pair<int, 
 	return printError(section, key, defValue);
 }
 
+std::vector<int> iniConfig::getList(LPCSTR section, LPCSTR key)
+{
+	try
+	{
+		if (get(section, key, true))
+		{
+			std::vector<int> list;
+			char *context, *token = strtok_s(buffer, ";", &context);
+			while (token != nullptr)
+			{
+				list.push_back(std::stoi(token));
+				token = strtok_s(nullptr, ";", &context);
+			}
+			return list;
+		}
+	}
+	catch (...) {}
+	printError(section, key, string());
+	return std::vector<int>();
+}
+
 void iniConfig::setStr(LPCSTR section, LPCSTR key, string value) const
 {
 	WritePrivateProfileStringA(section, key, (" " + value).c_str(), fileName);
@@ -137,4 +158,16 @@ void iniConfig::setEnum(LPCSTR section, LPCSTR key, int value, std::pair<int, LP
 			return;
 		}
 	setStr(section, key, std::to_string(value));
+}
+
+void iniConfig::setList(LPCSTR section, LPCSTR key, std::vector<int> list) const
+{
+	string str;
+	for (size_t i = 0; i < list.size(); i++)
+	{
+		str += std::to_string(list[i]);
+		if (i < list.size() - 1)
+			str += ";";
+	}
+	setStr(section, key, str);
 }

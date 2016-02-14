@@ -4,35 +4,54 @@
 #include "stdafx.h"
 #include "Cheats.h"
 
-bool thirdSkillLevels[0x200] = { false };
-void thirdSkillLevelsInit()
+bool thirdSkillLevels1[512] = { false };
+bool thirdSkillLevels2[512] = { false };
+bool thirdSkillLevels3[512] = { false };
+bool thirdSkillLevels4[512] = { false };
+void thirdSkillLevelsInit(bool (&skillArray)[512], std::vector<int> list)
 {
-	int temp[] =
-	{
-		40, 42, 46, 47, 52, 54, 57, 58,
-		102, 104, 106, 109,
-		150, 152, 155, 159, 161, 164, 165, 167,
-		210, 212, 214, 215, 220, 222, 223, 224, 225, 226, 227, 228, 229, 230, 236,
-		270, 274, 278,
-		310, 311, 312, 313, 314, 315, 316, 317, 318, 319, 320,
-		352, 353, 356, 359, 361, 363,
-		402, 403, 407
-	};
+	std::fill_n(skillArray, 512, false);
+	if (list.empty())
+		return;
 
-	for (int i = 0; i < sizeof(temp) / sizeof(int); i++)
-		thirdSkillLevels[temp[i]] = true;
+	if (find(list.begin(), list.end(), -1) != list.end())
+	{
+		list =
+		{
+			40, 42, 46, 47, 52, 54, 57, 58,
+			102, 104, 106, 109,
+			150, 152, 155, 159, 161, 164, 165, 167,
+			210, 212, 214, 215, 220, 222, 223, 224, 225, 226, 227, 228, 229, 230, 236,
+			270, 274, 278,
+			310, 311, 312, 313, 314, 315, 316, 317, 318, 319, 320,
+			352, 353, 356, 359, 361, 363,
+			402, 403, 407
+		};
+	}
+
+	for (int i = 0; i < list.size(); i++)
+		skillArray[list[i] & 0x1FF] = true;
+}
+
+void reloadSkills(void *clientData)
+{
+	thirdSkillLevelsInit(thirdSkillLevels1, config.getList("cheats", "thirdSkillLevelPlayer"));
+	thirdSkillLevelsInit(thirdSkillLevels2, config.getList("cheats", "thirdSkillLevelPawnMain"));
+	thirdSkillLevelsInit(thirdSkillLevels3, config.getList("cheats", "thirdSkillLevelPawn1"));
+	thirdSkillLevelsInit(thirdSkillLevels4, config.getList("cheats", "thirdSkillLevelPawn2"));
 }
 
 int __stdcall GetSkillTier(UINT16 skill, DWORD address)
 {
-	if (thirdSkillLevels[skill & 0x1FF] && pBase && *pBase)
-	{
-		address -= (DWORD)*pBase;
-		return address == 0xA7DFC ||	//player
-			address == 0xA85EC ||		//main pawn
-			address == 0xA9C4C ||		//pawn 1
-			address == 0xAB2AC;			//pawn 2
-	}
+	address -= (DWORD)*pBase;
+	if (address == 0xA7DFC)//player
+		return thirdSkillLevels1[skill & 0x1FF];
+	if (address == 0xA85EC)//main pawn
+		return thirdSkillLevels2[skill & 0x1FF];
+	if (address == 0xA9C4C)//pawn 1
+		return thirdSkillLevels3[skill & 0x1FF];
+	if (address == 0xAB2AC)//pawn 2
+		return thirdSkillLevels4[skill & 0x1FF];
 	return 0;
 }
 
@@ -250,9 +269,9 @@ void Hooks::Cheats()
 		skillLevel = config.getBool("cheats", "thirdSkillLevel", false);
 		CreateHook("Cheat (thirdSkillLevel)", pSkillLevel, &HSkillLevel, &oSkillLevel, skillLevel);
 		TweakBarAddCB("miscSkills", TW_TYPE_BOOLCPP, setCheats, getCheats, &skillLevel, "group=Main label='3rd level skills'");
-
+		TweakBarAddButton("miscReload", reloadSkills, nullptr, "group=Main label='  (reload skills)'");
 		oSkillLevel += 7;
-		thirdSkillLevelsInit();
+		reloadSkills(nullptr);
 	}
 
 	BYTE sigSpell[] = { 0x33, 0xC0, 0x81, 0xC1, 0x58, 0x02, 0x00, 0x00, 0x39, 0x11, 0x74, 0x34 };
@@ -265,8 +284,8 @@ void Hooks::Cheats()
 
 		CreateHook("Cheat (augmentMods)", pAugmentMods, &HAugmentMods, &oAugmentMods, augmentMods);
 		TweakBarAddCB("augmentMods", TW_TYPE_BOOLCPP, setCheats, getCheats, &augmentMods, "group='Augment mods' label=Enabled");
-		TweakBarAddCB("augmentArticulacy", TW_TYPE_FLOAT, setCheats, getCheats, augmentModsValues + 0x51, "group='Augment mods' label='Spell casting time' step=1.0 min=-1.0 precision=1 max=100.0");
-		TweakBarAddCB("augmentRadiance", TW_TYPE_FLOAT, setCheats, getCheats, augmentModsValues + 0x4B, "group='Augment mods' label='Lantern power' step=1.0 min=-1.0 precision=1");
+		TweakBarAddCB("augmentArticulacy", TW_TYPE_FLOAT, setCheats, getCheats, augmentModsValues + 0x51, "group='Augment mods' label=Articulacy step=1.0 min=-1.0 precision=1 max=100.0");
+		TweakBarAddCB("augmentRadiance", TW_TYPE_FLOAT, setCheats, getCheats, augmentModsValues + 0x4B, "group='Augment mods' label=Radiance step=1.0 min=-1.0 precision=1");
 		TweakBarDefine("DDDAFix/'Augment mods' group=Main opened=false");
 	}
 

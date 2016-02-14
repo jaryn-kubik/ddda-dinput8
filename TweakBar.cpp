@@ -46,6 +46,11 @@ void Hooks::TweakBarAddCB(const char* name, TwType type, TwSetVarCallback setCal
 	});
 }
 
+void Hooks::TweakBarAddButton(const char *name, TwButtonCallback callback, void *data, const char *def)
+{
+	TweakBarAdd([name, callback, data, def](TwBar *b) { TwAddButton(b, name, callback, data, def); });
+}
+
 void Hooks::setBase(const void *value, void *clientData)
 {
 	if (pBase && *pBase)
