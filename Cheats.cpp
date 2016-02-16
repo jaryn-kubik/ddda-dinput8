@@ -8,7 +8,7 @@ bool thirdSkillLevels1[512] = { false };
 bool thirdSkillLevels2[512] = { false };
 bool thirdSkillLevels3[512] = { false };
 bool thirdSkillLevels4[512] = { false };
-void thirdSkillLevelsInit(bool (&skillArray)[512], std::vector<int> list)
+void thirdSkillLevelsInit(bool *skillArray, std::vector<int> list)
 {
 	std::fill_n(skillArray, 512, false);
 	if (list.empty())
@@ -29,7 +29,7 @@ void thirdSkillLevelsInit(bool (&skillArray)[512], std::vector<int> list)
 		};
 	}
 
-	for (int i = 0; i < list.size(); i++)
+	for (size_t i = 0; i < list.size(); i++)
 		skillArray[list[i] & 0x1FF] = true;
 }
 
@@ -144,14 +144,6 @@ void __declspec(naked) HAugmentMods()
 {
 	__asm
 	{
-		//cmp		edx, 0x51; //0x4B;// 0x51;
-		lea		eax, [augmentModsValues + edx * 4];
-		movss	xmm0, [eax];
-		comiss	xmm0, floatZeroConstant;
-		jae		modValue;
-		jmp		oAugmentMods;
-
-	modValue:
 		mov		eax, pBase;
 		mov		eax, [eax];
 
@@ -174,6 +166,13 @@ void __declspec(naked) HAugmentMods()
 		jmp		oAugmentMods;
 
 	isParty:
+		lea		eax, [augmentModsValues + edx * 4];
+		movss	xmm0, [eax];
+		comiss	xmm0, floatZeroConstant;
+		jae		modValue;
+		jmp		oAugmentMods;
+
+	modValue:
 		movss	dword ptr[esi], xmm0;
 		mov		eax, 1;
 		retn	4;
@@ -224,6 +223,10 @@ void setCheats(const void *value, void *clientData)
 		config.setFloat("cheats", "augmentArticulacy", augmentModsValues[0x51] = *(float*)value);
 	else if (clientData == augmentModsValues + 0x4B)
 		config.setFloat("cheats", "augmentRadiance", augmentModsValues[0x4B] = *(float*)value);
+	else if (clientData == augmentModsValues + 0x01)
+		config.setFloat("cheats", "augmentSinew", augmentModsValues[0x01] = *(float*)value);
+	else if (clientData == augmentModsValues + 0x17)
+		config.setFloat("cheats", "augmentPerpetuation", augmentModsValues[0x17] = *(float*)value);
 }
 
 void Hooks::Cheats()
@@ -281,11 +284,15 @@ void Hooks::Cheats()
 		augmentMods = config.getBool("cheats", "augmentMods", false);
 		augmentModsValues[0x51] = config.getFloat("cheats", "augmentArticulacy", -1);
 		augmentModsValues[0x4B] = config.getFloat("cheats", "augmentRadiance", -1);
+		augmentModsValues[0x01] = config.getFloat("cheats", "augmentSinew", -1);
+		augmentModsValues[0x17] = config.getFloat("cheats", "augmentPerpetuation", -1);
 
 		CreateHook("Cheat (augmentMods)", pAugmentMods, &HAugmentMods, &oAugmentMods, augmentMods);
 		TweakBarAddCB("augmentMods", TW_TYPE_BOOLCPP, setCheats, getCheats, &augmentMods, "group='Augment mods' label=Enabled");
 		TweakBarAddCB("augmentArticulacy", TW_TYPE_FLOAT, setCheats, getCheats, augmentModsValues + 0x51, "group='Augment mods' label=Articulacy step=1.0 min=-1.0 precision=1 max=100.0");
 		TweakBarAddCB("augmentRadiance", TW_TYPE_FLOAT, setCheats, getCheats, augmentModsValues + 0x4B, "group='Augment mods' label=Radiance step=1.0 min=-1.0 precision=1");
+		TweakBarAddCB("augmentSinew", TW_TYPE_FLOAT, setCheats, getCheats, augmentModsValues + 0x01, "group='Augment mods' label=Sinew step=1.0 min=-1.0 precision=1");
+		TweakBarAddCB("augmentPerpetuation", TW_TYPE_FLOAT, setCheats, getCheats, augmentModsValues + 0x17, "group='Augment mods' label=Perpetuation step=1.0 min=-1.0 precision=1");
 		TweakBarDefine("DDDAFix/'Augment mods' group=Main opened=false");
 	}
 
