@@ -3,10 +3,10 @@
 #include "d3d9.h"
 
 RECT outLeft, outTop, outRight, outBottom, rect;
-LPD3DXFONT pFont, pNewFont = nullptr;
+LPD3DXFONT pFont;
 LPD3DXSPRITE pSprite;
-string clockFont;
-bool clockEnabled;
+char clockFont[64];
+bool clockEnabled, clockReload;
 DWORD clockTimebase, clockSize, clockColor, clockLeft, clockTop, clockRight, clockBottom, clockPositionV, clockPositionH;
 void setRectangles(LONG width, LONG height)
 {
@@ -21,7 +21,7 @@ void onCreateDevice(LPDIRECT3DDEVICE9 pD3DDevice, D3DPRESENT_PARAMETERS* pParams
 {
 	setRectangles(pParams->BackBufferWidth, pParams->BackBufferHeight);
 	D3DXCreateFontA(pD3DDevice, clockSize, 0, FW_HEAVY, 1, FALSE, DEFAULT_CHARSET, OUT_TT_ONLY_PRECIS,
-		CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, clockFont.c_str(), &pFont);
+		CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, clockFont, &pFont);
 	D3DXCreateSprite(pD3DDevice, &pSprite);
 }
 
@@ -68,11 +68,12 @@ void onEndScene(LPDIRECT3DDEVICE9 pD3DDevice)
 		pFont->DrawText(pSprite, clockBuf, -1, &rect, format, clockColor);
 		pSprite->End();
 
-		if (pNewFont)
+		if (clockReload)
 		{
+			clockReload = false;
 			pFont->Release();
-			pFont = pNewFont;
-			pNewFont = nullptr;
+			D3DXCreateFontA(pD3DDevice, clockSize, 0, FW_HEAVY, 1, FALSE, DEFAULT_CHARSET, OUT_TT_ONLY_PRECIS,
+				CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, clockFont, &pFont);
 		}
 	}
 }
@@ -101,74 +102,71 @@ void Hooks::InGameClockDec(BYTE minutes)
 
 std::pair<int, LPCSTR> clockPosVMap[] = { { DT_TOP, "top"}, { DT_BOTTOM, "bottom" } };
 std::pair<int, LPCSTR> clockPosHMap[] = { { DT_LEFT, "left" }, { DT_CENTER, "center" }, { DT_RIGHT, "right" } };
-void setClock(const void *value, void *clientData)
+void renderClockColor(LPCSTR label, LPCSTR key, LPDWORD color, float fColor[4])
 {
-	if (clientData == &clockEnabled)
-		config.setBool("d3d9", "inGameClock", clockEnabled = *(bool*)value);
-	else if (clientData == &clockSize)
-		config.setUInt("d3d9", "inGameClockSize", clockSize = *(UINT32*)value);
-	else if (clientData == &clockFont)
-		config.setStr("d3d9", "inGameClockFont", clockFont = *static_cast<const string*>(value));
-	else if (clientData == &clockTimebase)
-		config.setUInt("d3d9", "inGameClockTimebase", clockTimebase = *(UINT32*)value);
-	else if (clientData == &clockPositionV)
-		config.setEnum("d3d9", "inGameClockPositionVertical", clockPositionV = *(UINT32*)value, clockPosVMap, 2);
-	else if (clientData == &clockPositionH)
-		config.setEnum("d3d9", "inGameClockPositionHorizontal", clockPositionH = *(UINT32*)value, clockPosHMap, 3);
-	else if (clientData == &clockColor)
-		config.setUInt("d3d9", "inGameClockColor", clockColor = *(UINT32*)value, true);
-	else if (clientData == &clockLeft)
-		config.setUInt("d3d9", "inGameClockOutlineLeft", clockLeft = *(UINT32*)value, true);
-	else if (clientData == &clockTop)
-		config.setUInt("d3d9", "inGameClockOutlineTop", clockTop = *(UINT32*)value, true);
-	else if (clientData == &clockRight)
-		config.setUInt("d3d9", "inGameClockOutlineRight", clockRight = *(UINT32*)value, true);
-	else if (clientData == &clockBottom)
-		config.setUInt("d3d9", "inGameClockOutlineBottom", clockBottom = *(UINT32*)value, true);
-
-	if (clientData == &clockSize || clientData == &clockFont)
+	float s = 1.0f / 255.0f;
+	fColor[0] = (*color >> 16 & 0xFF) * s;
+	fColor[1] = (*color >> 8 & 0xFF) * s;
+	fColor[2] = (*color >> 0 & 0xFF) * s;
+	fColor[3] = (*color >> 24 & 0xFF) * s;
+	if (ImGui::ColorEdit4(label, fColor))
 	{
-		LPDIRECT3DDEVICE9 device;
-		pFont->GetDevice(&device);
-		D3DXCreateFontA(device, clockSize, 0, FW_HEAVY, 1, FALSE, DEFAULT_CHARSET, OUT_TT_ONLY_PRECIS,
-			CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, clockFont.c_str(), &pNewFont);
+		*color = (int)(fColor[0] * 255.0f + 0.5f) << 16 |
+			(int)(fColor[1] * 255.0f + 0.5f) << 8 |
+			(int)(fColor[2] * 255.0f + 0.5f) << 0 |
+			(int)(fColor[3] * 255.0f + 0.5f) << 24;
+		config.setUInt("d3d9", key, *color, true);
 	}
 }
 
-void getClock(void *value, void *clientData)
+void renderClockUI()
 {
-	if (clientData == &clockEnabled)
-		*(bool*)value = clockEnabled;
-	else if (clientData == &clockFont)
-		TwCopyStdStringToLibrary(*static_cast<string*>(value), clockFont);
-	else
-		*(UINT32*)value = *(UINT32*)clientData;
-}
+	if (ImGui::CollapsingHeader("Clock"))
+	{
+		if (ImGui::Checkbox("Enabled", &clockEnabled))
+			config.setBool("d3d9", "inGameClock", clockEnabled);
 
-void addInGameClock(TwBar *bar)
-{
-	TwEnumVal clockPosVEV[] = { { DT_TOP, "top" }, { DT_BOTTOM, "bottom" } };
-	TwEnumVal clockPosHEV[] = { { DT_LEFT, "left" }, { DT_CENTER, "center" }, { DT_RIGHT, "right" } };
-	TwType clockPosV = TwDefineEnum("clockPosVEnum", clockPosVEV, 2);
-	TwType clockPosH = TwDefineEnum("clockPosHEnum", clockPosHEV, 3);
+		if (ImGui::DragInt("Size", (int*)&clockSize, 1.0f, 1, 1024))
+		{
+			config.setUInt("d3d9", "inGameClockSize", clockSize);
+			clockReload = true;
+		}
 
-	TwAddVarCB(bar, "clockEnabled", TW_TYPE_BOOLCPP, setClock, getClock, &clockEnabled, "group=Clock label=Enabled");
-	TwAddVarCB(bar, "clockSize", TW_TYPE_UINT32, setClock, getClock, &clockSize, "group=Clock min=1 label=Size");
-	TwAddVarCB(bar, "clockFont", TW_TYPE_STDSTRING, setClock, getClock, &clockFont, "group=Clock label=Font");
-	TwAddVarCB(bar, "clockTimebase", TW_TYPE_UINT32, setClock, getClock, &clockTimebase, "group=Clock min=1 label=Timebase");
-	TwAddVarCB(bar, "clockPosV", clockPosV, setClock, getClock, &clockPositionV, "group=Clock label=Vertical");
-	TwAddVarCB(bar, "clockPosH", clockPosH, setClock, getClock, &clockPositionH, "group=Clock label=Horizontal");
-	TwAddVarCB(bar, "clockColor", TW_TYPE_COLOR32, setClock, getClock, &clockColor, "group=Clock alpha=true label=Color");
-	TwAddVarCB(bar, "clockOutlineL", TW_TYPE_COLOR32, setClock, getClock, &clockLeft, "group=Clock alpha=true label='Outline Left'");
-	TwAddVarCB(bar, "clockOutlineT", TW_TYPE_COLOR32, setClock, getClock, &clockTop, "group=Clock alpha=true label='Outline Top'");
-	TwAddVarCB(bar, "clockOutlineR", TW_TYPE_COLOR32, setClock, getClock, &clockRight, "group=Clock alpha=true label='Outline Right'");
-	TwAddVarCB(bar, "clockOutlineB", TW_TYPE_COLOR32, setClock, getClock, &clockBottom, "group=Clock alpha=true label='Outline Bottom'");
-	TwDefine("DDDAFix/Clock opened=false");
+		if (ImGui::InputText("Font", clockFont, sizeof clockFont))
+		{
+			config.setStr("d3d9", "inGameClockFont", clockFont);
+			clockReload = true;
+		}
+
+		if (ImGui::DragInt("Timebase", (int*)&clockTimebase, 1.0f, 1, 24 * 60))
+			config.setUInt("d3d9", "inGameClockTimebase", clockTimebase);
+
+		bool pressed = ImGui::RadioButton("top", (int*)&clockPositionV, DT_TOP);
+		ImGui::SameLine();
+		pressed |= ImGui::RadioButton("bottom", (int*)&clockPositionV, DT_BOTTOM);
+		if (pressed)
+			config.setEnum("d3d9", "inGameClockPositionVertical", clockPositionV, clockPosVMap, 2);
+
+		pressed = ImGui::RadioButton("left", (int*)&clockPositionH, DT_LEFT);
+		ImGui::SameLine();
+		pressed |= ImGui::RadioButton("center", (int*)&clockPositionH, DT_CENTER);
+		ImGui::SameLine();
+		pressed |= ImGui::RadioButton("right", (int*)&clockPositionH, DT_RIGHT);
+		if (pressed)
+			config.setEnum("d3d9", "inGameClockPositionHorizontal", clockPositionH, clockPosHMap, 3);
+
+		static float fClockColor[4], fClockLeft[4], fClockTop[4], fClockRight[4], fClockBottom[4];
+		renderClockColor("Color", "inGameClockColor", &clockColor, fClockColor);
+		renderClockColor("Outline Left", "inGameClockOutlineLeft", &clockLeft, fClockLeft);
+		renderClockColor("Outline Top", "inGameClockOutlineTop", &clockTop, fClockTop);
+		renderClockColor("Outline Right", "inGameClockOutlineRight", &clockRight, fClockRight);
+		renderClockColor("Outline Bottom", "inGameClockOutlineBottom", &clockBottom, fClockBottom);
+	}
 }
 
 void Hooks::InGameClock()
 {
-	clockFont = config.getStr("d3d9", "inGameClockFont", "Arial");
+	strncpy_s(clockFont, config.getStr("d3d9", "inGameClockFont", "Arial").c_str(), _TRUNCATE);
 	clockSize = config.getUInt("d3d9", "inGameClockSize", 30);
 	clockTimebase = config.getUInt("d3d9", "inGameClockTimebase", 1);
 	if (clockTimebase < 1)
@@ -183,10 +181,10 @@ void Hooks::InGameClock()
 	clockPositionV = config.getEnum("d3d9", "inGameClockPositionVertical", DT_TOP, clockPosVMap, 2);
 	clockPositionH = config.getEnum("d3d9", "inGameClockPositionHorizontal", DT_RIGHT, clockPosHMap, 3);
 
-	D3D9Add(onCreateDevice, onLostDevice, onResetDevice, onEndScene);
-	TweakBarAdd(addInGameClock);
-
 	clockEnabled = config.getBool("d3d9", "inGameClock", false);
 	if (!clockEnabled)
 		logFile << "InGameClock: disabled" << std::endl;
+
+	D3D9Add(onCreateDevice, onLostDevice, onResetDevice, onEndScene);
+	InGameUIAdd(renderClockUI);
 }
