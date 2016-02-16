@@ -72,7 +72,7 @@
     <ClCompile Include="include\imgui_impl_dx9.cpp">
       <Filter>include</Filter>
     </ClCompile>
-    <ClCompile Include="InGameGUI.cpp">
+    <ClCompile Include="InGameUI.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -156,7 +156,7 @@
     <ClInclude Include="include\stb_truetype.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="InGameGUI.h">
+    <ClInclude Include="InGameUI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

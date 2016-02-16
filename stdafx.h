@@ -19,5 +19,5 @@ using std::string;
 #include "include\AntTweakBar.h"
 #include "TweakBar.h"
 #include "include\imgui.h"
-#include "InGameGUI.h"
+#include "InGameUI.h"
 #include "steam_api.h"

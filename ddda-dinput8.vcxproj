@@ -99,7 +99,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Affinity.cpp" />
-    <ClCompile Include="InGameGUI.cpp" />
+    <ClCompile Include="InGameUI.cpp" />
     <ClCompile Include="include\imgui.cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\stdafx.h</PrecompiledHeaderFile>
     </ClCompile>
@@ -129,7 +129,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Affinity.h" />
-    <ClInclude Include="InGameGUI.h" />
+    <ClInclude Include="InGameUI.h" />
     <ClInclude Include="include\AntTweakBar.h" />
     <ClInclude Include="include\imconfig.h" />
     <ClInclude Include="include\imgui.h" />
