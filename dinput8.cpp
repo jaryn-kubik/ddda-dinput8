@@ -40,6 +40,7 @@ void InitHooks()
 		Hooks::ItemEditor();
 		Hooks::InGameClock();
 		Hooks::TweakBar();
+		Hooks::InGameGUI();
 	}
 }
 

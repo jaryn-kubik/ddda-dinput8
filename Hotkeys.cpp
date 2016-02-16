@@ -4,7 +4,7 @@
 
 INPUT keyInput = { INPUT_KEYBOARD, {} };
 DWORD menuPause;
-std::function<void()> keys[0x100] = { nullptr };
+void(*keys[0x100])() = { nullptr };
 void SendKeyPress(DWORD vKey)
 {
 	keyInput.ki.wVk = (WORD)vKey;
@@ -55,7 +55,7 @@ LRESULT CALLBACK HWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	if (msg == WM_SIZE && borderlessFullscreen)
 		setBorderlessFullscreen(hwnd);
 
-	if (Hooks::TweakBarEvent(hwnd, msg, wParam, lParam))
+	if (Hooks::InGameGUIEvent(hwnd, msg, wParam, lParam))
 		return 0;
 	if (msg != WM_KEYDOWN || (HIWORD(lParam) & KF_REPEAT) != 0)
 		return oWndProc(hwnd, msg, wParam, lParam);
@@ -66,7 +66,7 @@ LRESULT CALLBACK HWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-void loadHotkey(LPCSTR name, WORD defVal, std::function<void()> func)
+void loadHotkey(LPCSTR name, WORD defVal, void(*func)())
 {
 	keys[config.getUInt("hotkeys", name, defVal) & 0xFF] = func;
 }
@@ -77,7 +77,6 @@ void Hooks::Hotkeys()
 	{
 		borderlessFullscreen = config.getBool("main", "borderlessFullscreen", false);
 		menuPause = config.getUInt("hotkeys", "menuPause", 500);
-		loadHotkey("keyTweakBar", VK_F12, []() { TweakBarSwitch(); });
 		loadHotkey("keySave", VK_F5, []() { if (pSave && *pSave) (*pSave)[0x21AFD6] = 1; });
 		loadHotkey("keyCheckpoint", VK_F9, []() { if (pSave && *pSave) (*pSave)[0x21AFD5] = 1; });
 		loadHotkey("keyMap", 'M', []() { hotkeyStart(0); });

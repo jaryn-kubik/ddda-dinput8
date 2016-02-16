@@ -18,4 +18,6 @@ using std::string;
 #include "dinput8.h"
 #include "include\AntTweakBar.h"
 #include "TweakBar.h"
+#include "include\imgui.h"
+#include "InGameGUI.h"
 #include "steam_api.h"

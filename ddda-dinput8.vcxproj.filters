@@ -63,6 +63,18 @@
     <ClCompile Include="Portcrystals.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="include\imgui.cpp">
+      <Filter>include</Filter>
+    </ClCompile>
+    <ClCompile Include="include\imgui_draw.cpp">
+      <Filter>include</Filter>
+    </ClCompile>
+    <ClCompile Include="include\imgui_impl_dx9.cpp">
+      <Filter>include</Filter>
+    </ClCompile>
+    <ClCompile Include="InGameGUI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dinput8.h">
@@ -121,6 +133,30 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Portcrystals.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\imconfig.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\imgui.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\imgui_impl_dx9.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\imgui_internal.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\stb_rect_pack.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\stb_textedit.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\stb_truetype.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="InGameGUI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

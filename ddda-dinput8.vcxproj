@@ -99,6 +99,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Affinity.cpp" />
+    <ClCompile Include="InGameGUI.cpp" />
+    <ClCompile Include="include\imgui.cpp">
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\stdafx.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="include\imgui_draw.cpp">
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\stdafx.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="include\imgui_impl_dx9.cpp">
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\stdafx.h</PrecompiledHeaderFile>
+    </ClCompile>
     <ClCompile Include="ItemEditor.cpp" />
     <ClCompile Include="Misc.cpp" />
     <ClCompile Include="Cheats.cpp" />
@@ -119,7 +129,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Affinity.h" />
+    <ClInclude Include="InGameGUI.h" />
     <ClInclude Include="include\AntTweakBar.h" />
+    <ClInclude Include="include\imconfig.h" />
+    <ClInclude Include="include\imgui.h" />
+    <ClInclude Include="include\imgui_impl_dx9.h" />
+    <ClInclude Include="include\imgui_internal.h" />
+    <ClInclude Include="include\stb_rect_pack.h" />
+    <ClInclude Include="include\stb_textedit.h" />
+    <ClInclude Include="include\stb_truetype.h" />
     <ClInclude Include="ItemEditor.h" />
     <ClInclude Include="Misc.h" />
     <ClInclude Include="Cheats.h" />
