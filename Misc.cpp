@@ -108,13 +108,8 @@ void renderMiscUI()
 			Hooks::SwitchHook("DisableAutoCamH", pAutoCamH, disableAutoCam);
 		}
 
-		ImGui::RadioButton("Clear sky", (int*)(*pBase + 0xB8780 / 4), 0);
-		ImGui::SameLine();
-		ImGui::RadioButton("Cloudy", (int*)(*pBase + 0xB8780 / 4), 1);
-		ImGui::SameLine();
-		ImGui::RadioButton("Foggy", (int*)(*pBase + 0xB8780 / 4), 2);
-		ImGui::SameLine();
-		ImGui::RadioButton("Vulcanic (post-game)", (int*)(*pBase + 0xB8780 / 4), 3);
+		std::pair<int, const char*> weather[]{ { 0, "Clear sky" }, { 1, "Cloudy" }, { 2, "Foggy" }, { 3, "Vulcanic (post-game)" } };
+		ImGui::RadioButtons(*pBase + 0xB8780 / 4, weather);
 		ImGui::Checkbox("Weather - post game", (bool*)(*pBase + 0xB33A8 / 4));
 	}
 }

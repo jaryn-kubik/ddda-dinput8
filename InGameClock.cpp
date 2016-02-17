@@ -102,13 +102,16 @@ void Hooks::InGameClockDec(BYTE minutes)
 
 std::pair<int, LPCSTR> clockPosVMap[] = { { DT_TOP, "top"}, { DT_BOTTOM, "bottom" } };
 std::pair<int, LPCSTR> clockPosHMap[] = { { DT_LEFT, "left" }, { DT_CENTER, "center" }, { DT_RIGHT, "right" } };
-void renderClockColor(LPCSTR label, LPCSTR key, LPDWORD color, float fColor[4])
+void renderClockColor(LPCSTR label, LPCSTR key, LPDWORD color)
 {
 	float s = 1.0f / 255.0f;
-	fColor[0] = (*color >> 16 & 0xFF) * s;
-	fColor[1] = (*color >> 8 & 0xFF) * s;
-	fColor[2] = (*color >> 0 & 0xFF) * s;
-	fColor[3] = (*color >> 24 & 0xFF) * s;
+	float fColor[4] =
+	{
+		(*color >> 16 & 0xFF) * s,
+		(*color >> 8 & 0xFF) * s,
+		(*color >> 0 & 0xFF) * s,
+		(*color >> 24 & 0xFF) * s
+	};
 	if (ImGui::ColorEdit4(label, fColor))
 	{
 		*color = (int)(fColor[0] * 255.0f + 0.5f) << 16 |
@@ -140,27 +143,16 @@ void renderClockUI()
 
 		if (ImGui::DragInt("Timebase", (int*)&clockTimebase, 1.0f, 1, 24 * 60))
 			config.setUInt("d3d9", "inGameClockTimebase", clockTimebase);
-
-		bool pressed = ImGui::RadioButton("top", (int*)&clockPositionV, DT_TOP);
-		ImGui::SameLine();
-		pressed |= ImGui::RadioButton("bottom", (int*)&clockPositionV, DT_BOTTOM);
-		if (pressed)
+		if (ImGui::RadioButtons(&clockPositionV, clockPosVMap))
 			config.setEnum("d3d9", "inGameClockPositionVertical", clockPositionV, clockPosVMap, 2);
-
-		pressed = ImGui::RadioButton("left", (int*)&clockPositionH, DT_LEFT);
-		ImGui::SameLine();
-		pressed |= ImGui::RadioButton("center", (int*)&clockPositionH, DT_CENTER);
-		ImGui::SameLine();
-		pressed |= ImGui::RadioButton("right", (int*)&clockPositionH, DT_RIGHT);
-		if (pressed)
+		if (ImGui::RadioButtons(&clockPositionH, clockPosHMap))
 			config.setEnum("d3d9", "inGameClockPositionHorizontal", clockPositionH, clockPosHMap, 3);
 
-		static float fClockColor[4], fClockLeft[4], fClockTop[4], fClockRight[4], fClockBottom[4];
-		renderClockColor("Color", "inGameClockColor", &clockColor, fClockColor);
-		renderClockColor("Outline Left", "inGameClockOutlineLeft", &clockLeft, fClockLeft);
-		renderClockColor("Outline Top", "inGameClockOutlineTop", &clockTop, fClockTop);
-		renderClockColor("Outline Right", "inGameClockOutlineRight", &clockRight, fClockRight);
-		renderClockColor("Outline Bottom", "inGameClockOutlineBottom", &clockBottom, fClockBottom);
+		renderClockColor("Color", "inGameClockColor", &clockColor);
+		renderClockColor("Outline Left", "inGameClockOutlineLeft", &clockLeft);
+		renderClockColor("Outline Top", "inGameClockOutlineTop", &clockTop);
+		renderClockColor("Outline Right", "inGameClockOutlineRight", &clockRight);
+		renderClockColor("Outline Bottom", "inGameClockOutlineBottom", &clockBottom);
 	}
 }
 

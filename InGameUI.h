@@ -6,3 +6,84 @@ namespace Hooks
 	LRESULT InGameUIEvent(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 	void InGameUIAdd(void(*callback)());
 };
+
+namespace ImGui
+{
+	template <class T> bool ListBoxFilter(const char *label, void *v, TwEnumVal *items, int count, ImGuiTextFilter &filter, bool scroll)
+	{
+		ListBoxHeader(label, count);
+		bool value_changed = false;
+		for (int i = 0; i < count; i++)
+		{
+			const bool item_selected = i == *(T*)v;
+			const char* item_text = items[i].Label;
+
+			if (!filter.PassFilter(item_text))
+				continue;
+
+			if (item_selected && scroll)
+				SetScrollHere();
+
+			PushID(i);
+			if (Selectable(item_text, item_selected))
+			{
+				*(T*)v = i;
+				value_changed = true;
+			}
+			PopID();
+		}
+		ListBoxFooter();
+		return value_changed;
+	}
+
+	template<class T> bool ComboEnum(const char *label, void *v, TwEnumVal *items, int count)
+	{
+		auto items_getter = [](void* data, int idx, const char **text)
+		{
+			*text = ((TwEnumVal*)data)[idx].Label;
+			return true;
+		};
+
+		int currentIndex = -1;
+		for (int i = 0; i < count; i++)
+			if (items[i].Value == *(T*)v)
+			{
+				currentIndex = i;
+				break;
+			}
+		if (Combo(label, &currentIndex, items_getter, items, count))
+		{
+			if (currentIndex >= 0 && currentIndex < count)
+				*(T*)v = items[currentIndex].Value;
+			return true;
+		}
+		return false;
+	}
+
+	template<class T> bool Drag(const char *label, void *v, float v_speed = 1.0f, float v_min = 0, float v_max = 0, const char* display_format = "%.0f")
+	{
+		float v_f = (float)*(T*)v;
+		if (DragFloat(label, &v_f, v_speed, v_min, v_max, display_format))
+		{
+			*(T*)v = (T)v_f;
+			return true;
+		}
+		return false;
+	}
+
+	template<class T, size_t len> bool RadioButtons(void *v, std::pair<T, const char*>(&pairs)[len])
+	{
+		bool pressed = false;
+		for (int i = 0; i < len; i++)
+		{
+			if (ImGui::RadioButton(pairs[i].second, *(T*)v == pairs[i].first))
+			{
+				*(T*)v = pairs[i].first;
+				pressed |= true;
+			}
+			if (i < len - 1)
+				SameLine();
+		}
+		return pressed;
+	}
+}
