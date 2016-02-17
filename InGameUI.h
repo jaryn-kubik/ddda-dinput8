@@ -60,17 +60,6 @@ namespace ImGui
 		return false;
 	}
 
-	template<class T> bool Drag(const char *label, void *v, float v_speed = 1.0f, float v_min = 0, float v_max = 0, const char* display_format = "%.0f")
-	{
-		float v_f = (float)*(T*)v;
-		if (DragFloat(label, &v_f, v_speed, v_min, v_max, display_format))
-		{
-			*(T*)v = (T)v_f;
-			return true;
-		}
-		return false;
-	}
-
 	template<class T, size_t len> bool RadioButtons(void *v, std::pair<T, const char*>(&pairs)[len])
 	{
 		bool pressed = false;
@@ -85,5 +74,31 @@ namespace ImGui
 				SameLine();
 		}
 		return pressed;
+	}
+
+	template<class T> bool Drag(const char *label, void *v, float v_speed = 1.0f, float v_min = 0, float v_max = 0, const char* display_format = "%.0f")
+	{
+		float v_f = (float)*(T*)v;
+		if (DragFloat(label, &v_f, v_speed, v_min, v_max, display_format))
+		{
+			*(T*)v = (T)v_f;
+			return true;
+		}
+		return false;
+	}
+
+	template<class T> bool InputScalar(const char* label, void *v, int min, int max, int step = 1, int step_fast = 100)
+	{
+		int v_i = (int)*(T*)v;
+		if (InputInt(label, &v_i, step, step_fast))
+		{
+			if (v_i < min)
+				v_i = min;
+			if (v_i > max)
+				v_i = max;
+			*(T*)v = (T)v_i;
+			return true;
+		}
+		return false;
 	}
 }

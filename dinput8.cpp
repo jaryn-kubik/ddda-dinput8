@@ -8,7 +8,6 @@
 #include "Hotkeys.h"
 #include "ItemEditor.h"
 #include "PlayerStats.h"
-#include "Affinity.h"
 #include "Server.h"
 #include "Portcrystals.h"
 
@@ -31,7 +30,6 @@ void InitHooks()
 	Hooks::Hotkeys();
 	Hooks::Misc();
 	Hooks::Cheats();
-	Hooks::Affinity();
 	Hooks::Server();
 	if (Hooks::D3D9())
 	{
@@ -95,9 +93,17 @@ void Hooks::CreateHook(LPCSTR msg, LPVOID pTarget, LPVOID pDetour, LPVOID* ppOri
 void Hooks::SwitchHook(LPCSTR msg, LPVOID pTarget, bool enable)
 {
 	if (enable)
-		logFile << msg << " enable: " << MH_StatusToString(MH_EnableHook(pTarget)) << std::endl;
+	{
+		MH_STATUS result = MH_EnableHook(pTarget);
+		if (result != MH_ERROR_ENABLED)
+			logFile << msg << " enable: " << MH_StatusToString(result) << std::endl;
+	}
 	else
-		logFile << msg << " disable: " << MH_StatusToString(MH_DisableHook(pTarget)) << std::endl;
+	{
+		MH_STATUS result = MH_DisableHook(pTarget);
+		if (result != MH_ERROR_DISABLED)
+			logFile << msg << " disable: " << MH_StatusToString(result) << std::endl;
+	}
 }
 
 bool Hooks::FindSignature(LPCSTR msg, BYTE* signature, size_t len, BYTE** offset) { return Find(msg, codeBase, codeEnd, signature, len, offset); }

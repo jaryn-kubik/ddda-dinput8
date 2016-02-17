@@ -33,7 +33,7 @@ void thirdSkillLevelsInit(bool *skillArray, std::vector<int> list)
 		skillArray[list[i] & 0x1FF] = true;
 }
 
-void reloadSkills(void *clientData)
+void reloadSkills()
 {
 	thirdSkillLevelsInit(thirdSkillLevels1, config.getList("cheats", "thirdSkillLevelPlayer"));
 	thirdSkillLevelsInit(thirdSkillLevels2, config.getList("cheats", "thirdSkillLevelPawnMain"));
@@ -136,6 +136,44 @@ void __declspec(naked) HTimeInterval()
 	}
 }
 
+UINT16 *pAffinityLast;
+LPVOID oAffinity;
+enum AffinityMod { Disabled = -1, NoNegative, AllPositive, NoChange, InstantFriend = 850, InstantMax = 900 } iAffinityMod;
+void __declspec(naked) HAffinity()
+{
+	__asm
+	{
+		mov		dword ptr[pAffinityLast], esi;
+		cmp		iAffinityMod, Disabled;
+		jle		getBack;
+		cmp		iAffinityMod, AllPositive;
+		jle		notInstant;
+		cmp		iAffinityMod, NoChange;
+		je		noNegative;
+		movzx	eax, word ptr[esi + 0x8B8];
+		cmp		eax, [iAffinityMod];
+		jae		notInstant;
+		sub		eax, [iAffinityMod];
+		neg		eax;
+		mov		ebp, eax;
+		jmp		getBack;
+
+	notInstant:
+		test	ebp, ebp;
+		jns		getBack;
+		cmp		dword ptr[iAffinityMod], NoNegative;
+		je		noNegative;
+		neg		ebp;
+		jmp		getBack;
+
+	noNegative:
+		xor		ebp, ebp;
+
+	getBack:
+		jmp		oAffinity;
+	}
+}
+
 const float floatZeroConstant = 0.0f;
 float augmentModsValues[0x80];
 bool augmentMods;
@@ -179,54 +217,74 @@ void __declspec(naked) HAugmentMods()
 	}
 }
 
-template<typename T>
-T switchCheats(LPCVOID value, T &var, LPCSTR msg, LPVOID pTarget)
+void renderCheatsUI()
 {
-	bool prevState = var >= 0;
-	var = *(T*)value;
-	bool newState = var >= 0;
-	if (prevState != newState)
-		Hooks::SwitchHook(msg, pTarget, newState);
-	return var;
-}
+	if (ImGui::CollapsingHeader("Cheats"))
+	{
+		TwEnumVal runTypeMapEV[] = { { -1, "Disabled" }, { 0, "Town Animation" }, { 1, "Town Animation + Stamina" }, { 2, "Stamina" } };
+		if (ImGui::ComboEnum<int>("Outside run type", &runType, runTypeMapEV, 4))
+		{
+			config.setInt("cheats", "runType", runType);
+			Hooks::SwitchHook("Cheat (runType)", pRunType, runType >= 0);
+		}
 
-void getCheats(void *value, void *clientData)
-{
-	if (clientData == &skillLevel || clientData == &augmentMods)
-		*(bool*)value = *(bool*)clientData;
-	else
-		*(UINT32*)value = *(UINT32*)clientData;
-}
+		if (ImGui::DragFloat("Weight multiplicator", &mWeight, 0.01f, -1.0f, 1.0f))
+		{
+			config.setFloat("cheats", "weightMultiplicator", mWeight);
+			Hooks::SwitchHook("Cheat (weight)", pWeight, mWeight >= 0);
+		}
 
-void setCheats(const void *value, void *clientData)
-{
-	if (clientData == &runType)
-		config.setInt("cheats", "runType", switchCheats(value, runType, "Cheat (runType)", pRunType));
-	else if (clientData == &mWeight)
-		config.setFloat("cheats", "weightMultiplicator", switchCheats(value, mWeight, "Cheat (weight)", pWeight));
-	else if (clientData == &mTimeInterval)
-	{
-		config.setFloat("cheats", "timeInterval", switchCheats(value, mTimeInterval, "Cheat (timeInterval)", pTimeInterval));
-		realTime = mTimeInterval == 0;
+		if (ImGui::DragFloat("Time speed", &mTimeInterval, 0.1f, -1.0f, 60.0f))
+		{
+			config.setFloat("cheats", "timeInterval", mTimeInterval);
+			realTime = mTimeInterval == 0;
+			Hooks::SwitchHook("Cheat (timeInterval)", pTimeInterval, mTimeInterval >= 0);
+		}
+
+		if (ImGui::Checkbox("3rd level skills", &skillLevel))
+		{
+			config.setBool("cheats", "thirdSkillLevel", skillLevel);
+			Hooks::SwitchHook("Cheat (thirdSkillLevel)", pSkillLevel, skillLevel);
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("  (reload skills)"))
+			reloadSkills();
+
+		ImGui::Separator();
+		if (ImGui::TreeNode("Augment mods"))
+		{
+			if (ImGui::Checkbox("Enabled", &skillLevel))
+			{
+				config.setBool("cheats", "augmentMods", augmentMods);
+				Hooks::SwitchHook("Cheat (augmentMods)", pAugmentMods, augmentMods);
+			}
+
+			if (ImGui::DragFloat("Articulacy", augmentModsValues + 0x51, 1.0f, -1.0f, 100.0f))
+				config.setFloat("cheats", "augmentArticulacy", augmentModsValues[0x51]);
+			if (ImGui::DragFloat("Radiance", augmentModsValues + 0x4B, 0.5f, -1.0f, FLT_MAX))
+				config.setFloat("cheats", "augmentRadiance", augmentModsValues[0x4B]);
+			if (ImGui::DragFloat("Sinew", augmentModsValues + 0x01, 1.0f, -1.0f, FLT_MAX))
+				config.setFloat("cheats", "augmentSinew", augmentModsValues[0x01]);
+			if (ImGui::DragFloat("Perpetuation", augmentModsValues + 0x17, 1.0f, -1.0f, FLT_MAX))
+				config.setFloat("cheats", "augmentPerpetuation", augmentModsValues[0x17]);
+			ImGui::TreePop();
+		}
+
+		if (ImGui::TreeNode("Affinity mods"))
+		{
+			TwEnumVal affinityModEV[] =
+			{
+				{ Disabled, "Disabled" },{ NoNegative, "No negative changes" },{ AllPositive, "All changes are positive" },
+				{ NoChange, "No changes at all" },{ InstantFriend, "Instant friend (850)" },{ InstantMax, "Instant max (900)" }
+			};
+
+			if (ImGui::ComboEnum<int>("Mode", &iAffinityMod, affinityModEV, 6))
+				config.setInt("cheats", "affinityMod", iAffinityMod);
+
+			ImGui::InputScalar<UINT16>("Last changed", pAffinityLast + 0x8B8 / 2, 0, 1000);
+			ImGui::InputScalar<UINT16>("Attitude", pAffinityLast + 0x8BA / 2, 0, UINT16_MAX);
+		}
 	}
-	else if (clientData == &skillLevel)
-	{
-		config.setBool("cheats", "thirdSkillLevel", skillLevel = *(bool*)value);
-		Hooks::SwitchHook("Cheat (thirdSkillLevel)", pSkillLevel, skillLevel);
-	}
-	else if (clientData == &augmentMods)
-	{
-		config.setBool("cheats", "augmentMods", augmentMods = *(bool*)value);
-		Hooks::SwitchHook("Cheat (augmentMods)", pAugmentMods, augmentMods);
-	}
-	else if (clientData == augmentModsValues + 0x51)
-		config.setFloat("cheats", "augmentArticulacy", augmentModsValues[0x51] = *(float*)value);
-	else if (clientData == augmentModsValues + 0x4B)
-		config.setFloat("cheats", "augmentRadiance", augmentModsValues[0x4B] = *(float*)value);
-	else if (clientData == augmentModsValues + 0x01)
-		config.setFloat("cheats", "augmentSinew", augmentModsValues[0x01] = *(float*)value);
-	else if (clientData == augmentModsValues + 0x17)
-		config.setFloat("cheats", "augmentPerpetuation", augmentModsValues[0x17] = *(float*)value);
 }
 
 void Hooks::Cheats()
@@ -240,12 +298,6 @@ void Hooks::Cheats()
 		if (runType > 2 || runType < -1)
 			runType = -1;
 		CreateHook("Cheat (runType)", pRunType += 3, &HRunType, &oRunType, runType >= 0);
-		TweakBarAdd([](TwBar *b)
-		{
-			TwEnumVal runTypeMapEV[] = { { -1, "disabled" }, { 0, "town animation" }, { 1, "town animation + stamina" }, { 2, "stamina" } };
-			TwType runTypeEnum = TwDefineEnum("RunTypeEnum", runTypeMapEV, 4);
-			TwAddVarCB(b, "miscRun", runTypeEnum, setCheats, getCheats, &runType, "group=Main label='Outside run type'");
-		});
 	}
 
 	BYTE sigWeight[] = { 0xF3, 0x0F, 0x58, 0xAB, 0x4C, 0x02, 0x00, 0x00,	//addss		xmm5, dword ptr [ebx+24Ch]
@@ -254,7 +306,6 @@ void Hooks::Cheats()
 	{
 		mWeight = config.getFloat("cheats", "weightMultiplicator", -1);
 		CreateHook("Cheat (weight)", pWeight, &HWeight, &oWeight, mWeight >= 0);
-		TweakBarAddCB("miscWeight", TW_TYPE_FLOAT, setCheats, getCheats, &mWeight, "group=Main label='Weight multiplicator' step=0.01 min=-1.0 max=1.0 precision=4");
 	}
 
 	BYTE sigTime[] = { 0x8B, 0x44, 0x24, 0x08, 0x01, 0x86, 0x68, 0x87, 0x0B, 0x00 };
@@ -263,7 +314,6 @@ void Hooks::Cheats()
 		mTimeInterval = config.getFloat("cheats", "timeInterval", -1);
 		realTime = mTimeInterval == 0;
 		CreateHook("Cheat (timeInterval)", pTimeInterval, &HTimeInterval, &oTimeInterval, mTimeInterval >= 0);
-		TweakBarAddCB("miscTime", TW_TYPE_FLOAT, setCheats, getCheats, &mTimeInterval, "group=Main label='Time speed' step=0.1 min=-1.0");
 	}
 
 	BYTE sigSkill[] = { 0x85, 0x44, 0x8F, 0x74, 0x0F, 0x95, 0xC2 };
@@ -271,10 +321,16 @@ void Hooks::Cheats()
 	{
 		skillLevel = config.getBool("cheats", "thirdSkillLevel", false);
 		CreateHook("Cheat (thirdSkillLevel)", pSkillLevel, &HSkillLevel, &oSkillLevel, skillLevel);
-		TweakBarAddCB("miscSkills", TW_TYPE_BOOLCPP, setCheats, getCheats, &skillLevel, "group=Main label='3rd level skills'");
-		TweakBarAddButton("miscReload", reloadSkills, nullptr, "group=Main label='  (reload skills)'");
 		oSkillLevel += 7;
-		reloadSkills(nullptr);
+		reloadSkills();
+	}
+
+	BYTE *pOffset;
+	BYTE sigAffinity[] = { 0x0F, 0xB7, 0x86, 0xB8, 0x08, 0x00, 0x00, 0x8B, 0xD8, 0x03, 0xC5 };
+	if (FindSignature("Affinity", sigAffinity, &pOffset))
+	{
+		iAffinityMod = (AffinityMod)config.getInt("cheats", "affinityMod", Disabled);
+		CreateHook("Affinity", pOffset, &HAffinity, &oAffinity);
 	}
 
 	BYTE sigSpell[] = { 0x33, 0xC0, 0x81, 0xC1, 0x58, 0x02, 0x00, 0x00, 0x39, 0x11, 0x74, 0x34 };
@@ -286,17 +342,9 @@ void Hooks::Cheats()
 		augmentModsValues[0x4B] = config.getFloat("cheats", "augmentRadiance", -1);
 		augmentModsValues[0x01] = config.getFloat("cheats", "augmentSinew", -1);
 		augmentModsValues[0x17] = config.getFloat("cheats", "augmentPerpetuation", -1);
-
 		CreateHook("Cheat (augmentMods)", pAugmentMods, &HAugmentMods, &oAugmentMods, augmentMods);
-		TweakBarAddCB("augmentMods", TW_TYPE_BOOLCPP, setCheats, getCheats, &augmentMods, "group='Augment mods' label=Enabled");
-		TweakBarAddCB("augmentArticulacy", TW_TYPE_FLOAT, setCheats, getCheats, augmentModsValues + 0x51, "group='Augment mods' label=Articulacy step=1.0 min=-1.0 precision=1 max=100.0");
-		TweakBarAddCB("augmentRadiance", TW_TYPE_FLOAT, setCheats, getCheats, augmentModsValues + 0x4B, "group='Augment mods' label=Radiance step=1.0 min=-1.0 precision=1");
-		TweakBarAddCB("augmentSinew", TW_TYPE_FLOAT, setCheats, getCheats, augmentModsValues + 0x01, "group='Augment mods' label=Sinew step=1.0 min=-1.0 precision=1");
-		TweakBarAddCB("augmentPerpetuation", TW_TYPE_FLOAT, setCheats, getCheats, augmentModsValues + 0x17, "group='Augment mods' label=Perpetuation step=1.0 min=-1.0 precision=1");
-		TweakBarDefine("DDDAFix/'Augment mods' group=Main opened=false");
 	}
 
-	BYTE *pOffset;
 	if (config.getBool("cheats", "shareWeaponSkills", false))
 	{
 		BYTE sig1[] = { 0x0F,0x84,0x97,0x00,0x00,0x00,0x8B,0xCC,0xCC,0xCC,0x8B,0xCC,0x8B };
@@ -359,4 +407,6 @@ void Hooks::Cheats()
 	}
 	else
 		logFile << "Cheat (ignoreSkillVocation): disabled" << std::endl;
+
+	InGameUIAdd(renderCheatsUI);
 }

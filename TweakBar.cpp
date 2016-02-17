@@ -27,29 +27,6 @@ void Hooks::TweakBar()
 }
 
 void Hooks::TweakBarAdd(std::function<void(TwBar*)> func) { functions.push_back(func); }
-void Hooks::TweakBarDefine(const char* def) { TweakBarAdd([def](TwBar *b) { TwDefine(def); }); }
-void Hooks::TweakBarAddRW(const char* name, TwType type, void* var, const char* def)
-{
-	TweakBarAdd([name, type, var, def](TwBar *b) { TwAddVarRW(b, name, type, var, def); });
-}
-
-void Hooks::TweakBarAddRO(const char* name, TwType type, const void* var, const char* def)
-{
-	TweakBarAdd([name, type, var, def](TwBar *b) { TwAddVarRO(b, name, type, var, def); });
-}
-
-void Hooks::TweakBarAddCB(const char* name, TwType type, TwSetVarCallback setCallback, TwGetVarCallback getCallback, void* clientData, const char* def)
-{
-	TweakBarAdd([name, type, setCallback, getCallback, clientData, def](TwBar *b)
-	{
-		TwAddVarCB(b, name, type, setCallback, getCallback, clientData, def);
-	});
-}
-
-void Hooks::TweakBarAddButton(const char *name, TwButtonCallback callback, void *data, const char *def)
-{
-	TweakBarAdd([name, callback, data, def](TwBar *b) { TwAddButton(b, name, callback, data, def); });
-}
 
 void Hooks::setBase(const void *value, void *clientData)
 {

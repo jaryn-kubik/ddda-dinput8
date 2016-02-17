@@ -30,7 +30,7 @@ void drawImGui(LPDIRECT3DDEVICE9 pD3DDevice)
 
 	ImGui_ImplDX9_NewFrame();
 
-	ImGui::SetNextWindowSize(ImVec2(400, 400), ImGuiSetCond_Once);
+	ImGui::SetNextWindowSize(ImVec2(450, 600), ImGuiSetCond_Once);
 	ImGui::Begin("DDDAFix", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings);
 	ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
 	for (size_t i = 0; i < callbacks.size(); i++)
