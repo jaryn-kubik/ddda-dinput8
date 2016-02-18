@@ -1,7 +1,7 @@
 ﻿#include "stdafx.h"
 #include "d3d9.h"
-#include "include/imgui_impl_dx9.h"
-#include "include/imgui_internal.h"
+#include "ImGui/imgui_impl_dx9.h"
+#include "ImGui/imgui_internal.h"
 
 void createImGui(LPDIRECT3DDEVICE9 pD3DDevice, D3DPRESENT_PARAMETERS* pParams)
 {
@@ -47,7 +47,7 @@ void drawImGui(LPDIRECT3DDEVICE9 pD3DDevice)
 
 void Hooks::InGameUI()
 {
-	inGameUIHotkey = config.getUInt("hotkeys", "keyTweakBar", VK_F12) & 0xFF;
+	inGameUIHotkey = config.getUInt("hotkeys", "keyUI", VK_F12) & 0xFF;
 	D3D9Add(createImGui, lostImGui, resetImGui, drawImGui);
 }
 

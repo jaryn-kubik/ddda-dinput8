@@ -9,14 +9,14 @@ namespace Hooks
 
 namespace ImGui
 {
-	template <class T> bool ListBoxFilter(const char *label, void *v, TwEnumVal *items, int count, ImGuiTextFilter &filter, bool scroll)
+	template <class T> bool ListBoxFilter(const char *label, void *v, std::pair<int, LPCSTR> *items, int count, ImGuiTextFilter &filter, bool scroll)
 	{
 		ListBoxHeader(label, count);
 		bool value_changed = false;
 		for (int i = 0; i < count; i++)
 		{
 			const bool item_selected = i == *(T*)v;
-			const char* item_text = items[i].Label;
+			const char* item_text = items[i].second;
 
 			if (!filter.PassFilter(item_text))
 				continue;
@@ -36,17 +36,17 @@ namespace ImGui
 		return value_changed;
 	}
 
-	template<class T> bool ComboEnum(const char *label, void *v, TwEnumVal *items, int count)
+	template<class T> bool ComboEnum(const char *label, void *v, std::pair<int, LPCSTR> *items, int count)
 	{
 		auto items_getter = [](void* data, int idx, const char **text)
 		{
-			*text = ((TwEnumVal*)data)[idx].Label;
+			*text = ((std::pair<int, LPCSTR>*)data)[idx].second;
 			return true;
 		};
 
 		int currentIndex = -1;
 		for (int i = 0; i < count; i++)
-			if (items[i].Value == *(T*)v)
+			if (items[i].first == *(T*)v)
 			{
 				currentIndex = i;
 				break;
@@ -54,7 +54,7 @@ namespace ImGui
 		if (Combo(label, &currentIndex, items_getter, items, count))
 		{
 			if (currentIndex >= 0 && currentIndex < count)
-				*(T*)v = items[currentIndex].Value;
+				*(T*)v = items[currentIndex].first;
 			return true;
 		}
 		return false;

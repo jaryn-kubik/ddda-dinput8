@@ -18,7 +18,7 @@ enum ItemStarType : UINT16
 	StarMask = Star1 | Star2 | Star3 | Star4 | Star5 | Star6
 };
 
-TwEnumVal itemStarTypeEV[], itemEnchantEV[], itemBonusEV[], itemIdEV[];
+std::pair<int, LPCSTR> itemStarTypeEV[], itemEnchantEV[], itemBonusEV[], itemIdEV[];
 void renderItemEditorUI()
 {
 	if (ImGui::CollapsingHeader("Item Editor") && pItem)
@@ -53,13 +53,13 @@ void Hooks::ItemEditor()
 	InGameUIAdd(renderItemEditorUI);
 }
 
-TwEnumVal itemStarTypeEV[] =
+std::pair<int, LPCSTR> itemStarTypeEV[] =
 {
 	{ Star0, "0 stars" }, { Star1, "1 stars" }, { Star2, "2 stars" }, { Star3, "3 stars" },
 	{ Star4, "Dragon forged" }, { Star5, "Silver rarified" }, { Star6, "Gold rarified" }
 };
 
-TwEnumVal itemEnchantEV[]
+std::pair<int, LPCSTR> itemEnchantEV[]
 {
 	{ 40, "40: Blitz Strike" },
 	{ 42, "42: Downcrush" },
@@ -122,7 +122,7 @@ TwEnumVal itemEnchantEV[]
 	{ 65535, "65535: Empty" }
 };
 
-TwEnumVal itemBonusEV[] =
+std::pair<int, LPCSTR> itemBonusEV[] =
 {
 	{ 0, "0: Extends duration of equipped Skills" },
 	{ 1, "1: Boosts Strength when you've been noticed by a large group of enemies" },
@@ -144,7 +144,7 @@ TwEnumVal itemBonusEV[] =
 	{ 65535, "65535: Empty" }
 };
 
-TwEnumVal itemIdEV[] =
+std::pair<int, LPCSTR> itemIdEV[] =
 {
    { 0, "0: Airtight Flask" },
    { 1, "1: Scrag of Beast" },

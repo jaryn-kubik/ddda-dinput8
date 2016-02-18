@@ -62,7 +62,7 @@ void renderStatsParty(const char *label, int offset)
 	ImGui::TreePop();
 }
 
-void renderStatsSkill(int offset, int skillCount, const char *label, TwEnumVal *enumVal, int enumCount)
+void renderStatsSkill(int offset, int skillCount, const char *label, std::pair<int, LPCSTR> *enumVal, int enumCount)
 {
 	if (ImGui::TreeNode(label))
 	{
@@ -72,8 +72,8 @@ void renderStatsSkill(int offset, int skillCount, const char *label, TwEnumVal *
 	}
 }
 
-TwEnumVal skillsAugments[], skillsSword[], skillsLongsword[], skillsDagger[], skillsStaves[];
-TwEnumVal skillsShield[], skillsMagickShield[], skillsBow[], skillsLongbow[], skillsMagickBow[];
+std::pair<int, LPCSTR> skillsAugments[], skillsSword[], skillsLongsword[], skillsDagger[], skillsStaves[];
+std::pair<int, LPCSTR> skillsShield[], skillsMagickShield[], skillsBow[], skillsLongbow[], skillsMagickBow[];
 void renderStatsSkills(const char *label, int offset)
 {
 	if (ImGui::TreeNode(label))
@@ -119,7 +119,7 @@ void renderStatsUI()
 
 void Hooks::PlayerStats() { InGameUIAdd(renderStatsUI); }
 
-TwEnumVal skillsSword[] =
+std::pair<int, LPCSTR> skillsSword[] =
 {
 	{ -1, "-1: Empty" },
 	{ 40, "40: Blink Strike | Burst Strike" },
@@ -144,7 +144,7 @@ TwEnumVal skillsSword[] =
 	{ 59, "59: Clarity | Clairvoyance" }
 };
 
-TwEnumVal skillsLongsword[] =
+std::pair<int, LPCSTR> skillsLongsword[] =
 {
 	{ -1, "-1: Empty" },
 	{ 100, "100: Upward Strike | Whirlwind Slash" },
@@ -159,7 +159,7 @@ TwEnumVal skillsLongsword[] =
 	{ 109, "109: Arc of Might | Arc of Deliverance" }
 };
 
-TwEnumVal skillsDagger[] =
+std::pair<int, LPCSTR> skillsDagger[] =
 {
 	{ -1, "-1: Empty" },
 	{ 150, "150: Biting Wind | Cutting Wind" },
@@ -184,7 +184,7 @@ TwEnumVal skillsDagger[] =
 	{ 169, "169: Easy Kill | Masterful Kill" }
 };
 
-TwEnumVal skillsStaves[] =
+std::pair<int, LPCSTR> skillsStaves[] =
 {
 	{ -1, "-1: Empty" },
 	{ 210, "210: Ingle | High Ingle" },
@@ -219,7 +219,7 @@ TwEnumVal skillsStaves[] =
 	{ 239, "239: Necromancy | High Necromancy" }
 };
 
-/*TwEnumVal skillsStaff[] =
+/*std::pair<int, LPCSTR> skillsStaff[] =
 {
 	{ -1, "-1: Empty" },
 	{ 210, "210: Ingle | High Ingle" },
@@ -244,7 +244,7 @@ TwEnumVal skillsStaves[] =
 	{ 238, "238: Spellscreen | High Spellscreen" }
 };
 
-TwEnumVal skillsArchistaff[] =
+std::pair<int, LPCSTR> skillsArchistaff[] =
 {
 	{ -1, "-1: Empty" },
 	{ 210, "210: Ingle | High Ingle" },
@@ -273,7 +273,7 @@ TwEnumVal skillsArchistaff[] =
 	{ 239, "239: Necromancy | High Necromancy" }
 };*/
 
-TwEnumVal skillsShield[] =
+std::pair<int, LPCSTR> skillsShield[] =
 {
 	{ -1, "-1: Empty" },
 	{ 270, "270: Shield Strike | Shield Storm" },
@@ -287,7 +287,7 @@ TwEnumVal skillsShield[] =
 	{ 278, "278: Staredown | Showdown" }
 };
 
-TwEnumVal skillsMagickShield[] =
+std::pair<int, LPCSTR> skillsMagickShield[] =
 {
 	{ -1, "-1: Empty" },
 	{ 310, "310: Firecounter | Flame Riposte" },
@@ -307,7 +307,7 @@ TwEnumVal skillsMagickShield[] =
 	{ 324, "324: Holy Aid | Holy Grace" }
 };
 
-TwEnumVal skillsBow[] =
+std::pair<int, LPCSTR> skillsBow[] =
 {
 	{ -1, "-1: Empty" },
 	{ 350, "350: Threefold Arrow | Fivefold Flurry" },
@@ -321,7 +321,7 @@ TwEnumVal skillsBow[] =
 	{ 358, "358: Blunting Arrow | Plegic Arrow" }
 };
 
-TwEnumVal skillsLongbow[] =
+std::pair<int, LPCSTR> skillsLongbow[] =
 {
 	{ -1, "-1: Empty" },
 	{ 400, "400: Sixfold Arrow | Tenfold Flurry" },
@@ -335,7 +335,7 @@ TwEnumVal skillsLongbow[] =
 	{ 408, "408: Gamble Draw | Great Gamble" }
 };
 
-TwEnumVal skillsMagickBow[] =
+std::pair<int, LPCSTR> skillsMagickBow[] =
 {
 	{ -1, "-1: Empty" },
 	{ 359, "359: Threefold Bolt | Sixfold Bolt" },
@@ -349,7 +349,7 @@ TwEnumVal skillsMagickBow[] =
 	{ 367, "367: Sacrificial Bolt | Great Sacrifice" }
 };
 
-TwEnumVal skillsAugments[] =
+std::pair<int, LPCSTR> skillsAugments[] =
 {
 	{ -1, "-1: Empty" },
 	{ 0, "0: Fitness" },

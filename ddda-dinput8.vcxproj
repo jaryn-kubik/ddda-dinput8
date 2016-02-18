@@ -99,13 +99,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="InGameUI.cpp" />
-    <ClCompile Include="include\imgui.cpp">
+    <ClCompile Include="ImGui\imgui.cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\stdafx.h</PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="include\imgui_draw.cpp">
+    <ClCompile Include="ImGui\imgui_draw.cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\stdafx.h</PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="include\imgui_impl_dx9.cpp">
+    <ClCompile Include="ImGui\imgui_impl_dx9.cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\stdafx.h</PrecompiledHeaderFile>
     </ClCompile>
     <ClCompile Include="ItemEditor.cpp" />
@@ -127,14 +127,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="InGameUI.h" />
-    <ClInclude Include="include\AntTweakBar.h" />
-    <ClInclude Include="include\imconfig.h" />
-    <ClInclude Include="include\imgui.h" />
-    <ClInclude Include="include\imgui_impl_dx9.h" />
-    <ClInclude Include="include\imgui_internal.h" />
-    <ClInclude Include="include\stb_rect_pack.h" />
-    <ClInclude Include="include\stb_textedit.h" />
-    <ClInclude Include="include\stb_truetype.h" />
+    <ClInclude Include="ImGui\imconfig.h" />
+    <ClInclude Include="ImGui\imgui.h" />
+    <ClInclude Include="ImGui\imgui_impl_dx9.h" />
+    <ClInclude Include="ImGui\imgui_internal.h" />
+    <ClInclude Include="ImGui\stb_rect_pack.h" />
+    <ClInclude Include="ImGui\stb_textedit.h" />
+    <ClInclude Include="ImGui\stb_truetype.h" />
     <ClInclude Include="ItemEditor.h" />
     <ClInclude Include="Misc.h" />
     <ClInclude Include="Cheats.h" />
@@ -142,7 +141,7 @@
     <ClInclude Include="Hotkeys.h" />
     <ClInclude Include="InGameClock.h" />
     <ClInclude Include="dinput8.h" />
-    <ClInclude Include="include\MinHook.h" />
+    <ClInclude Include="MinHook\MinHook.h" />
     <ClInclude Include="iniConfig.h" />
     <ClInclude Include="PlayerStats.h" />
     <ClInclude Include="Portcrystals.h" />
@@ -158,8 +157,7 @@
     <None Include="dinput8.ini" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="include\AntTweakBarStatic.lib" />
-    <Library Include="include\libMinHook-x86-v140-mt.lib" />
+    <Library Include="MinHook\libMinHook-x86-v140-mt.lib" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Version.rc" />

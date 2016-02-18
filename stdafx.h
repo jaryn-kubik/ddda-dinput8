@@ -5,8 +5,8 @@
 #include <SDKDDKVer.h>
 #include <windows.h>
 
+#include <string>
 #include <fstream>
-#include <functional>
 #include <vector>
 #include <algorithm>
 
@@ -16,7 +16,6 @@ using std::string;
 
 #include "iniConfig.h"
 #include "dinput8.h"
-#include "include\AntTweakBar.h"
-#include "include\imgui.h"
+#include "ImGui\imgui.h"
 #include "InGameUI.h"
 #include "steam_api.h"

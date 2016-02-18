@@ -221,7 +221,7 @@ void renderCheatsUI()
 {
 	if (ImGui::CollapsingHeader("Cheats"))
 	{
-		TwEnumVal runTypeMapEV[] = { { -1, "Disabled" }, { 0, "Town Animation" }, { 1, "Town Animation + Stamina" }, { 2, "Stamina" } };
+		std::pair<int, LPCSTR> runTypeMapEV[] = { { -1, "Disabled" }, { 0, "Town Animation" }, { 1, "Town Animation + Stamina" }, { 2, "Stamina" } };
 		if (ImGui::ComboEnum<int>("Outside run type", &runType, runTypeMapEV, 4))
 		{
 			config.setInt("cheats", "runType", runType);
@@ -272,7 +272,7 @@ void renderCheatsUI()
 
 		if (ImGui::TreeNode("Affinity mods"))
 		{
-			TwEnumVal affinityModEV[] =
+			std::pair<int, LPCSTR> affinityModEV[] =
 			{
 				{ Disabled, "Disabled" },{ NoNegative, "No negative changes" },{ AllPositive, "All changes are positive" },
 				{ NoChange, "No changes at all" },{ InstantFriend, "Instant friend (850)" },{ InstantMax, "Instant max (900)" }

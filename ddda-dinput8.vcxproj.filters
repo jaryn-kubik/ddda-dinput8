@@ -9,12 +9,11 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
-    <Filter Include="include">
+    <Filter Include="ImGui">
       <UniqueIdentifier>{1100a992-abbc-40f3-abf5-a80a6a9ac4d3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MinHook">
+      <UniqueIdentifier>{c7998a61-e80b-45bf-b58c-8a94755cc727}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -57,17 +56,17 @@
     <ClCompile Include="Portcrystals.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="include\imgui.cpp">
-      <Filter>include</Filter>
-    </ClCompile>
-    <ClCompile Include="include\imgui_draw.cpp">
-      <Filter>include</Filter>
-    </ClCompile>
-    <ClCompile Include="include\imgui_impl_dx9.cpp">
-      <Filter>include</Filter>
-    </ClCompile>
     <ClCompile Include="InGameUI.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui.cpp">
+      <Filter>ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui_draw.cpp">
+      <Filter>ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui_impl_dx9.cpp">
+      <Filter>ImGui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -75,9 +74,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="README.md" />
-    <ClInclude Include="include\MinHook.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="SaveBackup.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -99,14 +95,8 @@
     <ClInclude Include="Hotkeys.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
-      <Filter>Resource Files</Filter>
-    </ClInclude>
     <ClInclude Include="Misc.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\AntTweakBar.h">
-      <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="ItemEditor.h">
       <Filter>Header Files</Filter>
@@ -123,30 +113,34 @@
     <ClInclude Include="Portcrystals.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\imconfig.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="include\imgui.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="include\imgui_impl_dx9.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="include\imgui_internal.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="include\stb_rect_pack.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="include\stb_textedit.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="include\stb_truetype.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="InGameUI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ImGui\imconfig.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imgui.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imgui_impl_dx9.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imgui_internal.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\stb_truetype.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\stb_rect_pack.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\stb_textedit.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="MinHook\MinHook.h">
+      <Filter>MinHook</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="dinput8.def">
@@ -155,16 +149,11 @@
     <None Include="dinput8.ini" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="include\libMinHook-x86-v140-mt.lib">
-      <Filter>include</Filter>
-    </Library>
-    <Library Include="include\AntTweakBarStatic.lib">
-      <Filter>include</Filter>
+    <Library Include="MinHook\libMinHook-x86-v140-mt.lib">
+      <Filter>MinHook</Filter>
     </Library>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="Version.rc">
-      <Filter>Resource Files</Filter>
-    </ResourceCompile>
+    <ResourceCompile Include="Version.rc" />
   </ItemGroup>
 </Project>
