@@ -147,6 +147,9 @@
       <Filter>Source Files</Filter>
     </None>
     <None Include="dinput8.ini" />
+    <None Include="ImGui\LICENSE">
+      <Filter>ImGui</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Library Include="MinHook\libMinHook-x86-v140-mt.lib">
@@ -155,5 +158,10 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Version.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="MinHook\LICENSE.txt">
+      <Filter>MinHook</Filter>
+    </Text>
   </ItemGroup>
 </Project>

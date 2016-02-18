@@ -155,12 +155,16 @@
   <ItemGroup>
     <None Include="dinput8.def" />
     <None Include="dinput8.ini" />
+    <None Include="ImGui\LICENSE" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="MinHook\libMinHook-x86-v140-mt.lib" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Version.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="MinHook\LICENSE.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
