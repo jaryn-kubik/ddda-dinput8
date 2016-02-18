@@ -55,7 +55,7 @@ LRESULT CALLBACK HWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	if (msg == WM_SIZE && borderlessFullscreen)
 		setBorderlessFullscreen(hwnd);
 
-	if (Hooks::InGameUIEvent(hwnd, msg, wParam, lParam) | Hooks::TweakBarEvent(hwnd, msg, wParam, lParam))
+	if (Hooks::InGameUIEvent(hwnd, msg, wParam, lParam))
 		return 0;
 	if (msg != WM_KEYDOWN || (HIWORD(lParam) & KF_REPEAT) != 0)
 		return oWndProc(hwnd, msg, wParam, lParam);
@@ -77,7 +77,6 @@ void Hooks::Hotkeys()
 	{
 		borderlessFullscreen = config.getBool("main", "borderlessFullscreen", false);
 		menuPause = config.getUInt("hotkeys", "menuPause", 500);
-		keys[VK_F11] = []() {TweakBarSwitch(); };
 		loadHotkey("keySave", VK_F5, []() { if (pSave && *pSave) (*pSave)[0x21AFD6] = 1; });
 		loadHotkey("keyCheckpoint", VK_F9, []() { if (pSave && *pSave) (*pSave)[0x21AFD5] = 1; });
 		loadHotkey("keyMap", 'M', []() { hotkeyStart(0); });

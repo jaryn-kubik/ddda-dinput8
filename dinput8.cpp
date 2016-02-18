@@ -17,14 +17,14 @@ tDirectInput8Create oDirectInput8Create = nullptr;
 BYTE *codeBase, *codeEnd, *dataBase, *dataEnd;
 std::ofstream logFile("dinput8.log", std::ios_base::out);
 iniConfig config(".\\dinput8.ini");
-DWORD **pBase;
+BYTE **pBase;
 
 void InitHooks()
 {
 	BYTE sig[] = { 0x8B, 0x15, 0xCC, 0xCC, 0xCC, 0xCC, 0x33, 0xDB, 0x8B, 0xF8 };
 	BYTE *pOffset;
 	if (Hooks::FindSignature("BasePointer", sig, &pOffset))
-		pBase = *(DWORD***)(pOffset + 2);
+		pBase = *(BYTE***)(pOffset + 2);
 
 	Hooks::SaveBackup();
 	Hooks::Hotkeys();
@@ -37,7 +37,6 @@ void InitHooks()
 		Hooks::PlayerStats();
 		Hooks::ItemEditor();
 		Hooks::InGameClock();
-		Hooks::TweakBar();
 		Hooks::InGameUI();
 	}
 }

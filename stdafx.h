@@ -17,7 +17,6 @@ using std::string;
 #include "iniConfig.h"
 #include "dinput8.h"
 #include "include\AntTweakBar.h"
-#include "TweakBar.h"
 #include "include\imgui.h"
 #include "InGameUI.h"
 #include "steam_api.h"

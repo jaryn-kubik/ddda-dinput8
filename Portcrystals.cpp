@@ -41,22 +41,24 @@ void renderPortcrystalsUI()
 
 		for (int i = 0; i < 10; i++)
 		{
-			DWORD address = 0xBE3A0 + 16 * i;
-			renderPortcrystalsPos(std::to_string(i).c_str(), (float*)(*pBase + address / 4));
+			ImGui::PushID(i);
+			float *pPosition = GetBasePtr<float>(0xBE3A0 + 16 * i);
+			renderPortcrystalsPos("##p", pPosition);
 			ImGui::SameLine();
 			if (ImGui::Button("Cursor"))
 			{
-				((float*)(*pBase + address / 4))[0] = pMapCursor[0];
-				((float*)(*pBase + address / 4))[1] = pMapCursor[1];
-				((float*)(*pBase + address / 4))[2] = pMapCursor[2];
+				pPosition[0] = pMapCursor[0];
+				pPosition[1] = pMapCursor[1];
+				pPosition[2] = pMapCursor[2];
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Closest"))
 			{
-				((float*)(*pBase + address / 4))[0] = pMapClosest[0];
-				((float*)(*pBase + address / 4))[1] = pMapClosest[1];
-				((float*)(*pBase + address / 4))[2] = pMapClosest[2];
+				pPosition[0] = pMapClosest[0];
+				pPosition[1] = pMapClosest[1];
+				pPosition[2] = pMapClosest[2];
 			}
+			ImGui::PopID();
 		}
 	}
 }

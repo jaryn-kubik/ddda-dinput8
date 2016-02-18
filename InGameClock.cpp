@@ -44,8 +44,8 @@ void onEndScene(LPDIRECT3DDEVICE9 pD3DDevice)
 {
 	if (clockEnabled && pBase && *pBase)
 	{
-		DWORD h = (*pBase)[0xB876C / 4];
-		DWORD m = (*pBase)[0xB8770 / 4];
+		DWORD h = *GetBasePtr<UINT32>(0xB876C);
+		DWORD m = *GetBasePtr<UINT32>(0xB8770);
 		if (clockTimebase != 1)
 		{
 			DWORD t = h * 60 + m;
@@ -81,23 +81,19 @@ void onEndScene(LPDIRECT3DDEVICE9 pD3DDevice)
 void Hooks::InGameClockSwitch() { clockEnabled = !clockEnabled; }
 void Hooks::InGameClockInc(BYTE minutes)
 {
-	if (pBase && *pBase)
-		(*pBase)[0xB8768 / 4] += minutes * 60000;
+	*GetBasePtr<UINT32>(0xB8768) += minutes * 60000;
 }
 
 void Hooks::InGameClockDec(BYTE minutes)
 {
-	if (pBase && *pBase)
+	DWORD time = *GetBasePtr<UINT32>(0xB8768);
+	if (time < minutes * 60000U)
 	{
-		DWORD time = (*pBase)[0xB8768 / 4];
-		if (time < minutes * 60000U)
-		{
-			if ((*pBase)[0xB8760 / 4] > 0)
-				(*pBase)[0xB8760 / 4]--;
-			time += 3600000 * 24;
-		}
-		(*pBase)[0xB8768 / 4] = time - minutes * 60000;
+		if (*GetBasePtr<UINT32>(0xB8760) > 0)
+			(*GetBasePtr<UINT32>(0xB8760))--;
+		time += 3600000 * 24;
 	}
+	*GetBasePtr<UINT32>(0xB8768) = time - minutes * 60000;
 }
 
 std::pair<int, LPCSTR> clockPosVMap[] = { { DT_TOP, "top"}, { DT_BOTTOM, "bottom" } };

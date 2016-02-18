@@ -43,7 +43,7 @@ void reloadSkills()
 
 int __stdcall GetSkillTier(UINT16 skill, DWORD address)
 {
-	address -= (DWORD)*pBase;
+	address -= (DWORD)GetBasePtr(0);
 	if (address == 0xA7DFC)//player
 		return thirdSkillLevels1[skill & 0x1FF];
 	if (address == 0xA85EC)//main pawn

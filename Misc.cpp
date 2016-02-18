@@ -109,8 +109,8 @@ void renderMiscUI()
 		}
 
 		std::pair<int, const char*> weather[]{ { 0, "Clear sky" }, { 1, "Cloudy" }, { 2, "Foggy" }, { 3, "Vulcanic (post-game)" } };
-		ImGui::RadioButtons(*pBase + 0xB8780 / 4, weather);
-		ImGui::Checkbox("Weather - post game", (bool*)(*pBase + 0xB33A8 / 4));
+		ImGui::RadioButtons(GetBasePtr(0xB8780), weather);
+		ImGui::Checkbox("Weather - post game", GetBasePtr<bool>(0xB33A8));
 	}
 }
 

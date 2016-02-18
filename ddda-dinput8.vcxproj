@@ -124,7 +124,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="TweakBar.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="InGameUI.h" />
@@ -153,7 +152,6 @@
     <ClInclude Include="Server.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="steam_api.h" />
-    <ClInclude Include="TweakBar.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="dinput8.def" />

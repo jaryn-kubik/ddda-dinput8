@@ -1,136 +1,123 @@
 ﻿#include "stdafx.h"
 #include "PlayerStats.h"
 
-void setSkills(const void *value, void *clientData)
+void renderStatsParty(const char *label, int offset)
 {
-	if (pBase && *pBase)
-		memcpy(*pBase + (DWORD)clientData / 4, value, 24);
-}
+	if (!ImGui::TreeNode(label))
+		return;
 
-void getSkills(void *value, void *clientData)
-{
-	if (pBase && *pBase)
-		memcpy(value, *pBase + (DWORD)clientData / 4, 24);
-}
+	int baseOffset = 0xA7000 + offset;
+	ImGui::InputScalar<int>("Level", GetBasePtr(baseOffset + 0xDD0), 0);
+	ImGui::InputScalar<int>("Discipline Points", GetBasePtr(baseOffset + 0xA14), 0);
+	ImGui::InputScalar<int>("XP", GetBasePtr(baseOffset + 0x994), 0);
 
-void skillSummary(char *str, size_t len, const void *val, void *data) { str[0] = '\0'; }
-void addSkill(TwBar *bar, DWORD offset, int count, string name, TwEnumVal *enumVal, unsigned int valCount)
-{
-	string var = "skills" + name;
-	string def = "group=Skills label='" + name + "'";
-	TwType type = TwDefineEnum((var + "Enum").c_str(), enumVal, valCount);
+	int statsOffset = baseOffset + 0x96C;
+	ImGui::InputFloatN("HP (Current/Max/Max+)", GetBasePtr<float>(statsOffset + 4 * 0), 3, 0.0f, FLT_MAX, 2);
+	ImGui::InputFloatN("Stamina (Current/Max/Max+)", GetBasePtr<float>(statsOffset + 4 * 3), 3, 0.0f, FLT_MAX, 2);
 
-	TwStructMember skillStruct[] =
+	ImGui::Columns(2, nullptr, false);
+	ImGui::InputFloat("Strength", GetBasePtr<float>(statsOffset + 4 * 6));
+	ImGui::NextColumn();
+	ImGui::InputFloat("Defenses", GetBasePtr<float>(statsOffset + 4 * 7));
+	ImGui::Columns();
+
+	ImGui::Columns(2, nullptr, false);
+	ImGui::InputFloat("Magick", GetBasePtr<float>(statsOffset + 4 * 8));
+	ImGui::NextColumn();
+	ImGui::InputFloat("Magick Defenses", GetBasePtr<float>(statsOffset + 4 * 9));
+	ImGui::Columns();
+
+	if (ImGui::TreeNode("Vocations"))
 	{
-		{ "1", type, 4 * 0, "" }, { "2", type, 4 * 1, "" }, { "3", type, 4 * 2, "" },
-		{ "4", type, 4 * 3, "" }, { "5", type, 4 * 4, "" }, { "6", type, 4 * 5, "" }
-	};
-	TwType skillType = TwDefineStruct((var + "Struct").c_str(), skillStruct, count, 4 * 6, skillSummary, nullptr);
-	TwAddVarCB(bar, var.c_str(), skillType, setSkills, getSkills, (LPVOID)offset, def.c_str());
+		int vocationOffset = statsOffset + 13 * 4;
+		ImGui::InputScalar<int>("Fighter", GetBasePtr(vocationOffset += 0), 0, 9);
+		ImGui::InputScalar<int>("Strider", GetBasePtr(vocationOffset += 4), 0, 9);
+		ImGui::InputScalar<int>("Mage", GetBasePtr(vocationOffset += 4), 0, 9);
+		if (!offset)// player
+		{
+			ImGui::InputScalar<int>("Mystic Knight", GetBasePtr(vocationOffset += 4), 0, 9);
+			ImGui::InputScalar<int>("Assassin", GetBasePtr(vocationOffset += 4), 0, 9);
+			ImGui::InputScalar<int>("Magic Archer", GetBasePtr(vocationOffset += 4), 0, 9);
+		}
+		ImGui::InputScalar<int>("Warrior", GetBasePtr(vocationOffset += 4), 0, 9);
+		ImGui::InputScalar<int>("Ranger", GetBasePtr(vocationOffset += 4), 0, 9);
+		ImGui::InputScalar<int>("Sorcerer", GetBasePtr(vocationOffset += 4), 0, 9);
+		ImGui::TreePop();
+	}
+
+	if (offset == 0x7F0 && ImGui::TreeNode("Inclinations"))//main pawn
+	{
+		int inclinationsOffset = statsOffset + 0x1224;
+		ImGui::InputFloatN("Scather", GetBasePtr<float>(inclinationsOffset += 0), 1, 0);
+		ImGui::InputFloatN("Medicant", GetBasePtr<float>(inclinationsOffset += 4 * 3), 1, 0);
+		ImGui::InputFloatN("Mitigator", GetBasePtr<float>(inclinationsOffset += 4 * 3), 1, 0);
+		ImGui::InputFloatN("Challenger", GetBasePtr<float>(inclinationsOffset += 4 * 3), 1, 0);
+		ImGui::InputFloatN("Utilitarian", GetBasePtr<float>(inclinationsOffset += 4 * 3), 1, 0);
+		ImGui::InputFloatN("Guardian", GetBasePtr<float>(inclinationsOffset += 4 * 3), 1, 0);
+		ImGui::InputFloatN("Nexus", GetBasePtr<float>(inclinationsOffset += 4 * 3), 1, 0);
+		ImGui::InputFloatN("Pioneer", GetBasePtr<float>(inclinationsOffset += 4 * 3), 1, 0);
+		ImGui::InputFloatN("Acquisitor", GetBasePtr<float>(inclinationsOffset += 4 * 3), 1, 0);
+		ImGui::TreePop();
+	}
+	ImGui::TreePop();
+}
+
+void renderStatsSkill(int offset, int skillCount, const char *label, TwEnumVal *enumVal, int enumCount)
+{
+	if (ImGui::TreeNode(label))
+	{
+		for (int i = 0; i < skillCount; i++)
+			ImGui::ComboEnum<UINT32>(("##" + std::to_string(i)).c_str(), GetBasePtr(offset + 4 * i), enumVal, enumCount);
+		ImGui::TreePop();
+	}
 }
 
 TwEnumVal skillsAugments[], skillsSword[], skillsLongsword[], skillsDagger[], skillsStaves[];
 TwEnumVal skillsShield[], skillsMagickShield[], skillsBow[], skillsLongbow[], skillsMagickBow[];
-void addPlayerStats(TwBar *bar)
+void renderStatsSkills(const char *label, int offset)
 {
-	using namespace Hooks;
-	//player
-	TwAddVarCB(bar, "playerGold", TW_TYPE_UINT32, setBase, getBase, (LPVOID)0xA7A18, "group=Stats label=Gold");
-	TwAddVarCB(bar, "playerRC", TW_TYPE_UINT32, setBase, getBase, (LPVOID)0xA7A1C, "group=Stats label='Rift Crystals'");
-	TwDefine("DDDAFix/Stats opened=false");
-
-	TwAddVarCB(bar, "playerLevel", TW_TYPE_UINT32, setBase, getBase, (LPVOID)0xA7DD0, "group=Player label=Level");
-	TwAddVarCB(bar, "playerDCP", TW_TYPE_UINT32, setBase, getBase, (LPVOID)0xA7A14, "group=Player label='Discipline Points'");
-	TwAddVarCB(bar, "playerXP", TW_TYPE_UINT32, setBase, getBase, (LPVOID)0xA7994, "group=Player label=XP");
-
-	TwAddVarCB(bar, "playerHPC", TW_TYPE_FLOAT, setBase, getBase, (LPVOID)0xA796C, "group=PStats label='HP Current'");
-	TwAddVarCB(bar, "playerHP", TW_TYPE_FLOAT, setBase, getBase, (LPVOID)0xA7970, "group=PStats label='HP Max'");
-	TwAddVarCB(bar, "playerHPlus", TW_TYPE_FLOAT, setBase, getBase, (LPVOID)0xA7974, "group=PStats label='HP Max+'");
-	TwAddVarCB(bar, "playerStamC", TW_TYPE_FLOAT, setBase, getBase, (LPVOID)0xA7978, "group=PStats label='Stamina Current'");
-	TwAddVarCB(bar, "playerStam", TW_TYPE_FLOAT, setBase, getBase, (LPVOID)0xA797C, "group=PStats label='Stamina Max'");
-	TwAddVarCB(bar, "playerStamPlus", TW_TYPE_FLOAT, setBase, getBase, (LPVOID)0xA7980, "group=PStats label='Stamina Max+'");
-	TwAddVarCB(bar, "playerStr", TW_TYPE_FLOAT, setBase, getBase, (LPVOID)0xA7984, "group=PStats label=Strength");
-	TwAddVarCB(bar, "playerDef", TW_TYPE_FLOAT, setBase, getBase, (LPVOID)0xA7988, "group=PStats label=Defenses");
-	TwAddVarCB(bar, "playerMStr", TW_TYPE_FLOAT, setBase, getBase, (LPVOID)0xA798C, "group=PStats label=Magick");
-	TwAddVarCB(bar, "playerMDef", TW_TYPE_FLOAT, setBase, getBase, (LPVOID)0xA7990, "group=PStats label='Magick Defenses'");
-
-	TwAddVarCB(bar, "playerVocFighter", TW_TYPE_UINT32, setBase, getBase, (LPVOID)0xA79A0, "group=PVocations label=Fighter max=9");
-	TwAddVarCB(bar, "playerVocStrider", TW_TYPE_UINT32, setBase, getBase, (LPVOID)0xA79A4, "group=PVocations label=Strider max=9");
-	TwAddVarCB(bar, "playerVocMage", TW_TYPE_UINT32, setBase, getBase, (LPVOID)0xA79A8, "group=PVocations label=Mage max=9");
-	TwAddVarCB(bar, "playerVocKnight", TW_TYPE_UINT32, setBase, getBase, (LPVOID)0xA79AC, "group=PVocations label='Mystic Knight' max=9");
-	TwAddVarCB(bar, "playerVocAss", TW_TYPE_UINT32, setBase, getBase, (LPVOID)0xA79B0, "group=PVocations label=Assassin max=9");
-	TwAddVarCB(bar, "playerVocArc", TW_TYPE_UINT32, setBase, getBase, (LPVOID)0xA79B4, "group=PVocations label='Magic Archer' max=9");
-	TwAddVarCB(bar, "playerVocWar", TW_TYPE_UINT32, setBase, getBase, (LPVOID)0xA79B8, "group=PVocations label=Warrior max=9");
-	TwAddVarCB(bar, "playerVocRang", TW_TYPE_UINT32, setBase, getBase, (LPVOID)0xA79BC, "group=PVocations label=Ranger max=9");
-	TwAddVarCB(bar, "playerVocSorc", TW_TYPE_UINT32, setBase, getBase, (LPVOID)0xA79C0, "group=PVocations label=Sorcerer max=9");
-	TwDefine("DDDAFix/PStats group=Player label=Stats opened=false");
-	TwDefine("DDDAFix/PVocations group=Player label=Vocations opened=false");
-	TwDefine("DDDAFix/Player group=Stats opened=false");
-
-	//main pawn
-	TwAddVarCB(bar, "pawnLevel", TW_TYPE_UINT32, setBase, getBase, (LPVOID)0xA85C0, "group=Pawn label=Level");
-	TwAddVarCB(bar, "pawnDCP", TW_TYPE_UINT32, setBase, getBase, (LPVOID)0xA8204, "group=Pawn label='Discipline Points'");
-	TwAddVarCB(bar, "pawnXP", TW_TYPE_UINT32, setBase, getBase, (LPVOID)0xA8184, "group=Pawn label=XP");
-
-	TwAddVarCB(bar, "pawnHPC", TW_TYPE_FLOAT, setBase, getBase, (LPVOID)0xA815C, "group=MStats label='HP Current'");
-	TwAddVarCB(bar, "pawnHP", TW_TYPE_FLOAT, setBase, getBase, (LPVOID)0xA8160, "group=MStats label='HP Max'");
-	TwAddVarCB(bar, "pawnHPlus", TW_TYPE_FLOAT, setBase, getBase, (LPVOID)0xA8164, "group=MStats label='HP Max+'");
-	TwAddVarCB(bar, "pawnStamC", TW_TYPE_FLOAT, setBase, getBase, (LPVOID)0xA8168, "group=MStats label='Stamina Current'");
-	TwAddVarCB(bar, "pawnStam", TW_TYPE_FLOAT, setBase, getBase, (LPVOID)0xA816C, "group=MStats label='Stamina Max'");
-	TwAddVarCB(bar, "pawnStamPlus", TW_TYPE_FLOAT, setBase, getBase, (LPVOID)0xA8170, "group=MStats label='Stamina Max+'");
-	TwAddVarCB(bar, "pawnStr", TW_TYPE_FLOAT, setBase, getBase, (LPVOID)0xA8174, "group=MStats label=Strength");
-	TwAddVarCB(bar, "pawnDef", TW_TYPE_FLOAT, setBase, getBase, (LPVOID)0xA8178, "group=MStats label=Defenses");
-	TwAddVarCB(bar, "pawnMStr", TW_TYPE_FLOAT, setBase, getBase, (LPVOID)0xA817C, "group=MStats label=Magick");
-	TwAddVarCB(bar, "pawnMDef", TW_TYPE_FLOAT, setBase, getBase, (LPVOID)0xA8180, "group=MStats label='Magick Defenses'");
-
-	TwAddVarCB(bar, "pawnVocFighter", TW_TYPE_UINT32, setBase, getBase, (LPVOID)0xA8190, "group=MVocations label=Fighter max=9");
-	TwAddVarCB(bar, "pawnVocStrider", TW_TYPE_UINT32, setBase, getBase, (LPVOID)0xA8194, "group=MVocations label=Strider max=9");
-	TwAddVarCB(bar, "pawnVocMage", TW_TYPE_UINT32, setBase, getBase, (LPVOID)0xA8198, "group=MVocations label=Mage max=9");
-	TwAddVarCB(bar, "pawnVocWar", TW_TYPE_UINT32, setBase, getBase, (LPVOID)0xA81A8, "group=MVocations label=Warrior max=9");
-	TwAddVarCB(bar, "pawnVocRang", TW_TYPE_UINT32, setBase, getBase, (LPVOID)0xA81AC, "group=MVocations label=Ranger max=9");
-	TwAddVarCB(bar, "pawnVocSorc", TW_TYPE_UINT32, setBase, getBase, (LPVOID)0xA81B0, "group=MVocations label=Sorcerer max=9");
-
-	TwAddVarCB(bar, "pawnIScather", TW_TYPE_FLOAT, setBase, getBase, (LPVOID)0xA9380, "group=MInclination label=Scather");
-	TwAddVarCB(bar, "pawnIMedicant", TW_TYPE_FLOAT, setBase, getBase, (LPVOID)0xA938C, "group=MInclination label=Medicant");
-	TwAddVarCB(bar, "pawnIMitigator", TW_TYPE_FLOAT, setBase, getBase, (LPVOID)0xA9398, "group=MInclination label=Mitigator");
-	TwAddVarCB(bar, "pawnIChallenger", TW_TYPE_FLOAT, setBase, getBase, (LPVOID)0xA93A4, "group=MInclination label=Challenger");
-	TwAddVarCB(bar, "pawnIUtilitarian", TW_TYPE_FLOAT, setBase, getBase, (LPVOID)0xA93B0, "group=MInclination label=Utilitarian");
-	TwAddVarCB(bar, "pawnIGuardian", TW_TYPE_FLOAT, setBase, getBase, (LPVOID)0xA93BC, "group=MInclination label=Guardian");
-	TwAddVarCB(bar, "pawnINexus", TW_TYPE_FLOAT, setBase, getBase, (LPVOID)0xA93C8, "group=MInclination label=Nexus");
-	TwAddVarCB(bar, "pawnIPioneer", TW_TYPE_FLOAT, setBase, getBase, (LPVOID)0xA93D4, "group=MInclination label=Pioneer");
-	TwAddVarCB(bar, "pawnIAcquisitor", TW_TYPE_FLOAT, setBase, getBase, (LPVOID)0xA93E0, "group=MInclination label=Acquisitor");
-	TwDefine("DDDAFix/MStats group=Pawn label=Stats opened=false");
-	TwDefine("DDDAFix/MVocations group=Pawn label=Vocations opened=false");
-	TwDefine("DDDAFix/MInclination group=Pawn label=Inclinations opened=false");
-	TwDefine("DDDAFix/Pawn group=Stats opened=false");
-
-	//skills
-	addSkill(bar, 0xA7928, 6, "Augments", skillsAugments, 83);
-	addSkill(bar, 0xA7808 + 24 * 0, 3, "Sword", skillsSword, 21);
-	addSkill(bar, 0xA7808 + 24 * 1, 3, "Mace", skillsSword, 21);
-	addSkill(bar, 0xA7808 + 24 * 2, 3, "Longsword", skillsLongsword, 11);
-	addSkill(bar, 0xA7808 + 24 * 6, 3, "Warhammer", skillsLongsword, 11);
-	addSkill(bar, 0xA7808 + 24 * 3, 3, "Dagger", skillsDagger, 21);
-	addSkill(bar, 0xA7808 + 24 * 4, 6, "Staff", skillsStaves, 31);
-	addSkill(bar, 0xA7808 + 24 * 5, 6, "Archistaff", skillsStaves, 31);
-	addSkill(bar, 0xA7808 + 24 * 7, 3, "Shield", skillsShield, 10);
-	addSkill(bar, 0xA7808 + 24 * 8, 3, "MagickShield", skillsMagickShield, 16);
-	addSkill(bar, 0xA7808 + 24 * 9, 3, "Bow", skillsBow, 10);
-	addSkill(bar, 0xA7808 + 24 * 10, 3, "Longbow", skillsLongbow, 10);
-	addSkill(bar, 0xA7808 + 24 * 11, 3, "MagickBow", skillsMagickBow, 10);
-	TwDefine("DDDAFix/Skills opened=false");
-
-	//a7940 - current primary 1
-	//a7944 - current primary 2
-	//a7948 - current primary 3
-	//a794C - current secondary 1
-	//a7950 - current secondary 2
-	//a7954 - current secondary 3
-	//a76e4 - current primary weapon
-	//a76e8 - current secondary weapon
+	if (ImGui::TreeNode(label))
+	{
+		int skillsOffset = 0xA7808 + offset;
+		renderStatsSkill(skillsOffset + 24 * 12, 6, "Augments", skillsAugments, 83);
+		renderStatsSkill(skillsOffset + 24 * 0, 3, "Sword", skillsSword, 21);
+		renderStatsSkill(skillsOffset + 24 * 1, 3, "Mace", skillsSword, 21);
+		renderStatsSkill(skillsOffset + 24 * 2, 3, "Longsword", skillsLongsword, 11);
+		renderStatsSkill(skillsOffset + 24 * 6, 3, "Warhammer", skillsLongsword, 11);
+		renderStatsSkill(skillsOffset + 24 * 3, 3, "Dagger", skillsDagger, 21);
+		renderStatsSkill(skillsOffset + 24 * 4, 6, "Staff", skillsStaves, 31);
+		renderStatsSkill(skillsOffset + 24 * 5, 6, "Archistaff", skillsStaves, 31);
+		renderStatsSkill(skillsOffset + 24 * 7, 3, "Shield", skillsShield, 10);
+		renderStatsSkill(skillsOffset + 24 * 8, 3, "Magick Shield", skillsMagickShield, 16);
+		renderStatsSkill(skillsOffset + 24 * 9, 3, "Bow", skillsBow, 10);
+		renderStatsSkill(skillsOffset + 24 * 10, 3, "Longbow", skillsLongbow, 10);
+		renderStatsSkill(skillsOffset + 24 * 11, 3, "Magic kBow", skillsMagickBow, 10);
+		ImGui::TreePop();
+	}
 }
 
-void Hooks::PlayerStats() { TweakBarAdd(addPlayerStats); }
+void renderStatsUI()
+{
+	if (ImGui::CollapsingHeader("Stats"))
+	{
+		ImGui::InputScalar<int>("Gold", GetBasePtr(0xA7A18), 0);
+		ImGui::InputScalar<int>("Rift Crystals", GetBasePtr(0xA7A1C), 0);
+		renderStatsParty("Player", 0);
+		renderStatsParty("Main Pawn", 0x7F0);
+		renderStatsParty("Pawn 1", 0x7F0 + 0x1660);
+		renderStatsParty("Pawn 2", 0x7F0 + 0x1660 + 0x1660);
+	}
+
+	if (ImGui::CollapsingHeader("Skills"))
+	{
+		renderStatsSkills("Player", 0);
+		renderStatsSkills("Main Pawn", 0x7F0);
+		renderStatsSkills("Pawn 1", 0x7F0 + 0x1660);
+		renderStatsSkills("Pawn 2", 0x7F0 + 0x1660 + 0x1660);
+	}
+}
+
+void Hooks::PlayerStats() { InGameUIAdd(renderStatsUI); }
 
 TwEnumVal skillsSword[] =
 {

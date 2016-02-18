@@ -42,9 +42,6 @@
     <ClCompile Include="Misc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TweakBar.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ItemEditor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -106,9 +103,6 @@
       <Filter>Resource Files</Filter>
     </ClInclude>
     <ClInclude Include="Misc.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="TweakBar.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\AntTweakBar.h">

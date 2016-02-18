@@ -2,7 +2,9 @@
 
 extern std::ofstream logFile;
 extern iniConfig config;
-extern DWORD **pBase;
+extern BYTE **pBase;
+
+template<class T = void> T* GetBasePtr(int offset) { return (T*)(*pBase + offset); }
 
 namespace Hooks
 {
@@ -12,7 +14,7 @@ namespace Hooks
 	bool FindSignature(LPCSTR msg, BYTE *signature, size_t len, BYTE **offset);
 	bool FindData(LPCSTR msg, BYTE *signature, size_t len, BYTE **offset);
 
-	template <typename T>
+	template <class T>
 	void CreateHook(LPCSTR msg, LPVOID pTarget, LPVOID pDetour, T** ppOriginal, bool enable = true)
 	{
 		CreateHook(msg, pTarget, pDetour, reinterpret_cast<LPVOID*>(ppOriginal), enable);
@@ -33,7 +35,7 @@ namespace Hooks
 		return FindData(msg, signature, len, offset);
 	}
 
-	template<typename T> void Set(T *address, std::initializer_list<T> args)
+	template<class T> void Set(T *address, std::initializer_list<T> args)
 	{
 		DWORD oldProtect;
 		VirtualProtect(address, args.size() * sizeof(T), PAGE_EXECUTE_READWRITE, &oldProtect);

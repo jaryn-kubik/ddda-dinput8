@@ -1,6 +1,7 @@
 ﻿#include "stdafx.h"
 #include "d3d9.h"
 #include "include/imgui_impl_dx9.h"
+#include "include/imgui_internal.h"
 
 void createImGui(LPDIRECT3DDEVICE9 pD3DDevice, D3DPRESENT_PARAMETERS* pParams)
 {
@@ -56,4 +57,23 @@ LRESULT Hooks::InGameUIEvent(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	if (msg == WM_KEYDOWN && (HIWORD(lParam) & KF_REPEAT) == 0 && wParam == inGameUIHotkey)
 		inGameUIEnabled = !inGameUIEnabled;
 	return inGameUIEnabled ? ImGui_ImplDX9_WndProcHandler(hwnd, msg, wParam, lParam) : 0;
+}
+
+namespace ImGui
+{
+	bool InputFloatN(const char* label, float* v, int components, float min, float max, int precision)
+	{
+		if (InputFloatN(label, v, components, precision, 0))
+		{
+			for (int i = 0; i < components; i++)
+			{
+				if (v[i] < min)
+					v[i] = min;
+				if (v[i] > max)
+					v[i] = max;
+			}
+			return true;
+		}
+		return false;
+	}
 }

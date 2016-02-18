@@ -87,7 +87,7 @@ namespace ImGui
 		return false;
 	}
 
-	template<class T> bool InputScalar(const char* label, void *v, int min, int max, int step = 1, int step_fast = 100)
+	template<class T> bool InputScalar(const char* label, void *v, int min, int max = INT_MAX, int step = 1, int step_fast = 100)
 	{
 		int v_i = (int)*(T*)v;
 		if (InputInt(label, &v_i, step, step_fast))
@@ -101,4 +101,6 @@ namespace ImGui
 		}
 		return false;
 	}
+
+	bool InputFloatN(const char* label, float* v, int components, float min, float max = FLT_MAX, int precision = -1);
 }
