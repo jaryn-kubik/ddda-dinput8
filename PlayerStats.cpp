@@ -7,25 +7,31 @@ void renderStatsParty(const char *label, int offset)
 		return;
 
 	int baseOffset = 0xA7000 + offset;
-	ImGui::InputScalar<int>("Level", GetBasePtr(baseOffset + 0xDD0), 0);
-	ImGui::InputScalar<int>("Discipline Points", GetBasePtr(baseOffset + 0xA14), 0);
-	ImGui::InputScalar<int>("XP", GetBasePtr(baseOffset + 0x994), 0);
-
 	int statsOffset = baseOffset + 0x96C;
-	ImGui::InputFloatN("HP (Current/Max/Max+)", GetBasePtr<float>(statsOffset + 4 * 0), 3, 0.0f, FLT_MAX, 2);
-	ImGui::InputFloatN("Stamina (Current/Max/Max+)", GetBasePtr<float>(statsOffset + 4 * 3), 3, 0.0f, FLT_MAX, 2);
+	if (ImGui::TreeNode("Attributes"))
+	{
+		ImGui::Columns(3, nullptr, false);
+		ImGui::InputScalar<int>("Level", GetBasePtr(baseOffset + 0xDD0), 0, 200, -1);
+		ImGui::NextColumn();
+		ImGui::InputScalar<int>("DP", GetBasePtr(baseOffset + 0xA14), 0, INT_MAX, -1);
+		ImGui::NextColumn();
+		ImGui::InputScalar<int>("XP", GetBasePtr(baseOffset + 0x994), 0, INT_MAX, -1);
+		ImGui::Columns();
 
-	ImGui::Columns(2, nullptr, false);
-	ImGui::InputFloat("Strength", GetBasePtr<float>(statsOffset + 4 * 6));
-	ImGui::NextColumn();
-	ImGui::InputFloat("Defenses", GetBasePtr<float>(statsOffset + 4 * 7));
-	ImGui::Columns();
+		ImGui::Separator();
+		ImGui::InputFloatN("HP (Current/Max/Max+)", GetBasePtr<float>(statsOffset + 4 * 0), 3, 70.0f);
+		ImGui::InputFloatN("Stamina (Current/Max/Max+)", GetBasePtr<float>(statsOffset + 4 * 3), 3, 70.0f);
 
-	ImGui::Columns(2, nullptr, false);
-	ImGui::InputFloat("Magick", GetBasePtr<float>(statsOffset + 4 * 8));
-	ImGui::NextColumn();
-	ImGui::InputFloat("Magick Defenses", GetBasePtr<float>(statsOffset + 4 * 9));
-	ImGui::Columns();
+		ImGui::Separator();
+		ImGui::Columns(2, nullptr, false);
+		ImGui::InputFloatN("Strength", GetBasePtr<float>(statsOffset + 4 * 6), 1, 70.0f);
+		ImGui::InputFloatN("Defenses", GetBasePtr<float>(statsOffset + 4 * 7), 1, 70.0f);
+		ImGui::NextColumn();
+		ImGui::InputFloatN("Magick", GetBasePtr<float>(statsOffset + 4 * 8), 1, 70.0f);
+		ImGui::InputFloatN("Magick Defenses", GetBasePtr<float>(statsOffset + 4 * 9), 1, 70.0f);
+		ImGui::Columns();
+		ImGui::TreePop();
+	}
 
 	if (ImGui::TreeNode("Vocations"))
 	{
@@ -48,15 +54,15 @@ void renderStatsParty(const char *label, int offset)
 	if (offset == 0x7F0 && ImGui::TreeNode("Inclinations"))//main pawn
 	{
 		int inclinationsOffset = statsOffset + 0x1224;
-		ImGui::InputFloatN("Scather", GetBasePtr<float>(inclinationsOffset += 0), 1, 0);
-		ImGui::InputFloatN("Medicant", GetBasePtr<float>(inclinationsOffset += 4 * 3), 1, 0);
-		ImGui::InputFloatN("Mitigator", GetBasePtr<float>(inclinationsOffset += 4 * 3), 1, 0);
-		ImGui::InputFloatN("Challenger", GetBasePtr<float>(inclinationsOffset += 4 * 3), 1, 0);
-		ImGui::InputFloatN("Utilitarian", GetBasePtr<float>(inclinationsOffset += 4 * 3), 1, 0);
-		ImGui::InputFloatN("Guardian", GetBasePtr<float>(inclinationsOffset += 4 * 3), 1, 0);
-		ImGui::InputFloatN("Nexus", GetBasePtr<float>(inclinationsOffset += 4 * 3), 1, 0);
-		ImGui::InputFloatN("Pioneer", GetBasePtr<float>(inclinationsOffset += 4 * 3), 1, 0);
-		ImGui::InputFloatN("Acquisitor", GetBasePtr<float>(inclinationsOffset += 4 * 3), 1, 0);
+		ImGui::InputFloat("Scather", GetBasePtr<float>(inclinationsOffset += 0));
+		ImGui::InputFloat("Medicant", GetBasePtr<float>(inclinationsOffset += 4 * 3));
+		ImGui::InputFloat("Mitigator", GetBasePtr<float>(inclinationsOffset += 4 * 3));
+		ImGui::InputFloat("Challenger", GetBasePtr<float>(inclinationsOffset += 4 * 3));
+		ImGui::InputFloat("Utilitarian", GetBasePtr<float>(inclinationsOffset += 4 * 3));
+		ImGui::InputFloat("Guardian", GetBasePtr<float>(inclinationsOffset += 4 * 3));
+		ImGui::InputFloat("Nexus", GetBasePtr<float>(inclinationsOffset += 4 * 3));
+		ImGui::InputFloat("Pioneer", GetBasePtr<float>(inclinationsOffset += 4 * 3));
+		ImGui::InputFloat("Acquisitor", GetBasePtr<float>(inclinationsOffset += 4 * 3));
 		ImGui::TreePop();
 	}
 	ImGui::TreePop();
@@ -100,8 +106,12 @@ void renderStatsUI()
 {
 	if (ImGui::CollapsingHeader("Stats"))
 	{
-		ImGui::InputScalar<int>("Gold", GetBasePtr(0xA7A18), 0);
-		ImGui::InputScalar<int>("Rift Crystals", GetBasePtr(0xA7A1C), 0);
+		ImGui::Columns(2, nullptr, false);
+		ImGui::InputScalar<int>("Gold", GetBasePtr(0xA7A18), 0, INT_MAX, 1000, 100000);
+		ImGui::NextColumn();
+		ImGui::InputScalar<int>("RC", GetBasePtr(0xA7A1C), 0, INT_MAX, 100, 10000);
+		ImGui::Columns();
+
 		renderStatsParty("Player", 0);
 		renderStatsParty("Main Pawn", 0x7F0);
 		renderStatsParty("Pawn 1", 0x7F0 + 0x1660);

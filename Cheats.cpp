@@ -136,7 +136,7 @@ void __declspec(naked) HTimeInterval()
 	}
 }
 
-UINT16 *pAffinityLast;
+BYTE *pAffinityLast;
 LPVOID oAffinity;
 enum AffinityMod { Disabled = -1, NoNegative, AllPositive, NoChange, InstantFriend = 850, InstantMax = 900 } iAffinityMod;
 void __declspec(naked) HAffinity()
@@ -217,28 +217,34 @@ void __declspec(naked) HAugmentMods()
 	}
 }
 
+std::pair<int, LPCSTR> runTypeMapEV[] = { { -1, "Disabled" },{ 0, "Town Animation" },{ 1, "Town Animation + Stamina" },{ 2, "Stamina" } };
 void renderCheatsUI()
 {
 	if (ImGui::CollapsingHeader("Cheats"))
 	{
-		std::pair<int, LPCSTR> runTypeMapEV[] = { { -1, "Disabled" }, { 0, "Town Animation" }, { 1, "Town Animation + Stamina" }, { 2, "Stamina" } };
+		bool prevState = runType >= 0;
 		if (ImGui::ComboEnum<int>("Outside run type", &runType, runTypeMapEV, 4))
 		{
 			config.setInt("cheats", "runType", runType);
-			Hooks::SwitchHook("Cheat (runType)", pRunType, runType >= 0);
+			if (prevState != runType >= 0)
+				Hooks::SwitchHook("Cheat (runType)", pRunType, runType >= 0);
 		}
 
-		if (ImGui::DragFloat("Weight multiplicator", &mWeight, 0.01f, -1.0f, 1.0f))
+		prevState = mWeight >= 0;
+		if (ImGui::InputFloatEx("Weight multiplicator", &mWeight, 0.01f, -1.0f, 1.0f))
 		{
 			config.setFloat("cheats", "weightMultiplicator", mWeight);
-			Hooks::SwitchHook("Cheat (weight)", pWeight, mWeight >= 0);
+			if (prevState != mWeight >= 0)
+				Hooks::SwitchHook("Cheat (weight)", pWeight, mWeight >= 0);
 		}
 
-		if (ImGui::DragFloat("Time speed", &mTimeInterval, 0.1f, -1.0f, 60.0f))
+		prevState = mTimeInterval >= 0;
+		if (ImGui::InputFloatEx("Time speed", &mTimeInterval, 0.1f, -1.0f, 60.0f))
 		{
 			config.setFloat("cheats", "timeInterval", mTimeInterval);
 			realTime = mTimeInterval == 0;
-			Hooks::SwitchHook("Cheat (timeInterval)", pTimeInterval, mTimeInterval >= 0);
+			if (prevState != mTimeInterval >= 0)
+				Hooks::SwitchHook("Cheat (timeInterval)", pTimeInterval, mTimeInterval >= 0);
 		}
 
 		if (ImGui::Checkbox("3rd level skills", &skillLevel))
@@ -247,7 +253,7 @@ void renderCheatsUI()
 			Hooks::SwitchHook("Cheat (thirdSkillLevel)", pSkillLevel, skillLevel);
 		}
 		ImGui::SameLine();
-		if (ImGui::Button("  (reload skills)"))
+		if (ImGui::Button("(reload)"))
 			reloadSkills();
 
 		ImGui::Separator();
@@ -259,13 +265,13 @@ void renderCheatsUI()
 				Hooks::SwitchHook("Cheat (augmentMods)", pAugmentMods, augmentMods);
 			}
 
-			if (ImGui::DragFloat("Articulacy", augmentModsValues + 0x51, 1.0f, -1.0f, 100.0f))
+			if (ImGui::InputFloatEx("Articulacy", augmentModsValues + 0x51, 1.0f, -1.0f, 100.0f))
 				config.setFloat("cheats", "augmentArticulacy", augmentModsValues[0x51]);
-			if (ImGui::DragFloat("Radiance", augmentModsValues + 0x4B, 0.5f, -1.0f, FLT_MAX))
+			if (ImGui::InputFloatEx("Radiance", augmentModsValues + 0x4B, 0.5f, -1.0f, FLT_MAX))
 				config.setFloat("cheats", "augmentRadiance", augmentModsValues[0x4B]);
-			if (ImGui::DragFloat("Sinew", augmentModsValues + 0x01, 1.0f, -1.0f, FLT_MAX))
+			if (ImGui::InputFloatEx("Sinew", augmentModsValues + 0x01, 1.0f, -1.0f, FLT_MAX))
 				config.setFloat("cheats", "augmentSinew", augmentModsValues[0x01]);
-			if (ImGui::DragFloat("Perpetuation", augmentModsValues + 0x17, 1.0f, -1.0f, FLT_MAX))
+			if (ImGui::InputFloatEx("Perpetuation", augmentModsValues + 0x17, 1.0f, -1.0f, FLT_MAX))
 				config.setFloat("cheats", "augmentPerpetuation", augmentModsValues[0x17]);
 			ImGui::TreePop();
 		}
@@ -281,8 +287,12 @@ void renderCheatsUI()
 			if (ImGui::ComboEnum<int>("Mode", &iAffinityMod, affinityModEV, 6))
 				config.setInt("cheats", "affinityMod", iAffinityMod);
 
-			ImGui::InputScalar<UINT16>("Last changed", pAffinityLast + 0x8B8 / 2, 0, 1000);
-			ImGui::InputScalar<UINT16>("Attitude", pAffinityLast + 0x8BA / 2, 0, UINT16_MAX);
+			if (pAffinityLast)
+			{
+				ImGui::InputScalar<UINT16>("Last changed", pAffinityLast + 0x8B8, 0, 1000);
+				ImGui::InputScalar<UINT16>("Attitude", pAffinityLast + 0x8BA, 0, UINT16_MAX);
+			}
+			ImGui::TreePop();
 		}
 	}
 }

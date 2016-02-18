@@ -96,7 +96,7 @@ void Hooks::InGameClockDec(BYTE minutes)
 	*GetBasePtr<UINT32>(0xB8768) = time - minutes * 60000;
 }
 
-std::pair<int, LPCSTR> clockPosVMap[] = { { DT_TOP, "top"}, { DT_BOTTOM, "bottom" } };
+std::pair<int, LPCSTR> clockPosVMap[] = { { DT_TOP, "top"}, { DT_VCENTER, "center" }, { DT_BOTTOM, "bottom" } };
 std::pair<int, LPCSTR> clockPosHMap[] = { { DT_LEFT, "left" }, { DT_CENTER, "center" }, { DT_RIGHT, "right" } };
 void renderClockColor(LPCSTR label, LPCSTR key, LPDWORD color)
 {
@@ -125,7 +125,7 @@ void renderClockUI()
 		if (ImGui::Checkbox("Enabled", &clockEnabled))
 			config.setBool("d3d9", "inGameClock", clockEnabled);
 
-		if (ImGui::DragInt("Size", (int*)&clockSize, 1.0f, 1, 1024))
+		if (ImGui::InputScalar<DWORD>("Size", &clockSize, 1, 1024))
 		{
 			config.setUInt("d3d9", "inGameClockSize", clockSize);
 			clockReload = true;
@@ -137,10 +137,10 @@ void renderClockUI()
 			clockReload = true;
 		}
 
-		if (ImGui::DragInt("Timebase", (int*)&clockTimebase, 1.0f, 1, 24 * 60))
+		if (ImGui::InputScalar<DWORD>("Timebase", &clockTimebase, 1, 24 * 60))
 			config.setUInt("d3d9", "inGameClockTimebase", clockTimebase);
 		if (ImGui::RadioButtons(&clockPositionV, clockPosVMap))
-			config.setEnum("d3d9", "inGameClockPositionVertical", clockPositionV, clockPosVMap, 2);
+			config.setEnum("d3d9", "inGameClockPositionVertical", clockPositionV, clockPosVMap, 3);
 		if (ImGui::RadioButtons(&clockPositionH, clockPosHMap))
 			config.setEnum("d3d9", "inGameClockPositionHorizontal", clockPositionH, clockPosHMap, 3);
 
@@ -166,7 +166,7 @@ void Hooks::InGameClock()
 	clockRight = config.getUInt("d3d9", "inGameClockOutlineRight", 0xFF666666);
 	clockBottom = config.getUInt("d3d9", "inGameClockOutlineBottom", 0xFF888888);
 
-	clockPositionV = config.getEnum("d3d9", "inGameClockPositionVertical", DT_TOP, clockPosVMap, 2);
+	clockPositionV = config.getEnum("d3d9", "inGameClockPositionVertical", DT_TOP, clockPosVMap, 3);
 	clockPositionH = config.getEnum("d3d9", "inGameClockPositionHorizontal", DT_RIGHT, clockPosHMap, 3);
 
 	clockEnabled = config.getBool("d3d9", "inGameClock", false);

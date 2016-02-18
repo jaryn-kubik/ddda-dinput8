@@ -61,19 +61,32 @@ LRESULT Hooks::InGameUIEvent(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 namespace ImGui
 {
-	bool InputFloatN(const char* label, float* v, int components, float min, float max, int precision)
+	bool InputFloatN(const char* label, float* v, int count, float item_width, float min, float max, int precision)
 	{
-		if (InputFloatN(label, v, components, precision, 0))
-		{
-			for (int i = 0; i < components; i++)
+		if (item_width > 0.0f)
+			PushItemWidth(item_width * count);
+		bool changed = InputFloatN(label, v, count, precision, 0);
+		if (item_width > 0.0f)
+			PopItemWidth();
+		if (changed)
+			for (int i = 0; i < count; i++)
 			{
 				if (v[i] < min)
 					v[i] = min;
 				if (v[i] > max)
 					v[i] = max;
 			}
-			return true;
-		}
-		return false;
+		return changed;
+	}
+
+	bool InputFloatEx(const char* label, float* v, float step, float min, float max, int precision)
+	{
+		if (!InputFloat(label, v, step, 0.0f, precision, 0))
+			return false;
+		if (*v < min)
+			*v = min;
+		if (*v > max)
+			*v = max;
+		return true;
 	}
 }

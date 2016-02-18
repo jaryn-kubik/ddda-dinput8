@@ -92,17 +92,9 @@ void Hooks::CreateHook(LPCSTR msg, LPVOID pTarget, LPVOID pDetour, LPVOID* ppOri
 void Hooks::SwitchHook(LPCSTR msg, LPVOID pTarget, bool enable)
 {
 	if (enable)
-	{
-		MH_STATUS result = MH_EnableHook(pTarget);
-		if (result != MH_ERROR_ENABLED)
-			logFile << msg << " enable: " << MH_StatusToString(result) << std::endl;
-	}
+		logFile << msg << " enable: " << MH_StatusToString(MH_EnableHook(pTarget)) << std::endl;
 	else
-	{
-		MH_STATUS result = MH_DisableHook(pTarget);
-		if (result != MH_ERROR_DISABLED)
-			logFile << msg << " disable: " << MH_StatusToString(result) << std::endl;
-	}
+		logFile << msg << " disable: " << MH_StatusToString(MH_DisableHook(pTarget)) << std::endl;
 }
 
 bool Hooks::FindSignature(LPCSTR msg, BYTE* signature, size_t len, BYTE** offset) { return Find(msg, codeBase, codeEnd, signature, len, offset); }

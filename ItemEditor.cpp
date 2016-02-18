@@ -29,8 +29,8 @@ void renderItemEditorUI()
 		pItemChanged = false;
 
 		ImGui::Separator();
-		ImGui::Drag<UINT16>("Quantity", pItem + 0x12, 1.0f, 1.0f, UINT16_MAX);
-		ImGui::DragFloat("Weight", *(float**)(pItem + 0x04) + 0x44 / 4, 0.1f, 0.0f, 100.0f);
+		ImGui::InputScalar<UINT16>("Quantity", pItem + 0x12, 1, UINT16_MAX, 1, 10);
+		ImGui::InputFloatEx("Weight", *(float**)(pItem + 0x04) + 0x44 / 4, 0.1f, 0.0f, 100.0f, -1);
 		UINT16 itemFlags = *(UINT16*)(pItem + 0x20) & StarMask;
 		if (ImGui::ComboEnum<UINT16>("Quality", &itemFlags, itemStarTypeEV, 7))
 			*(UINT16*)(pItem + 0x20) = *(UINT16*)(pItem + 0x20) & ~StarMask | itemFlags;
