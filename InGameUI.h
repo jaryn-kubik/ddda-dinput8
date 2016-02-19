@@ -77,10 +77,15 @@ namespace ImGui
 		return pressed;
 	}
 
-	template<class T> bool InputScalar(const char* label, void *v, int min, int max = INT_MAX, int step = 1, int step_fast = 100)
+	template<class T> bool InputScalar(const char* label, void *v, int min, int max = INT_MAX, int step = 1, float item_width = -1.0f)
 	{
 		int v_i = (int)*(T*)v;
-		if (InputInt(label, &v_i, step, step_fast))
+		if (item_width > 0.0f)
+			PushItemWidth(item_width);
+		bool changed = InputInt(label, &v_i, step, step * 10);
+		if (item_width > 0.0f)
+			PopItemWidth();
+		if (changed)
 		{
 			if (v_i < min)
 				v_i = min;

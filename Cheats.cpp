@@ -14,7 +14,7 @@ void thirdSkillLevelsInit(bool *skillArray, std::vector<int> list)
 	if (list.empty())
 		return;
 	if (find(list.begin(), list.end(), -1) != list.end())
-		for (int i = 0; i < Hooks::ListItemEnchant.size() - 1; i++)
+		for (size_t i = 0; i < Hooks::ListItemEnchant.size() - 1; i++)
 			skillArray[Hooks::ListItemEnchant[i].first & 0x1FF] = true;
 	else
 		for (size_t i = 0; i < list.size(); i++)
@@ -206,7 +206,7 @@ void renderCheatsSkillLevel(const char *label, float position, bool *check, bool
 	if (ImGui::Checkbox((string("##") + label).c_str(), check))
 	{
 		std::vector<int> list;
-		for (int i = 0; i < Hooks::ListItemEnchant.size() - 1; i++)
+		for (size_t i = 0; i < Hooks::ListItemEnchant.size() - 1; i++)
 		{
 			if (isHeader)
 				skills[Hooks::ListItemEnchant[i].first] = *check;
@@ -229,7 +229,7 @@ void renderCheatsUI()
 		renderCheatsSkillLevel("Pawn1", 200.0f + 75.0f * 2, &selectAll3, thirdSkillLevels3, true);
 		renderCheatsSkillLevel("Pawn2", 200.0f + 75.0f * 3, &selectAll4, thirdSkillLevels4, true);
 
-		for (int i = 0; i < Hooks::ListItemEnchant.size() - 1; i++)
+		for (size_t i = 0; i < Hooks::ListItemEnchant.size() - 1; i++)
 		{
 			ImGui::PushID(i);
 			ImGui::Text(Hooks::ListItemEnchant[i].second);

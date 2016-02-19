@@ -1,6 +1,19 @@
 ﻿#include "stdafx.h"
 #include "PlayerStats.h"
 
+void renderStatsVocation(const char *label, int offset)
+{
+	ImGui::PushID(label);
+	ImGui::InputScalar<int>("##rank", GetBasePtr(offset + 0x28 * 0), 0, 9, -1, 25.0f);
+	ImGui::SameLine();
+	ImGui::InputScalar<int>("##xp", GetBasePtr(offset + 0x28 * 1), 0, INT_MAX, -1, 60.0f);
+	ImGui::SameLine();
+	ImGui::InputScalar<int>("##next", GetBasePtr(offset + 0x28 * 2), 0, INT_MAX, -1, 60.0f);
+	ImGui::SameLine();
+	ImGui::Text("(rank/xp/next) %s", label);
+	ImGui::PopID();
+}
+
 void renderStatsParty(const char *label, int offset)
 {
 	if (!ImGui::TreeNode(label))
@@ -36,18 +49,18 @@ void renderStatsParty(const char *label, int offset)
 	if (ImGui::TreeNode("Vocations"))
 	{
 		int vocationOffset = statsOffset + 13 * 4;
-		ImGui::InputScalar<int>("Fighter", GetBasePtr(vocationOffset += 0), 0, 9);
-		ImGui::InputScalar<int>("Strider", GetBasePtr(vocationOffset += 4), 0, 9);
-		ImGui::InputScalar<int>("Mage", GetBasePtr(vocationOffset += 4), 0, 9);
+		renderStatsVocation("Fighter", vocationOffset += 0);
+		renderStatsVocation("Strider", vocationOffset += 4);
+		renderStatsVocation("Mage", vocationOffset += 4);
 		if (!offset)// player
 		{
-			ImGui::InputScalar<int>("Mystic Knight", GetBasePtr(vocationOffset += 4), 0, 9);
-			ImGui::InputScalar<int>("Assassin", GetBasePtr(vocationOffset += 4), 0, 9);
-			ImGui::InputScalar<int>("Magic Archer", GetBasePtr(vocationOffset += 4), 0, 9);
+			renderStatsVocation("Mystic Knight", vocationOffset += 4);
+			renderStatsVocation("Assassin", vocationOffset += 4);
+			renderStatsVocation("Magic Archer", vocationOffset += 4);
 		}
-		ImGui::InputScalar<int>("Warrior", GetBasePtr(vocationOffset += 4), 0, 9);
-		ImGui::InputScalar<int>("Ranger", GetBasePtr(vocationOffset += 4), 0, 9);
-		ImGui::InputScalar<int>("Sorcerer", GetBasePtr(vocationOffset += 4), 0, 9);
+		renderStatsVocation("Warrior", vocationOffset += 4);
+		renderStatsVocation("Ranger", vocationOffset += 4);
+		renderStatsVocation("Sorcerer", vocationOffset += 4);
 		ImGui::TreePop();
 	}
 
@@ -134,7 +147,7 @@ void renderStatsLearnedSkills(const char *label, int offset, std::pair<bool, int
 		int learnedOffset = 0xA7E00 + offset;
 		auto skillList = SkillTypeList[state->second].second;
 		bool isCoreSkills = state->second == 9;
-		for (int i = 1; i < skillList->size(); i++)
+		for (size_t i = 1; i < skillList->size(); i++)
 		{
 			ImGui::PushID(i);
 			ImGui::Text(skillList->at(i).second);
@@ -164,9 +177,9 @@ void renderStatsUI()
 	if (ImGui::CollapsingHeader("Stats"))
 	{
 		ImGui::Columns(2, nullptr, false);
-		ImGui::InputScalar<int>("Gold", GetBasePtr(0xA7A18), 0, INT_MAX, 1000, 100000);
+		ImGui::InputScalar<int>("Gold", GetBasePtr(0xA7A18), 0, INT_MAX, 1000);
 		ImGui::NextColumn();
-		ImGui::InputScalar<int>("RC", GetBasePtr(0xA7A1C), 0, INT_MAX, 100, 10000);
+		ImGui::InputScalar<int>("RC", GetBasePtr(0xA7A1C), 0, INT_MAX, 100);
 		ImGui::Columns();
 
 		renderStatsParty("Player", 0);

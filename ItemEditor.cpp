@@ -28,17 +28,29 @@ void renderItemEditorUI()
 		pItemChanged = false;
 
 		ImGui::Separator();
-		ImGui::InputScalar<UINT16>("Quantity", pItem + 0x12, 1, UINT16_MAX, 1, 10);
+		ImGui::InputScalar<UINT16>("Quantity", pItem + 0x12, 1, UINT16_MAX, 1);
 		ImGui::InputFloatEx("Weight", *(float**)(pItem + 0x04) + 0x44 / 4, 0.1f, 0.0f, 100.0f, -1);
 		UINT16 itemFlags = *(UINT16*)(pItem + 0x20) & StarMask;
 		if (ImGui::ComboEnum<UINT16>("Quality", &itemFlags, Hooks::ListItemStarType))
 			*(UINT16*)(pItem + 0x20) = *(UINT16*)(pItem + 0x20) & ~StarMask | itemFlags;
 
 		ImGui::Separator();
-		ImGui::ComboEnum<UINT16>("Enchant 1", pItem + 0x18, Hooks::ListItemEnchant);
-		ImGui::ComboEnum<UINT16>("Enchant 2", pItem + 0x1A, Hooks::ListItemEnchant);
-		ImGui::ComboEnum<UINT16>("Bonus 1", pItem + 0x1C, Hooks::ListItemBonus);
-		ImGui::ComboEnum<UINT16>("Bonus 2", pItem + 0x1E, Hooks::ListItemBonus);
+
+		if (ImGui::TreeNode("(for master rings)"))
+		{
+			
+		}
+		if (ImGui::TreeNode("(for skill rings"))
+		{
+			ImGui::ComboEnum<UINT16>("Enchant 1", pItem + 0x18, Hooks::ListItemEnchant);
+			ImGui::ComboEnum<UINT16>("Enchant 2", pItem + 0x1A, Hooks::ListItemEnchant);
+			ImGui::TreePop();
+		}
+		if (ImGui::TreeNode("(for bbi armor)"))
+		{
+			ImGui::ComboEnum<UINT16>("Bonus 1", pItem + 0x1C, Hooks::ListItemBonus);
+			ImGui::ComboEnum<UINT16>("Bonus 2", pItem + 0x1E, Hooks::ListItemBonus);
+		}
 	}
 }
 
