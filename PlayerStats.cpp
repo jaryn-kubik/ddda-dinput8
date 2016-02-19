@@ -78,9 +78,13 @@ void renderStatsSkill(int offset, int skillCount, const char *label, const std::
 	}
 }
 
-void renderStatsSkills(const char *label, int offset)
+void renderStatsSkills(const char *label, int offset, std::pair<bool, int> *state)
 {
-	if (ImGui::TreeNode(label))
+	bool treeOpened = ImGui::TreeNode(label);
+	ImGui::SameLine(150.0f);
+	if (ImGui::SmallButton("Learned Skills"))
+		state->first = true;
+	if (treeOpened)
 	{
 		int skillsOffset = 0xA7808 + offset;
 		renderStatsSkill(skillsOffset + 24 * 12, 6, "Augments", Hooks::ListSkillsAugments);
@@ -95,8 +99,63 @@ void renderStatsSkills(const char *label, int offset)
 		renderStatsSkill(skillsOffset + 24 * 8, 3, "Magick Shield", Hooks::ListSkillsMagickShield);
 		renderStatsSkill(skillsOffset + 24 * 9, 3, "Bow", Hooks::ListSkillsBow);
 		renderStatsSkill(skillsOffset + 24 * 10, 3, "Longbow", Hooks::ListSkillsLongbow);
-		renderStatsSkill(skillsOffset + 24 * 11, 3, "Magic kBow", Hooks::ListSkillsMagickBow);
+		renderStatsSkill(skillsOffset + 24 * 11, 3, "Magick Bow", Hooks::ListSkillsMagickBow);
 		ImGui::TreePop();
+	}
+}
+
+std::pair<LPCSTR, const std::vector<std::pair<int, LPCSTR>>*> SkillTypeList[] =
+{
+	{ "Sword", &Hooks::ListSkillsSword },
+	{ "Longsword", &Hooks::ListSkillsLongsword },
+	{ "Dagger", &Hooks::ListSkillsDagger },
+	{ "Staff", &Hooks::ListSkillsStaves },
+	{ "Shield", &Hooks::ListSkillsShield },
+	{ "MShield", &Hooks::ListSkillsMagickShield },
+	{ "Bow", &Hooks::ListSkillsBow },
+	{ "MBow", &Hooks::ListSkillsMagickBow },
+	{ "Longbow", &Hooks::ListSkillsLongbow },
+	{ "Core", &Hooks::ListSkillsCore }
+};
+void renderStatsLearnedSkills(const char *label, int offset, std::pair<bool, int> *state)
+{
+	if (state->first && ImGui::Begin(string("Learned skills - ").append(label).c_str(), &(state->first), ImVec2(500, 400)))
+	{
+		ImGui::Columns(5, nullptr, false);
+		for (int i = 0; i < 10;)
+		{
+			ImGui::RadioButton(SkillTypeList[i].first, &(state->second), i++);
+			ImGui::RadioButton(SkillTypeList[i].first, &(state->second), i++);
+			ImGui::NextColumn();
+		}
+		ImGui::Columns();
+		ImGui::Separator();
+
+		int learnedOffset = 0xA7E00 + offset;
+		auto skillList = SkillTypeList[state->second].second;
+		bool isCoreSkills = state->second == 9;
+		for (int i = 1; i < skillList->size(); i++)
+		{
+			ImGui::PushID(i);
+			ImGui::Text(skillList->at(i).second);
+			ImGui::SameLine(400.0f);
+
+			int id = skillList->at(i).first;
+			UINT32 *pLvl1 = GetBasePtr<UINT32>(learnedOffset + (id / 32) * 4);
+			UINT32 *pLvl2 = GetBasePtr<UINT32>(learnedOffset + 0x38 + (id / 32) * 4);
+			UINT32 flagBit = 1U << id % 32;
+
+			if (ImGui::CheckboxFlags("##lvl1", pLvl1, flagBit) && *pLvl1 & flagBit && !isCoreSkills)
+				*pLvl2 = *pLvl2 & ~flagBit;
+			if (isCoreSkills)
+			{
+				ImGui::SameLine();
+				if (ImGui::CheckboxFlags("##lvl2", pLvl2, flagBit) && *pLvl2 & flagBit)
+					*pLvl1 = *pLvl1 & ~flagBit;
+			}
+			ImGui::PopID();
+		}
+		ImGui::End();
 	}
 }
 
@@ -116,16 +175,44 @@ void renderStatsUI()
 		renderStatsParty("Pawn 2", 0x7F0 + 0x1660 + 0x1660);
 	}
 
+	static std::pair<bool, int> learnedSkills[4] = {};
 	if (ImGui::CollapsingHeader("Skills"))
 	{
-		renderStatsSkills("Player", 0);
-		renderStatsSkills("Main Pawn", 0x7F0);
-		renderStatsSkills("Pawn 1", 0x7F0 + 0x1660);
-		renderStatsSkills("Pawn 2", 0x7F0 + 0x1660 + 0x1660);
+		renderStatsSkills("Player", 0, learnedSkills);
+		renderStatsSkills("Main Pawn", 0x7F0, learnedSkills + 1);
+		renderStatsSkills("Pawn 1", 0x7F0 + 0x1660, learnedSkills + 2);
+		renderStatsSkills("Pawn 2", 0x7F0 + 0x1660 + 0x1660, learnedSkills + 3);
 	}
+	renderStatsLearnedSkills("Player", 0, learnedSkills);
+	renderStatsLearnedSkills("Main Pawn", 0x7F0, learnedSkills + 1);
+	renderStatsLearnedSkills("Pawn 1", 0x7F0 + 0x1660, learnedSkills + 2);
+	renderStatsLearnedSkills("Pawn 2", 0x7F0 + 0x1660 + 0x1660, learnedSkills + 3);
 }
 
 void Hooks::PlayerStats() { InGameUIAdd(renderStatsUI); }
+
+const std::vector<std::pair<int, LPCSTR>> Hooks::ListSkillsCore =
+{
+	{ -1, "Empty" },
+	{ 30, "30: Sword - Dire Onslaught" },
+	{ 31, "31: Sword - Takedown" },
+	{ 32, "32: Sword - Controlled Fall" },
+	{ 90, "90: Longsword - Devastate" },
+	{ 91, "91: Longsword - Eviscerate" },
+	{ 92, "92: Longsword - Controlled Fall" },
+	{ 140, "140: Dagger - Engrave" },
+	{ 141, "141: Dagger - Roundelay" },
+	{ 142, "142: Dagger - Double Vault" },
+	{ 143, "143: Dagger - Forward Roll" },
+	{ 200, "200: Staff - Focused Bolt" },
+	{ 201, "201: Staff - Magick Agent" },
+	{ 202, "202: Staff - Levitate" },
+	{ 260, "260: Shield - Deflect" },
+	{ 300, "300: MShield - Reflect" },
+	{ 340, "340: Bow - Quick Loose" },
+	{ 341, "341: MBow - True Seeker" },
+	{ 390, "390: Longbow - Quick Loose" }
+};
 
 const std::vector<std::pair<int, LPCSTR>> Hooks::ListSkillsSword =
 {
@@ -347,7 +434,7 @@ const std::vector<std::pair<int, LPCSTR>> Hooks::ListSkillsMagickBow =
 {
 	{ -1, "-1: Empty" },
 	{ 359, "359: Threefold Bolt | Sixfold Bolt" },
-	{ 360, "360: Seeker | True Seeker" },
+	{ 360, "360: Seeker Bolt | Hunter Bolt" },
 	{ 361, "361: Explosive Bolt | Explosive Rivet" },
 	{ 362, "362: Ricochet Seeker | Ricochet Hunter" },
 	{ 363, "363: Magickal Flare | Magickal Gleam" },
