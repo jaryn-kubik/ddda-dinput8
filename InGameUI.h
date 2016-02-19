@@ -9,11 +9,11 @@ namespace Hooks
 
 namespace ImGui
 {
-	template <class T> bool ListBoxFilter(const char *label, void *v, std::pair<int, LPCSTR> *items, int count, ImGuiTextFilter &filter, bool scroll)
+	template <class T> bool ListBoxFilter(const char *label, void *v, const std::vector<std::pair<int, LPCSTR>> &items, ImGuiTextFilter &filter, bool scroll)
 	{
-		ListBoxHeader(label, count);
+		ListBoxHeader(label, items.size());
 		bool value_changed = false;
-		for (int i = 0; i < count; i++)
+		for (size_t i = 0; i < items.size(); i++)
 		{
 			const bool item_selected = i == *(T*)v;
 			const char* item_text = items[i].second;
@@ -27,7 +27,7 @@ namespace ImGui
 			PushID(i);
 			if (Selectable(item_text, item_selected))
 			{
-				*(T*)v = i;
+				*(T*)v = (T)i;
 				value_changed = true;
 			}
 			PopID();
@@ -36,7 +36,7 @@ namespace ImGui
 		return value_changed;
 	}
 
-	template<class T> bool ComboEnum(const char *label, void *v, std::pair<int, LPCSTR> *items, int count)
+	template<class T> bool ComboEnum(const char *label, void *v, const std::vector<std::pair<int, LPCSTR>> &items)
 	{
 		auto items_getter = [](void* data, int idx, const char **text)
 		{
@@ -45,15 +45,15 @@ namespace ImGui
 		};
 
 		int currentIndex = -1;
-		for (int i = 0; i < count; i++)
+		for (size_t i = 0; i < items.size(); i++)
 			if (items[i].first == *(T*)v)
 			{
 				currentIndex = i;
 				break;
 			}
-		if (Combo(label, &currentIndex, items_getter, items, count))
+		if (Combo(label, &currentIndex, items_getter, (void*)items.data(), items.size()))
 		{
-			if (currentIndex >= 0 && currentIndex < count)
+			if (currentIndex >= 0 && currentIndex < (int)items.size())
 				*(T*)v = items[currentIndex].first;
 			return true;
 		}
@@ -71,8 +71,7 @@ namespace ImGui
 				*(T*)v = pairs[i].first;
 				pressed |= true;
 			}
-			if (i < len - 1)
-				NextColumn();
+			NextColumn();
 		}
 		Columns();
 		return pressed;

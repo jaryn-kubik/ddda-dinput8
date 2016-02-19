@@ -18,28 +18,27 @@ enum ItemStarType : UINT16
 	StarMask = Star1 | Star2 | Star3 | Star4 | Star5 | Star6
 };
 
-std::pair<int, LPCSTR> itemStarTypeEV[], itemEnchantEV[], itemBonusEV[], itemIdEV[];
 void renderItemEditorUI()
 {
 	if (ImGui::CollapsingHeader("Item Editor") && pItem)
 	{
 		static ImGuiTextFilter itemFilter;
 		itemFilter.Draw("Filter");
-		ImGui::ListBoxFilter<UINT16>("Item", pItem + 0x10, itemIdEV, 1902, itemFilter, pItemChanged);
+		ImGui::ListBoxFilter<UINT16>("Item", pItem + 0x10, Hooks::ListItemId, itemFilter, pItemChanged);
 		pItemChanged = false;
 
 		ImGui::Separator();
 		ImGui::InputScalar<UINT16>("Quantity", pItem + 0x12, 1, UINT16_MAX, 1, 10);
 		ImGui::InputFloatEx("Weight", *(float**)(pItem + 0x04) + 0x44 / 4, 0.1f, 0.0f, 100.0f, -1);
 		UINT16 itemFlags = *(UINT16*)(pItem + 0x20) & StarMask;
-		if (ImGui::ComboEnum<UINT16>("Quality", &itemFlags, itemStarTypeEV, 7))
+		if (ImGui::ComboEnum<UINT16>("Quality", &itemFlags, Hooks::ListItemStarType))
 			*(UINT16*)(pItem + 0x20) = *(UINT16*)(pItem + 0x20) & ~StarMask | itemFlags;
 
 		ImGui::Separator();
-		ImGui::ComboEnum<UINT16>("Enchant 1", pItem + 0x18, itemEnchantEV, 59);
-		ImGui::ComboEnum<UINT16>("Enchant 2", pItem + 0x1A, itemEnchantEV, 59);
-		ImGui::ComboEnum<UINT16>("Bonus 1", pItem + 0x1C, itemBonusEV, 59);
-		ImGui::ComboEnum<UINT16>("Bonus 2", pItem + 0x1E, itemBonusEV, 59);
+		ImGui::ComboEnum<UINT16>("Enchant 1", pItem + 0x18, Hooks::ListItemEnchant);
+		ImGui::ComboEnum<UINT16>("Enchant 2", pItem + 0x1A, Hooks::ListItemEnchant);
+		ImGui::ComboEnum<UINT16>("Bonus 1", pItem + 0x1C, Hooks::ListItemBonus);
+		ImGui::ComboEnum<UINT16>("Bonus 2", pItem + 0x1E, Hooks::ListItemBonus);
 	}
 }
 
@@ -53,13 +52,13 @@ void Hooks::ItemEditor()
 	InGameUIAdd(renderItemEditorUI);
 }
 
-std::pair<int, LPCSTR> itemStarTypeEV[] =
+const std::vector<std::pair<int, LPCSTR>> Hooks::ListItemStarType =
 {
 	{ Star0, "0 stars" }, { Star1, "1 stars" }, { Star2, "2 stars" }, { Star3, "3 stars" },
 	{ Star4, "Dragon forged" }, { Star5, "Silver rarified" }, { Star6, "Gold rarified" }
 };
 
-std::pair<int, LPCSTR> itemEnchantEV[]
+const std::vector<std::pair<int, LPCSTR>> Hooks::ListItemEnchant =
 {
 	{ 40, "40: Blitz Strike" },
 	{ 42, "42: Downcrush" },
@@ -122,7 +121,7 @@ std::pair<int, LPCSTR> itemEnchantEV[]
 	{ 65535, "65535: Empty" }
 };
 
-std::pair<int, LPCSTR> itemBonusEV[] =
+const std::vector<std::pair<int, LPCSTR>> Hooks::ListItemBonus =
 {
 	{ 0, "0: Extends duration of equipped Skills" },
 	{ 1, "1: Boosts Strength when you've been noticed by a large group of enemies" },
@@ -144,7 +143,7 @@ std::pair<int, LPCSTR> itemBonusEV[] =
 	{ 65535, "65535: Empty" }
 };
 
-std::pair<int, LPCSTR> itemIdEV[] =
+const std::vector<std::pair<int, LPCSTR>> Hooks::ListItemId =
 {
    { 0, "0: Airtight Flask" },
    { 1, "1: Scrag of Beast" },

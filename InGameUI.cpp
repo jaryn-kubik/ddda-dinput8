@@ -6,7 +6,10 @@
 void createImGui(LPDIRECT3DDEVICE9 pD3DDevice, D3DPRESENT_PARAMETERS* pParams)
 {
 	ImGui_ImplDX9_Init(pD3DDevice);
+	ImGui::GetIO().IniFilename = nullptr;
 	ImGui::GetIO().DisplaySize = ImVec2((float)pParams->BackBufferWidth, (float)pParams->BackBufferHeight);
+	ImGui::GetStyle().WindowTitleAlign = ImGuiAlign_Center;
+	ImGui::GetStyle().WindowFillAlphaDefault = 0.95f;
 }
 
 void lostImGui(LPDIRECT3DDEVICE9 pD3DDevice, D3DPRESENT_PARAMETERS* pParams)
@@ -24,16 +27,16 @@ void resetImGui(LPDIRECT3DDEVICE9 pD3DDevice, D3DPRESENT_PARAMETERS* pParams)
 bool inGameUIEnabled = false;
 WPARAM inGameUIHotkey;
 std::vector<void(*)()> callbacks;
+char titleBuffer[64];
 void drawImGui(LPDIRECT3DDEVICE9 pD3DDevice)
 {
 	if (!inGameUIEnabled)
 		return;
 
 	ImGui_ImplDX9_NewFrame();
-
-	ImGui::SetNextWindowSize(ImVec2(450, 600), ImGuiSetCond_Once);
-	ImGui::Begin("DDDAFix", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings);
-	ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
+	sprintf_s(titleBuffer, "DDDAFix - %.1f FPS###DDDAFix", ImGui::GetIO().Framerate);
+	ImGui::SetNextWindowPos(ImVec2(5, 5), ImGuiSetCond_Once);
+	ImGui::Begin(titleBuffer, nullptr, ImVec2(450, 600));
 	for (size_t i = 0; i < callbacks.size(); i++)
 	{
 		ImGui::PushID(i);
@@ -41,7 +44,6 @@ void drawImGui(LPDIRECT3DDEVICE9 pD3DDevice)
 		ImGui::PopID();
 	}
 	ImGui::End();
-
 	ImGui::Render();
 }
 

@@ -68,36 +68,34 @@ void renderStatsParty(const char *label, int offset)
 	ImGui::TreePop();
 }
 
-void renderStatsSkill(int offset, int skillCount, const char *label, std::pair<int, LPCSTR> *enumVal, int enumCount)
+void renderStatsSkill(int offset, int skillCount, const char *label, const std::vector<std::pair<int, LPCSTR>> &items)
 {
 	if (ImGui::TreeNode(label))
 	{
 		for (int i = 0; i < skillCount; i++)
-			ImGui::ComboEnum<UINT32>(("##" + std::to_string(i)).c_str(), GetBasePtr(offset + 4 * i), enumVal, enumCount);
+			ImGui::ComboEnum<UINT32>(("##" + std::to_string(i)).c_str(), GetBasePtr(offset + 4 * i), items);
 		ImGui::TreePop();
 	}
 }
 
-std::pair<int, LPCSTR> skillsAugments[], skillsSword[], skillsLongsword[], skillsDagger[], skillsStaves[];
-std::pair<int, LPCSTR> skillsShield[], skillsMagickShield[], skillsBow[], skillsLongbow[], skillsMagickBow[];
 void renderStatsSkills(const char *label, int offset)
 {
 	if (ImGui::TreeNode(label))
 	{
 		int skillsOffset = 0xA7808 + offset;
-		renderStatsSkill(skillsOffset + 24 * 12, 6, "Augments", skillsAugments, 83);
-		renderStatsSkill(skillsOffset + 24 * 0, 3, "Sword", skillsSword, 21);
-		renderStatsSkill(skillsOffset + 24 * 1, 3, "Mace", skillsSword, 21);
-		renderStatsSkill(skillsOffset + 24 * 2, 3, "Longsword", skillsLongsword, 11);
-		renderStatsSkill(skillsOffset + 24 * 6, 3, "Warhammer", skillsLongsword, 11);
-		renderStatsSkill(skillsOffset + 24 * 3, 3, "Dagger", skillsDagger, 21);
-		renderStatsSkill(skillsOffset + 24 * 4, 6, "Staff", skillsStaves, 31);
-		renderStatsSkill(skillsOffset + 24 * 5, 6, "Archistaff", skillsStaves, 31);
-		renderStatsSkill(skillsOffset + 24 * 7, 3, "Shield", skillsShield, 10);
-		renderStatsSkill(skillsOffset + 24 * 8, 3, "Magick Shield", skillsMagickShield, 16);
-		renderStatsSkill(skillsOffset + 24 * 9, 3, "Bow", skillsBow, 10);
-		renderStatsSkill(skillsOffset + 24 * 10, 3, "Longbow", skillsLongbow, 10);
-		renderStatsSkill(skillsOffset + 24 * 11, 3, "Magic kBow", skillsMagickBow, 10);
+		renderStatsSkill(skillsOffset + 24 * 12, 6, "Augments", Hooks::ListSkillsAugments);
+		renderStatsSkill(skillsOffset + 24 * 0, 3, "Sword", Hooks::ListSkillsSword);
+		renderStatsSkill(skillsOffset + 24 * 1, 3, "Mace", Hooks::ListSkillsSword);
+		renderStatsSkill(skillsOffset + 24 * 2, 3, "Longsword", Hooks::ListSkillsLongsword);
+		renderStatsSkill(skillsOffset + 24 * 6, 3, "Warhammer", Hooks::ListSkillsLongsword);
+		renderStatsSkill(skillsOffset + 24 * 3, 3, "Dagger", Hooks::ListSkillsDagger);
+		renderStatsSkill(skillsOffset + 24 * 4, 6, "Staff", Hooks::ListSkillsStaves);
+		renderStatsSkill(skillsOffset + 24 * 5, 6, "Archistaff", Hooks::ListSkillsStaves);
+		renderStatsSkill(skillsOffset + 24 * 7, 3, "Shield", Hooks::ListSkillsShield);
+		renderStatsSkill(skillsOffset + 24 * 8, 3, "Magick Shield", Hooks::ListSkillsMagickShield);
+		renderStatsSkill(skillsOffset + 24 * 9, 3, "Bow", Hooks::ListSkillsBow);
+		renderStatsSkill(skillsOffset + 24 * 10, 3, "Longbow", Hooks::ListSkillsLongbow);
+		renderStatsSkill(skillsOffset + 24 * 11, 3, "Magic kBow", Hooks::ListSkillsMagickBow);
 		ImGui::TreePop();
 	}
 }
@@ -129,7 +127,7 @@ void renderStatsUI()
 
 void Hooks::PlayerStats() { InGameUIAdd(renderStatsUI); }
 
-std::pair<int, LPCSTR> skillsSword[] =
+const std::vector<std::pair<int, LPCSTR>> Hooks::ListSkillsSword =
 {
 	{ -1, "-1: Empty" },
 	{ 40, "40: Blink Strike | Burst Strike" },
@@ -154,7 +152,7 @@ std::pair<int, LPCSTR> skillsSword[] =
 	{ 59, "59: Clarity | Clairvoyance" }
 };
 
-std::pair<int, LPCSTR> skillsLongsword[] =
+const std::vector<std::pair<int, LPCSTR>> Hooks::ListSkillsLongsword =
 {
 	{ -1, "-1: Empty" },
 	{ 100, "100: Upward Strike | Whirlwind Slash" },
@@ -169,7 +167,7 @@ std::pair<int, LPCSTR> skillsLongsword[] =
 	{ 109, "109: Arc of Might | Arc of Deliverance" }
 };
 
-std::pair<int, LPCSTR> skillsDagger[] =
+const std::vector<std::pair<int, LPCSTR>> Hooks::ListSkillsDagger =
 {
 	{ -1, "-1: Empty" },
 	{ 150, "150: Biting Wind | Cutting Wind" },
@@ -194,7 +192,7 @@ std::pair<int, LPCSTR> skillsDagger[] =
 	{ 169, "169: Easy Kill | Masterful Kill" }
 };
 
-std::pair<int, LPCSTR> skillsStaves[] =
+const std::vector<std::pair<int, LPCSTR>> Hooks::ListSkillsStaves =
 {
 	{ -1, "-1: Empty" },
 	{ 210, "210: Ingle | High Ingle" },
@@ -229,7 +227,7 @@ std::pair<int, LPCSTR> skillsStaves[] =
 	{ 239, "239: Necromancy | High Necromancy" }
 };
 
-/*std::pair<int, LPCSTR> skillsStaff[] =
+/*const std::vector<std::pair<int, LPCSTR>> Hooks::skillsStaff[] =
 {
 	{ -1, "-1: Empty" },
 	{ 210, "210: Ingle | High Ingle" },
@@ -254,7 +252,7 @@ std::pair<int, LPCSTR> skillsStaves[] =
 	{ 238, "238: Spellscreen | High Spellscreen" }
 };
 
-std::pair<int, LPCSTR> skillsArchistaff[] =
+const std::vector<std::pair<int, LPCSTR>> Hooks::skillsArchistaff[] =
 {
 	{ -1, "-1: Empty" },
 	{ 210, "210: Ingle | High Ingle" },
@@ -283,7 +281,7 @@ std::pair<int, LPCSTR> skillsArchistaff[] =
 	{ 239, "239: Necromancy | High Necromancy" }
 };*/
 
-std::pair<int, LPCSTR> skillsShield[] =
+const std::vector<std::pair<int, LPCSTR>> Hooks::ListSkillsShield =
 {
 	{ -1, "-1: Empty" },
 	{ 270, "270: Shield Strike | Shield Storm" },
@@ -297,7 +295,7 @@ std::pair<int, LPCSTR> skillsShield[] =
 	{ 278, "278: Staredown | Showdown" }
 };
 
-std::pair<int, LPCSTR> skillsMagickShield[] =
+const std::vector<std::pair<int, LPCSTR>> Hooks::ListSkillsMagickShield =
 {
 	{ -1, "-1: Empty" },
 	{ 310, "310: Firecounter | Flame Riposte" },
@@ -317,7 +315,7 @@ std::pair<int, LPCSTR> skillsMagickShield[] =
 	{ 324, "324: Holy Aid | Holy Grace" }
 };
 
-std::pair<int, LPCSTR> skillsBow[] =
+const std::vector<std::pair<int, LPCSTR>> Hooks::ListSkillsBow =
 {
 	{ -1, "-1: Empty" },
 	{ 350, "350: Threefold Arrow | Fivefold Flurry" },
@@ -331,7 +329,7 @@ std::pair<int, LPCSTR> skillsBow[] =
 	{ 358, "358: Blunting Arrow | Plegic Arrow" }
 };
 
-std::pair<int, LPCSTR> skillsLongbow[] =
+const std::vector<std::pair<int, LPCSTR>> Hooks::ListSkillsLongbow =
 {
 	{ -1, "-1: Empty" },
 	{ 400, "400: Sixfold Arrow | Tenfold Flurry" },
@@ -345,7 +343,7 @@ std::pair<int, LPCSTR> skillsLongbow[] =
 	{ 408, "408: Gamble Draw | Great Gamble" }
 };
 
-std::pair<int, LPCSTR> skillsMagickBow[] =
+const std::vector<std::pair<int, LPCSTR>> Hooks::ListSkillsMagickBow =
 {
 	{ -1, "-1: Empty" },
 	{ 359, "359: Threefold Bolt | Sixfold Bolt" },
@@ -359,7 +357,7 @@ std::pair<int, LPCSTR> skillsMagickBow[] =
 	{ 367, "367: Sacrificial Bolt | Great Sacrifice" }
 };
 
-std::pair<int, LPCSTR> skillsAugments[] =
+const std::vector<std::pair<int, LPCSTR>> Hooks::ListSkillsAugments =
 {
 	{ -1, "-1: Empty" },
 	{ 0, "0: Fitness" },

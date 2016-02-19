@@ -3,42 +3,22 @@
 
 #include "stdafx.h"
 #include "Cheats.h"
+#include "ItemEditor.h"
 
-bool thirdSkillLevels1[512] = { false };
-bool thirdSkillLevels2[512] = { false };
-bool thirdSkillLevels3[512] = { false };
-bool thirdSkillLevels4[512] = { false };
+bool thirdSkillLevels1[512] = {};
+bool thirdSkillLevels2[512] = {};
+bool thirdSkillLevels3[512] = {};
+bool thirdSkillLevels4[512] = {};
 void thirdSkillLevelsInit(bool *skillArray, std::vector<int> list)
 {
-	std::fill_n(skillArray, 512, false);
 	if (list.empty())
 		return;
-
 	if (find(list.begin(), list.end(), -1) != list.end())
-	{
-		list =
-		{
-			40, 42, 46, 47, 52, 54, 57, 58,
-			102, 104, 106, 109,
-			150, 152, 155, 159, 161, 164, 165, 167,
-			210, 212, 214, 215, 220, 222, 223, 224, 225, 226, 227, 228, 229, 230, 236,
-			270, 274, 278,
-			310, 311, 312, 313, 314, 315, 316, 317, 318, 319, 320,
-			352, 353, 356, 359, 361, 363,
-			402, 403, 407
-		};
-	}
-
-	for (size_t i = 0; i < list.size(); i++)
-		skillArray[list[i] & 0x1FF] = true;
-}
-
-void reloadSkills()
-{
-	thirdSkillLevelsInit(thirdSkillLevels1, config.getList("cheats", "thirdSkillLevelPlayer"));
-	thirdSkillLevelsInit(thirdSkillLevels2, config.getList("cheats", "thirdSkillLevelPawnMain"));
-	thirdSkillLevelsInit(thirdSkillLevels3, config.getList("cheats", "thirdSkillLevelPawn1"));
-	thirdSkillLevelsInit(thirdSkillLevels4, config.getList("cheats", "thirdSkillLevelPawn2"));
+		for (int i = 0; i < Hooks::ListItemEnchant.size() - 1; i++)
+			skillArray[Hooks::ListItemEnchant[i].first & 0x1FF] = true;
+	else
+		for (size_t i = 0; i < list.size(); i++)
+			skillArray[list[i] & 0x1FF] = true;
 }
 
 int __stdcall GetSkillTier(UINT16 skill, DWORD address)
@@ -217,13 +197,56 @@ void __declspec(naked) HAugmentMods()
 	}
 }
 
-std::pair<int, LPCSTR> runTypeMapEV[] = { { -1, "Disabled" },{ 0, "Town Animation" },{ 1, "Town Animation + Stamina" },{ 2, "Stamina" } };
+void renderCheatsSkillLevel(const char *label, float position, bool *check, bool *skills, bool isHeader = false)
+{
+	ImGui::SameLine(position);
+	if (isHeader)
+		ImGui::Text(label);
+	ImGui::SameLine(position + 50.0f);
+	if (ImGui::Checkbox((string("##") + label).c_str(), check))
+	{
+		std::vector<int> list;
+		for (int i = 0; i < Hooks::ListItemEnchant.size() - 1; i++)
+		{
+			if (isHeader)
+				skills[Hooks::ListItemEnchant[i].first] = *check;
+			if (skills[Hooks::ListItemEnchant[i].first])
+				list.push_back(Hooks::ListItemEnchant[i].first);
+		}
+		config.setList("cheats", (string("thirdSkillLevel") + label).c_str(), list);
+	}
+}
+
+std::vector<std::pair<int, LPCSTR>> runTypeMapEV = { { -1, "Disabled" },{ 0, "Town Animation" },{ 1, "Town Animation + Stamina" },{ 2, "Stamina" } };
 void renderCheatsUI()
 {
+	static bool setSkillsOpened = false;
+	if (setSkillsOpened && ImGui::Begin("Set 3rd level skills", &setSkillsOpened, ImVec2(525, 400)))
+	{
+		static bool selectAll1 = false, selectAll2 = false, selectAll3 = false, selectAll4 = false;
+		renderCheatsSkillLevel("Player", 200.0f + 75.0f * 0, &selectAll1, thirdSkillLevels1, true);
+		renderCheatsSkillLevel("Pawn", 200.0f + 75.0f * 1, &selectAll2, thirdSkillLevels2, true);
+		renderCheatsSkillLevel("Pawn1", 200.0f + 75.0f * 2, &selectAll3, thirdSkillLevels3, true);
+		renderCheatsSkillLevel("Pawn2", 200.0f + 75.0f * 3, &selectAll4, thirdSkillLevels4, true);
+
+		for (int i = 0; i < Hooks::ListItemEnchant.size() - 1; i++)
+		{
+			ImGui::PushID(i);
+			ImGui::Text(Hooks::ListItemEnchant[i].second);
+			int skillId = Hooks::ListItemEnchant[i].first;
+			renderCheatsSkillLevel("Player", 200.0f + 75.0f * 0, thirdSkillLevels1 + skillId, thirdSkillLevels1);
+			renderCheatsSkillLevel("Pawn", 200.0f + 75.0f * 1, thirdSkillLevels2 + skillId, thirdSkillLevels2);
+			renderCheatsSkillLevel("Pawn1", 200.0f + 75.0f * 2, thirdSkillLevels3 + skillId, thirdSkillLevels3);
+			renderCheatsSkillLevel("Pawn2", 200.0f + 75.0f * 3, thirdSkillLevels4 + skillId, thirdSkillLevels4);
+			ImGui::PopID();
+		}
+		ImGui::End();
+	}
+
 	if (ImGui::CollapsingHeader("Cheats"))
 	{
 		bool prevState = runType >= 0;
-		if (ImGui::ComboEnum<int>("Outside run type", &runType, runTypeMapEV, 4))
+		if (ImGui::ComboEnum<int>("Outside run type", &runType, runTypeMapEV))
 		{
 			config.setInt("cheats", "runType", runType);
 			if (prevState != runType >= 0)
@@ -253,13 +276,13 @@ void renderCheatsUI()
 			Hooks::SwitchHook("Cheat (thirdSkillLevel)", pSkillLevel, skillLevel);
 		}
 		ImGui::SameLine();
-		if (ImGui::Button("(reload)"))
-			reloadSkills();
+		if (ImGui::Button("Set"))
+			setSkillsOpened = true;
 
 		ImGui::Separator();
 		if (ImGui::TreeNode("Augment mods"))
 		{
-			if (ImGui::Checkbox("Enabled", &skillLevel))
+			if (ImGui::Checkbox("Enabled", &augmentMods))
 			{
 				config.setBool("cheats", "augmentMods", augmentMods);
 				Hooks::SwitchHook("Cheat (augmentMods)", pAugmentMods, augmentMods);
@@ -276,20 +299,20 @@ void renderCheatsUI()
 			ImGui::TreePop();
 		}
 
-		if (ImGui::TreeNode("Affinity mods"))
+		if (ImGui::TreeNode("Affinity mod"))
 		{
-			std::pair<int, LPCSTR> affinityModEV[] =
+			std::vector<std::pair<int, LPCSTR>> affinityModEV =
 			{
 				{ Disabled, "Disabled" },{ NoNegative, "No negative changes" },{ AllPositive, "All changes are positive" },
 				{ NoChange, "No changes at all" },{ InstantFriend, "Instant friend (850)" },{ InstantMax, "Instant max (900)" }
 			};
 
-			if (ImGui::ComboEnum<int>("Mode", &iAffinityMod, affinityModEV, 6))
+			if (ImGui::ComboEnum<int>("Mode", &iAffinityMod, affinityModEV))
 				config.setInt("cheats", "affinityMod", iAffinityMod);
 
 			if (pAffinityLast)
 			{
-				ImGui::InputScalar<UINT16>("Last changed", pAffinityLast + 0x8B8, 0, 1000);
+				ImGui::InputScalar<UINT16>("Last", pAffinityLast + 0x8B8, 0, 1000);
 				ImGui::InputScalar<UINT16>("Attitude", pAffinityLast + 0x8BA, 0, UINT16_MAX);
 			}
 			ImGui::TreePop();
@@ -332,7 +355,10 @@ void Hooks::Cheats()
 		skillLevel = config.getBool("cheats", "thirdSkillLevel", false);
 		CreateHook("Cheat (thirdSkillLevel)", pSkillLevel, &HSkillLevel, &oSkillLevel, skillLevel);
 		oSkillLevel += 7;
-		reloadSkills();
+		thirdSkillLevelsInit(thirdSkillLevels1, config.getList("cheats", "thirdSkillLevelPlayer"));
+		thirdSkillLevelsInit(thirdSkillLevels2, config.getList("cheats", "thirdSkillLevelPawn"));
+		thirdSkillLevelsInit(thirdSkillLevels3, config.getList("cheats", "thirdSkillLevelPawn1"));
+		thirdSkillLevelsInit(thirdSkillLevels4, config.getList("cheats", "thirdSkillLevelPawn2"));
 	}
 
 	BYTE *pOffset;
