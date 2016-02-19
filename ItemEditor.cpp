@@ -35,10 +35,13 @@ void renderItemEditorUI()
 			*(UINT16*)(pItem + 0x20) = *(UINT16*)(pItem + 0x20) & ~StarMask | itemFlags;
 
 		ImGui::Separator();
-
 		if (ImGui::TreeNode("(for master rings)"))
 		{
-			
+			ImGui::ComboEnum<UINT8>("Enchant 1", pItem + 0x18, Hooks::ListItemMaster);
+			ImGui::ComboEnum<UINT8>("Enchant 2", pItem + 0x19, Hooks::ListItemMaster);
+			ImGui::InputScalar<UINT16>("Power 1", pItem + 0x1A, 0, UINT16_MAX);
+			ImGui::InputScalar<UINT16>("Power 2", pItem + 0x1C, 0, UINT16_MAX);
+			ImGui::TreePop();
 		}
 		if (ImGui::TreeNode("(for skill rings"))
 		{
@@ -50,6 +53,7 @@ void renderItemEditorUI()
 		{
 			ImGui::ComboEnum<UINT16>("Bonus 1", pItem + 0x1C, Hooks::ListItemBonus);
 			ImGui::ComboEnum<UINT16>("Bonus 2", pItem + 0x1E, Hooks::ListItemBonus);
+			ImGui::TreePop();
 		}
 	}
 }
@@ -68,6 +72,34 @@ const std::vector<std::pair<int, LPCSTR>> Hooks::ListItemStarType =
 {
 	{ Star0, "0 stars" }, { Star1, "1 stars" }, { Star2, "2 stars" }, { Star3, "3 stars" },
 	{ Star4, "Dragon forged" }, { Star5, "Silver rarified" }, { Star6, "Gold rarified" }
+};
+
+const std::vector<std::pair<int, LPCSTR>> Hooks::ListItemMaster =
+{
+	{ 0, "0: Maximum Health" },
+	{ 1, "1: Maximum Stamina" },
+	{ 2, "2: Strength" },
+	{ 3, "3: Magick" },
+	{ 4, "4: Defenses" },
+	{ 5, "5: Magick Defenses" },
+	{ 6, "6: Knockdown Power" },
+	{ 7, "7: Stagger Power" },
+	{ 8, "8: Fire Resistance" },
+	{ 9, "9: Ice Resistance" },
+	{ 10, "10: Thunder Resistance" },
+	{ 11, "11: Holy Resistance" },
+	{ 12, "12: Dark Resistance" },
+	{ 13, "13: Poison Resistance" },
+	{ 14, "14: Torpor Resistance" },
+	{ 15, "15: Blindness Resistance" },
+	{ 16, "16: Sleep Resistance" },
+	{ 17, "17: Drenched Resistance" },
+	{ 18, "18: Tarred Resistance" },
+	{ 19, "19: Possession Resistance" },
+	{ 20, "20: Skill Stifling Resistance" },
+	{ 21, "21: Cursed Resistance" },
+	{ 22, "22: Petrifaction Resistance" },
+	{ 23, "23: Silence Resistance" }
 };
 
 const std::vector<std::pair<int, LPCSTR>> Hooks::ListItemEnchant =
