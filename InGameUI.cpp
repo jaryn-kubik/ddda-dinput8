@@ -47,17 +47,33 @@ void drawImGui(LPDIRECT3DDEVICE9 pD3DDevice)
 	ImGui::Render();
 }
 
+LPBYTE pInGameUI, oInGameUI;
+SHORT WINAPI HGetAsyncKeyState(int vKey) { return ImGui::IsAnyItemActive() ? 0 : GetAsyncKeyState(vKey); }
+void __declspec(naked) HInGameUI()
+{
+	__asm	mov		ebp, HGetAsyncKeyState;
+	__asm	jmp		oInGameUI;
+}
+
 void Hooks::InGameUI()
 {
 	inGameUIHotkey = config.getUInt("hotkeys", "keyUI", VK_F12) & 0xFF;
 	D3D9Add(createImGui, lostImGui, resetImGui, drawImGui);
+
+	BYTE sigRun[] = { 0x8B, 0x2D, 0xCC, 0xCC, 0xCC, 0xCC,	//mov	ebp, ds:GetAsyncKeyState
+					0x8D, 0x7E, 0x01 };						//lea	edi, [esi+1]
+	if (FindSignature("InGameUI", sigRun, &pInGameUI))
+	{
+		CreateHook("InGameUI", pInGameUI, &HInGameUI, &oInGameUI, inGameUIEnabled);
+		oInGameUI += 6;
+	}
 }
 
 void Hooks::InGameUIAdd(void(*callback)()) { callbacks.push_back(callback); }
 LRESULT Hooks::InGameUIEvent(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	if (msg == WM_KEYDOWN && (HIWORD(lParam) & KF_REPEAT) == 0 && wParam == inGameUIHotkey)
-		inGameUIEnabled = !inGameUIEnabled;
+		SwitchHook("InGameUI", pInGameUI, inGameUIEnabled = !inGameUIEnabled);
 	return inGameUIEnabled ? ImGui_ImplDX9_WndProcHandler(hwnd, msg, wParam, lParam) : 0;
 }
 
