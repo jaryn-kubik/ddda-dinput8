@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "Cheats.h"
 #include "ItemEditor.h"
+#include "PlayerStats.h"
 
 bool thirdSkillLevels1[512] = {};
 bool thirdSkillLevels2[512] = {};
@@ -157,7 +158,7 @@ void __declspec(naked) HAffinity()
 const float floatZeroConstant = 0.0f;
 float augmentModsValues[0x80];
 bool augmentMods;
-LPBYTE pAugmentMods, oAugmentMods;
+LPBYTE pAugmentMods, oAugmentMods1, oAugmentMods2;
 void __declspec(naked) HAugmentMods()
 {
 	__asm
@@ -181,20 +182,49 @@ void __declspec(naked) HAugmentMods()
 		cmp		eax, ecx;
 		je		isParty;
 
-		jmp		oAugmentMods;
+		jmp		oAugmentMods1;
 
 	isParty:
 		lea		eax, [augmentModsValues + edx * 4];
 		movss	xmm0, [eax];
 		comiss	xmm0, floatZeroConstant;
-		jae		modValue;
-		jmp		oAugmentMods;
+		ja		modValue;
+		je		allowAug;
+		jmp		oAugmentMods1;
 
 	modValue:
 		movss	dword ptr[esi], xmm0;
 		mov		eax, 1;
 		retn	4;
+
+	allowAug:
+		mov		eax, 1;
+		jmp		oAugmentMods2;
 	}
+}
+
+std::vector<std::pair<int, LPCSTR>> augmentModsActive;
+void augmentModsLoad()
+{
+	std::fill_n(augmentModsValues, 0x80, -1.0f);
+	augmentModsActive.clear();
+	for (auto &key : config.getSection("augments"))
+	{
+		try
+		{
+			int augmentId = stoi(key);
+			for (size_t i = 1; i < Hooks::ListSkillsAugments.size(); i++)
+				if (Hooks::ListSkillsAugments[i].first == augmentId)
+				{
+					augmentModsActive.push_back(Hooks::ListSkillsAugments[i]);
+					augmentModsValues[augmentId] = config.getFloat("augments", std::to_string(augmentId).c_str(), -1);
+					break;
+				}
+		}
+		catch (...) {}
+	}
+	sort(augmentModsActive.begin(), augmentModsActive.end(),
+		[](const std::pair<int, LPCSTR> &a, const std::pair<int, LPCSTR> &b) { return a.first < b.first; });
 }
 
 void renderCheatsSkillLevel(const char *label, float position, bool *check, bool *skills, bool isHeader = false)
@@ -285,18 +315,34 @@ void renderCheatsUI()
 		{
 			if (ImGui::Checkbox("Enabled", &augmentMods))
 			{
-				config.setBool("cheats", "augmentMods", augmentMods);
+				config.setBool("augments", "enabled", augmentMods);
 				Hooks::SwitchHook("Cheat (augmentMods)", pAugmentMods, augmentMods);
 			}
 
-			if (ImGui::InputFloatEx("Articulacy", augmentModsValues + 0x51, 1.0f, -1.0f, 100.0f))
-				config.setFloat("cheats", "augmentArticulacy", augmentModsValues[0x51]);
-			if (ImGui::InputFloatEx("Radiance", augmentModsValues + 0x4B, 0.5f, -1.0f, FLT_MAX))
-				config.setFloat("cheats", "augmentRadiance", augmentModsValues[0x4B]);
-			if (ImGui::InputFloatEx("Sinew", augmentModsValues + 0x01, 1.0f, -1.0f, FLT_MAX))
-				config.setFloat("cheats", "augmentSinew", augmentModsValues[0x01]);
-			if (ImGui::InputFloatEx("Perpetuation", augmentModsValues + 0x17, 1.0f, -1.0f, FLT_MAX))
-				config.setFloat("cheats", "augmentPerpetuation", augmentModsValues[0x17]);
+			for (auto &augment : augmentModsActive)
+			{
+				ImGui::PushID(augment.first);
+				if (ImGui::Button("Remove"))
+				{
+					config.removeKey("augments", std::to_string(augment.first).c_str());
+					augmentModsLoad();
+				}
+				ImGui::SameLine();
+				ImGui::PushItemWidth(200.0f);
+				if (ImGui::InputFloatEx(augment.second, augmentModsValues + augment.first, 1.0f, -1.0f))
+					config.setFloat("augments", std::to_string(augment.first).c_str(), augmentModsValues[augment.first]);
+				ImGui::PopItemWidth();
+				ImGui::PopID();
+			}
+
+			static int augmentId = -1;
+			if (ImGui::Button("Add") && augmentId >= 0)
+			{
+				config.setFloat("augments", std::to_string(augmentId).c_str(), -1.0f);
+				augmentModsLoad();
+			}
+			ImGui::SameLine();
+			ImGui::ComboEnum<int>("##augment", &augmentId, Hooks::ListSkillsAugments);
 			ImGui::TreePop();
 		}
 
@@ -370,16 +416,13 @@ void Hooks::Cheats()
 		CreateHook("Cheat (affinity)", pOffset, &HAffinity, &oAffinity);
 	}
 
-	BYTE sigSpell[] = { 0x33, 0xC0, 0x81, 0xC1, 0x58, 0x02, 0x00, 0x00, 0x39, 0x11, 0x74, 0x34 };
-	if (FindSignature("Cheat (augmentMods)", sigSpell, &pAugmentMods))
+	BYTE sigAug[] = { 0x33, 0xC0, 0x81, 0xC1, 0x58, 0x02, 0x00, 0x00,  0x39, 0x11, 0x74, 0xCC, 0x40, 0x83, 0xC1, 0x04, 0x83, 0xF8, 0x06, 0x72, 0xCC, 0x32, 0xC0, 0x8B, 0x0D };
+	if (FindSignature("Cheat (augmentMods)", sigAug, &pAugmentMods))
 	{
-		std::fill_n(augmentModsValues, 0x80, -1.0f);
-		augmentMods = config.getBool("cheats", "augmentMods", false);
-		augmentModsValues[0x51] = config.getFloat("cheats", "augmentArticulacy", -1);
-		augmentModsValues[0x4B] = config.getFloat("cheats", "augmentRadiance", -1);
-		augmentModsValues[0x01] = config.getFloat("cheats", "augmentSinew", -1);
-		augmentModsValues[0x17] = config.getFloat("cheats", "augmentPerpetuation", -1);
-		CreateHook("Cheat (augmentMods)", pAugmentMods, &HAugmentMods, &oAugmentMods, augmentMods);
+		augmentMods = config.getBool("augments", "enabled", false);
+		augmentModsLoad();
+		CreateHook("Cheat (augmentMods)", pAugmentMods, &HAugmentMods, &oAugmentMods1, augmentMods);
+		oAugmentMods2 = pAugmentMods + sizeof sigAug - 2;
 	}
 
 	if (config.getBool("cheats", "shareWeaponSkills", false))

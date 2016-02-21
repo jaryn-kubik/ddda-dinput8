@@ -18,6 +18,22 @@ bool iniConfig::get(LPCSTR section, LPCSTR key, bool allowEmpty)
 	return GetLastError() != ERROR_FILE_NOT_FOUND && (allowEmpty || result > 0);
 }
 
+void iniConfig::removeKey(LPCSTR section, LPCSTR key) const { WritePrivateProfileStringA(section, key, nullptr, fileName); }
+std::vector<string> iniConfig::getSection(LPCSTR section)
+{
+	std::vector<string> keys;
+	if (get(section, nullptr, false))
+	{
+		LPSTR nextKey = buffer;
+		while (*nextKey != '\0')
+		{
+			keys.push_back(nextKey);
+			nextKey = nextKey + strlen(nextKey) + 1;
+		}
+	}
+	return keys;
+}
+
 template <typename T>
 T printError(LPCSTR section, LPCSTR key, T defValue)
 {
@@ -139,7 +155,7 @@ void iniConfig::setUInt(LPCSTR section, LPCSTR key, unsigned value, bool hex) co
 	if (hex)
 	{
 		char buf[16];
-		snprintf(buf, sizeof buf, "0x%X8", value);
+		snprintf(buf, sizeof buf, "0x%8X", value);
 		setStr(section, key, buf);
 	}
 	else
