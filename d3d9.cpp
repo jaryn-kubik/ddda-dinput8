@@ -5,56 +5,41 @@ typedef LPDIRECT3D9(WINAPI *tDirect3DCreate9)(UINT SDKVersion);
 tDirect3DCreate9 oDirect3DCreate9;
 LPDIRECT3D9 WINAPI HDirect3DCreate9(UINT SDKVersion) { return new fIDirect3D9(oDirect3DCreate9(SDKVersion)); }
 
-bool Hooks::D3D9()
+void(*onCreateDevice)(LPDIRECT3DDEVICE9);
+void(*onLostDevice)();
+void(*onResetDevice)();
+void(*onEndScene)();
+void Hooks::D3D9(void(*onCreate)(LPDIRECT3DDEVICE9), void(*onLost)(), void(*onReset)(), void(*onEnd)())
 {
-	if (!config.getBool("d3d9", "enabled", false))
-	{
-		logFile << "D3D9: disabled" << std::endl;
-		return false;
-	}
-
 	HMODULE hMod = LoadLibrary("d3d9.dll");
 	oDirect3DCreate9 = (tDirect3DCreate9)GetProcAddress(hMod, "Direct3DCreate9");
 	CreateHook("D3D9", Direct3DCreate9, &HDirect3DCreate9, &oDirect3DCreate9);
-	return true;
+	onCreateDevice = onCreate;
+	onLostDevice = onLost;
+	onResetDevice = onReset;
+	onEndScene = onEnd;
 }
 
-std::vector<d3d9CallbackEx> onCreateDevice, onLostDevice, onResetDevice;
-std::vector<d3d9Callback> onEndScene;
-void Hooks::D3D9Add(d3d9CallbackEx onCreate, d3d9CallbackEx onLost, d3d9CallbackEx onReset, d3d9Callback onEnd)
-{
-	onCreateDevice.push_back(onCreate);
-	onLostDevice.push_back(onLost);
-	onResetDevice.push_back(onReset);
-	onEndScene.push_back(onEnd);
-}
-/*---------------------------------------------------------------------------
----------------------------------------------------------------------------
----------------------------------------------------------------------------*/
 HRESULT fIDirect3D9::CreateDevice(UINT Adapter, D3DDEVTYPE DeviceType, HWND hFocusWindow, DWORD BehaviorFlags, D3DPRESENT_PARAMETERS* pPresentationParameters, IDirect3DDevice9** ppReturnedDeviceInterface)
 {
 	IDirect3DDevice9* pDirect3DDevice9;
 	HRESULT hr = pD3D9->CreateDevice(Adapter, DeviceType, hFocusWindow, BehaviorFlags, pPresentationParameters, &pDirect3DDevice9);
 	*ppReturnedDeviceInterface = new fIDirect3DDevice9(pDirect3DDevice9, this);
-	for (auto &h : onCreateDevice)
-		h(pDirect3DDevice9, pPresentationParameters);
+	onCreateDevice(pDirect3DDevice9);
 	return hr;
 }
 
 HRESULT fIDirect3DDevice9::EndScene()
 {
-	for (auto &h : onEndScene)
-		h(pD3DDevice);
+	onEndScene();
 	return pD3DDevice->EndScene();
 }
 
 HRESULT fIDirect3DDevice9::Reset(D3DPRESENT_PARAMETERS* pPresentationParameters)
 {
-	for (auto &h : onLostDevice)
-		h(pD3DDevice, pPresentationParameters);
+	onLostDevice();
 	HRESULT hr = pD3DDevice->Reset(pPresentationParameters);
-	for (auto &h : onResetDevice)
-		h(pD3DDevice, pPresentationParameters);
+	onResetDevice();
 	return hr;
 }
 

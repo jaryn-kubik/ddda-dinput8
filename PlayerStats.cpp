@@ -81,18 +81,21 @@ void renderStatsParty(const char *label, int offset)
 	ImGui::TreePop();
 }
 
-void renderStatsSkill(int offset, int skillCount, const char *label, const std::vector<std::pair<int, LPCSTR>> &items)
+bool renderStatsSkill(int offset, int skillCount, const char *label, const std::vector<std::pair<int, LPCSTR>> &items)
 {
+	bool changed = false;
 	if (ImGui::TreeNode(label))
 	{
 		for (int i = 0; i < skillCount; i++)
-			ImGui::ComboEnum<UINT32>(("##" + std::to_string(i)).c_str(), GetBasePtr(offset + 4 * i), items);
+			changed |= ImGui::ComboEnum<UINT32>(("##" + std::to_string(i)).c_str(), GetBasePtr(offset + 4 * i), items);
 		ImGui::TreePop();
 	}
+	return changed;
 }
 
-void renderStatsSkills(const char *label, int offset, std::pair<bool, int> *state)
+bool renderStatsSkills(const char *label, int offset, std::pair<bool, int> *state)
 {
+	bool changed = false;
 	bool treeOpened = ImGui::TreeNode(label);
 	ImGui::SameLine(150.0f);
 	if (ImGui::SmallButton("Learned Skills"))
@@ -100,21 +103,22 @@ void renderStatsSkills(const char *label, int offset, std::pair<bool, int> *stat
 	if (treeOpened)
 	{
 		int skillsOffset = 0xA7808 + offset;
-		renderStatsSkill(skillsOffset + 24 * 12, 6, "Augments", Hooks::ListSkillsAugments);
-		renderStatsSkill(skillsOffset + 24 * 0, 3, "Sword", Hooks::ListSkillsSword);
-		renderStatsSkill(skillsOffset + 24 * 1, 3, "Mace", Hooks::ListSkillsSword);
-		renderStatsSkill(skillsOffset + 24 * 2, 3, "Longsword", Hooks::ListSkillsLongsword);
-		renderStatsSkill(skillsOffset + 24 * 6, 3, "Warhammer", Hooks::ListSkillsLongsword);
-		renderStatsSkill(skillsOffset + 24 * 3, 3, "Dagger", Hooks::ListSkillsDagger);
-		renderStatsSkill(skillsOffset + 24 * 4, 6, "Staff", Hooks::ListSkillsStaves);
-		renderStatsSkill(skillsOffset + 24 * 5, 6, "Archistaff", Hooks::ListSkillsStaves);
-		renderStatsSkill(skillsOffset + 24 * 7, 3, "Shield", Hooks::ListSkillsShield);
-		renderStatsSkill(skillsOffset + 24 * 8, 3, "Magick Shield", Hooks::ListSkillsMagickShield);
-		renderStatsSkill(skillsOffset + 24 * 9, 3, "Bow", Hooks::ListSkillsBow);
-		renderStatsSkill(skillsOffset + 24 * 10, 3, "Longbow", Hooks::ListSkillsLongbow);
-		renderStatsSkill(skillsOffset + 24 * 11, 3, "Magick Bow", Hooks::ListSkillsMagickBow);
+		changed |= renderStatsSkill(skillsOffset + 24 * 12, 6, "Augments", Hooks::ListSkillsAugments);
+		changed |= renderStatsSkill(skillsOffset + 24 * 0, 3, "Sword", Hooks::ListSkillsSword);
+		changed |= renderStatsSkill(skillsOffset + 24 * 1, 3, "Mace", Hooks::ListSkillsSword);
+		changed |= renderStatsSkill(skillsOffset + 24 * 2, 3, "Longsword", Hooks::ListSkillsLongsword);
+		changed |= renderStatsSkill(skillsOffset + 24 * 6, 3, "Warhammer", Hooks::ListSkillsLongsword);
+		changed |= renderStatsSkill(skillsOffset + 24 * 3, 3, "Dagger", Hooks::ListSkillsDagger);
+		changed |= renderStatsSkill(skillsOffset + 24 * 4, 6, "Staff", Hooks::ListSkillsStaves);
+		changed |= renderStatsSkill(skillsOffset + 24 * 5, 6, "Archistaff", Hooks::ListSkillsStaves);
+		changed |= renderStatsSkill(skillsOffset + 24 * 7, 3, "Shield", Hooks::ListSkillsShield);
+		changed |= renderStatsSkill(skillsOffset + 24 * 8, 3, "Magick Shield", Hooks::ListSkillsMagickShield);
+		changed |= renderStatsSkill(skillsOffset + 24 * 9, 3, "Bow", Hooks::ListSkillsBow);
+		changed |= renderStatsSkill(skillsOffset + 24 * 10, 3, "Longbow", Hooks::ListSkillsLongbow);
+		changed |= renderStatsSkill(skillsOffset + 24 * 11, 3, "Magick Bow", Hooks::ListSkillsMagickBow);
 		ImGui::TreePop();
 	}
+	return changed;
 }
 
 std::pair<LPCSTR, const std::vector<std::pair<int, LPCSTR>>*> SkillTypeList[] =
@@ -132,8 +136,9 @@ std::pair<LPCSTR, const std::vector<std::pair<int, LPCSTR>>*> SkillTypeList[] =
 };
 void renderStatsLearnedSkills(const char *label, int offset, std::pair<bool, int> *state)
 {
-	if (state->first && ImGui::Begin(string("Learned skills - ").append(label).c_str(), &(state->first), ImVec2(500, 400)))
+	if (state->first)
 	{
+		ImGui::Begin(string("Learned skills - ").append(label).c_str(), &(state->first), ImVec2(500, 400));
 		ImGui::Columns(5, nullptr, false);
 		for (int i = 0; i < 10;)
 		{
@@ -172,6 +177,7 @@ void renderStatsLearnedSkills(const char *label, int offset, std::pair<bool, int
 	}
 }
 
+LPBYTE pEquipChanged;
 void renderStatsUI()
 {
 	if (ImGui::CollapsingHeader("Stats"))
@@ -191,10 +197,14 @@ void renderStatsUI()
 	static std::pair<bool, int> learnedSkills[4] = {};
 	if (ImGui::CollapsingHeader("Skills"))
 	{
-		renderStatsSkills("Player", 0, learnedSkills);
-		renderStatsSkills("Main Pawn", 0x7F0, learnedSkills + 1);
-		renderStatsSkills("Pawn 1", 0x7F0 + 0x1660, learnedSkills + 2);
-		renderStatsSkills("Pawn 2", 0x7F0 + 0x1660 + 0x1660, learnedSkills + 3);
+		if (renderStatsSkills("Player", 0, learnedSkills) && pEquipChanged)
+			pEquipChanged[0] = 1;
+		if (renderStatsSkills("Main Pawn", 0x7F0, learnedSkills + 1) && pEquipChanged)
+			pEquipChanged[1] = 1;
+		if (renderStatsSkills("Pawn 1", 0x7F0 + 0x1660, learnedSkills + 2) && pEquipChanged)
+			pEquipChanged[2] = 1;
+		if (renderStatsSkills("Pawn 2", 0x7F0 + 0x1660 + 0x1660, learnedSkills + 3) && pEquipChanged)
+			pEquipChanged[3] = 1;
 	}
 	renderStatsLearnedSkills("Player", 0, learnedSkills);
 	renderStatsLearnedSkills("Main Pawn", 0x7F0, learnedSkills + 1);
@@ -202,7 +212,17 @@ void renderStatsUI()
 	renderStatsLearnedSkills("Pawn 2", 0x7F0 + 0x1660 + 0x1660, learnedSkills + 3);
 }
 
-void Hooks::PlayerStats() { InGameUIAdd(renderStatsUI); }
+void Hooks::PlayerStats()
+{
+	BYTE sigRun[] = { 0x6A, 0x00, 0x6A, 0x00, 0x6A, 0x00,	//push 0, 0, 0
+					0x68, 0xCC, 0xCC, 0xCC, 0xCC,			//push pEquipChanged
+					0x8B, 0xF8, 0xE8 };						//mov	edi, eax
+	if (FindSignature("EquipChanged", sigRun, &pEquipChanged))
+		pEquipChanged = *(BYTE**)(pEquipChanged + 7);
+	else
+		pEquipChanged = nullptr;
+	InGameUIAdd(renderStatsUI);
+}
 
 const std::vector<std::pair<int, LPCSTR>> Hooks::ListSkillsCore =
 {

@@ -238,6 +238,9 @@ bool ImGui_ImplDX9_CreateDeviceObjects()
 {
 	if (!g_pd3dDevice)
 		return false;
+	D3DVIEWPORT9 viewPort;
+	g_pd3dDevice->GetViewport(&viewPort);
+	ImGui::GetIO().DisplaySize = ImVec2((float)viewPort.Width, (float)viewPort.Height);
 	if (!ImGui_ImplDX9_CreateFontsTexture())
 		return false;
 	if (!g_State)
@@ -249,6 +252,9 @@ void ImGui_ImplDX9_InvalidateDeviceObjects()
 {
 	if (!g_pd3dDevice)
 		return;
+	D3DVIEWPORT9 viewPort;
+	g_pd3dDevice->GetViewport(&viewPort);
+	ImGui::GetIO().DisplaySize = ImVec2((float)viewPort.Width, (float)viewPort.Height);
 	if (g_pVB)
 	{
 		g_pVB->Release();

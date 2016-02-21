@@ -31,13 +31,12 @@ void InitHooks()
 	Hooks::Misc();
 	Hooks::Cheats();
 	Hooks::Server();
-	if (Hooks::D3D9())
+	if (Hooks::InGameUI())
 	{
 		Hooks::Portcrystals();
 		Hooks::PlayerStats();
 		Hooks::ItemEditor();
 		Hooks::InGameClock();
-		Hooks::InGameUI();
 	}
 }
 

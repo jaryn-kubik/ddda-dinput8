@@ -221,8 +221,9 @@ std::vector<std::pair<int, LPCSTR>> runTypeMapEV = { { -1, "Disabled" },{ 0, "To
 void renderCheatsUI()
 {
 	static bool setSkillsOpened = false;
-	if (setSkillsOpened && ImGui::Begin("Set 3rd level skills", &setSkillsOpened, ImVec2(525, 400)))
+	if (setSkillsOpened)
 	{
+		ImGui::Begin("Set 3rd level skills", &setSkillsOpened, ImVec2(525, 400));
 		static bool selectAll1 = false, selectAll2 = false, selectAll3 = false, selectAll4 = false;
 		renderCheatsSkillLevel("Player", 200.0f + 75.0f * 0, &selectAll1, thirdSkillLevels1, true);
 		renderCheatsSkillLevel("Pawn", 200.0f + 75.0f * 1, &selectAll2, thirdSkillLevels2, true);
@@ -363,10 +364,10 @@ void Hooks::Cheats()
 
 	BYTE *pOffset;
 	BYTE sigAffinity[] = { 0x0F, 0xB7, 0x86, 0xB8, 0x08, 0x00, 0x00, 0x8B, 0xD8, 0x03, 0xC5 };
-	if (FindSignature("Affinity", sigAffinity, &pOffset))
+	if (FindSignature("Cheat (affinity)", sigAffinity, &pOffset))
 	{
 		iAffinityMod = (AffinityMod)config.getInt("cheats", "affinityMod", Disabled);
-		CreateHook("Affinity", pOffset, &HAffinity, &oAffinity);
+		CreateHook("Cheat (affinity)", pOffset, &HAffinity, &oAffinity);
 	}
 
 	BYTE sigSpell[] = { 0x33, 0xC0, 0x81, 0xC1, 0x58, 0x02, 0x00, 0x00, 0x39, 0x11, 0x74, 0x34 };

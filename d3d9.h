@@ -1,14 +1,9 @@
 ﻿#pragma once
 #include <d3d9.h>
-#include <d3dx9.h>
-
-typedef void(*d3d9Callback)(LPDIRECT3DDEVICE9);
-typedef void(*d3d9CallbackEx)(LPDIRECT3DDEVICE9, D3DPRESENT_PARAMETERS*);
 
 namespace Hooks
 {
-	bool D3D9();
-	void D3D9Add(d3d9CallbackEx onCreateDevice, d3d9CallbackEx onLostDevice, d3d9CallbackEx onResetDevice, d3d9Callback onEndScene);
+	void D3D9(void(*onCreateDevice)(LPDIRECT3DDEVICE9), void(*onLostDevice)(), void(*onResetDevice)(), void(*onEndScene)());
 }
 
 class fIDirect3D9 : public IDirect3D9

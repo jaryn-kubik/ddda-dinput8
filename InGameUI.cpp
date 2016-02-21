@@ -3,48 +3,46 @@
 #include "ImGui/imgui_impl_dx9.h"
 #include "ImGui/imgui_internal.h"
 
-void createImGui(LPDIRECT3DDEVICE9 pD3DDevice, D3DPRESENT_PARAMETERS* pParams)
+std::vector<void(*)()> content, windows, init;
+void onLostDevice() { ImGui_ImplDX9_InvalidateDeviceObjects(); }
+void onResetDevice() { ImGui_ImplDX9_CreateDeviceObjects(); }
+void onCreateDevice(LPDIRECT3DDEVICE9 pD3DDevice)
 {
 	ImGui_ImplDX9_Init(pD3DDevice);
 	ImGui::GetIO().IniFilename = nullptr;
-	ImGui::GetIO().DisplaySize = ImVec2((float)pParams->BackBufferWidth, (float)pParams->BackBufferHeight);
 	ImGui::GetStyle().WindowTitleAlign = ImGuiAlign_Center;
 	ImGui::GetStyle().WindowFillAlphaDefault = 0.95f;
+	for (size_t i = 0; i < init.size(); i++)
+		init[i]();
 }
 
-void lostImGui(LPDIRECT3DDEVICE9 pD3DDevice, D3DPRESENT_PARAMETERS* pParams)
+void onEndScene()
 {
-	ImGui_ImplDX9_InvalidateDeviceObjects();
-	ImGui::GetIO().DisplaySize = ImVec2((float)pParams->BackBufferWidth, (float)pParams->BackBufferHeight);
-}
-
-void resetImGui(LPDIRECT3DDEVICE9 pD3DDevice, D3DPRESENT_PARAMETERS* pParams)
-{
-	ImGui_ImplDX9_CreateDeviceObjects();
-	ImGui::GetIO().DisplaySize = ImVec2((float)pParams->BackBufferWidth, (float)(pParams->BackBufferHeight));
+	ImGui_ImplDX9_NewFrame();
+	for (size_t i = 0; i < windows.size(); i++)
+		windows[i]();
+	ImGui::Render();
 }
 
 bool inGameUIEnabled = false;
-WPARAM inGameUIHotkey;
-std::vector<void(*)()> callbacks;
-char titleBuffer[64];
-void drawImGui(LPDIRECT3DDEVICE9 pD3DDevice)
+void renderDDDAFixUI()
 {
 	if (!inGameUIEnabled)
 		return;
 
-	ImGui_ImplDX9_NewFrame();
-	sprintf_s(titleBuffer, "DDDAFix - %.1f FPS###DDDAFix", ImGui::GetIO().Framerate);
+	static char titleBuffer[64];
+	sprintf_s(titleBuffer, "DDDAFix - %.1f FPS - %d###DDDAFix", ImGui::GetIO().Framerate, ImGui::GetIO().Fonts->Fonts.size());
 	ImGui::SetNextWindowPos(ImVec2(5, 5), ImGuiSetCond_Once);
-	ImGui::Begin(titleBuffer, nullptr, ImVec2(450, 600));
-	for (size_t i = 0; i < callbacks.size(); i++)
+	if (ImGui::Begin(titleBuffer, nullptr, ImVec2(450, 600)))
 	{
-		ImGui::PushID(i);
-		callbacks[i]();
-		ImGui::PopID();
+		for (size_t i = 0; i < content.size(); i++)
+		{
+			ImGui::PushID(i);
+			content[i]();
+			ImGui::PopID();
+		}
 	}
 	ImGui::End();
-	ImGui::Render();
 }
 
 LPBYTE pInGameUI, oInGameUI;
@@ -55,10 +53,14 @@ void __declspec(naked) HInGameUI()
 	__asm	jmp		oInGameUI;
 }
 
-void Hooks::InGameUI()
+WPARAM inGameUIHotkey;
+bool Hooks::InGameUI()
 {
-	inGameUIHotkey = config.getUInt("hotkeys", "keyUI", VK_F12) & 0xFF;
-	D3D9Add(createImGui, lostImGui, resetImGui, drawImGui);
+	if (!config.getBool("inGameUI", "enabled", false))
+	{
+		logFile << "InGameUI: disabled" << std::endl;
+		return false;
+	}
 
 	BYTE sigRun[] = { 0x8B, 0x2D, 0xCC, 0xCC, 0xCC, 0xCC,	//mov	ebp, ds:GetAsyncKeyState
 					0x8D, 0x7E, 0x01 };						//lea	edi, [esi+1]
@@ -67,9 +69,16 @@ void Hooks::InGameUI()
 		CreateHook("InGameUI", pInGameUI, &HInGameUI, &oInGameUI, inGameUIEnabled);
 		oInGameUI += 6;
 	}
+
+	inGameUIHotkey = config.getUInt("hotkeys", "keyUI", VK_F12) & 0xFF;
+	InGameUIAddWindow(renderDDDAFixUI);
+	D3D9(onCreateDevice, onLostDevice, onResetDevice, onEndScene);
+	return true;
 }
 
-void Hooks::InGameUIAdd(void(*callback)()) { callbacks.push_back(callback); }
+void Hooks::InGameUIAdd(void(*callback)()) { content.push_back(callback); }
+void Hooks::InGameUIAddWindow(void(*callback)()) { windows.push_back(callback); }
+void Hooks::InGameUIAddInit(void(*callback)()) { init.push_back(callback); }
 LRESULT Hooks::InGameUIEvent(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	if (msg == WM_KEYDOWN && (HIWORD(lParam) & KF_REPEAT) == 0 && wParam == inGameUIHotkey)
