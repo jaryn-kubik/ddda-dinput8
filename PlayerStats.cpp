@@ -64,7 +64,7 @@ void renderStatsParty(const char *label, int offset)
 		ImGui::TreePop();
 	}
 
-	if (offset == 0x7F0 && ImGui::TreeNode("Inclinations"))//main pawn
+	if (offset && ImGui::TreeNode("Inclinations"))//main pawn
 	{
 		int inclinationsOffset = statsOffset + 0x1224;
 		ImGui::InputFloat("Scather", GetBasePtr<float>(inclinationsOffset += 0));
@@ -76,6 +76,7 @@ void renderStatsParty(const char *label, int offset)
 		ImGui::InputFloat("Nexus", GetBasePtr<float>(inclinationsOffset += 4 * 3));
 		ImGui::InputFloat("Pioneer", GetBasePtr<float>(inclinationsOffset += 4 * 3));
 		ImGui::InputFloat("Acquisitor", GetBasePtr<float>(inclinationsOffset += 4 * 3));
+		ImGui::InputFloat("Skill use", GetBasePtr<float>(inclinationsOffset += 4 * 5));
 		ImGui::TreePop();
 	}
 	ImGui::TreePop();
