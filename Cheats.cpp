@@ -330,7 +330,11 @@ void renderCheatsUI()
 	{
 		ImGui::Begin("Set augment mods", &setAugmentsOpened, ImVec2(625, 400));
 		ImGui::TextUnformatted("On", 150.0f + 50.0f * 0);
+		if (ImGui::IsItemHovered())
+			ImGui::SetTooltip("(when the augment is equipped)");
 		ImGui::TextUnformatted("Off", 150.0f + 50.0f * 2.5f);
+		if (ImGui::IsItemHovered())
+			ImGui::SetTooltip("(when the augment is not equipped)");
 		ImGui::TextUnformatted("Player", 150.0f + 50.0f * 5);
 		ImGui::TextUnformatted("Pawn", 150.0f + 50.0f * 6);
 		ImGui::TextUnformatted("Pawn1", 150.0f + 50.0f * 7);
