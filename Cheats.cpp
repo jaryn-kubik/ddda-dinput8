@@ -77,15 +77,6 @@ void __declspec(naked) HRunType()
 	}
 }
 
-float mWeight;
-LPBYTE pWeight, oWeight;
-void __declspec(naked) HWeight()
-{
-	__asm	movss	xmm0, mWeight;
-	__asm	mulss	xmm5, xmm0;
-	__asm	jmp		oWeight;
-}
-
 bool realTime;
 float mTimeInterval;
 UINT rTimeInterval;
@@ -299,6 +290,7 @@ void renderCheatsAugment(const char *label, float position, int partyId, int ski
 	}
 }
 
+bool shareWeaponSkills, ignoreEquipVocation;
 std::vector<std::pair<int, LPCSTR>> runTypeMapEV = { { -1, "Disabled" },{ 0, "Town Animation" },{ 1, "Town Animation + Stamina" },{ 2, "Stamina" } };
 void renderCheatsUI()
 {
@@ -373,20 +365,22 @@ void renderCheatsUI()
 
 	if (ImGui::CollapsingHeader("Cheats"))
 	{
+		if (ImGui::Checkbox("Share weapon skills", &shareWeaponSkills))
+			config.setBool("cheats", "shareWeaponSkills", shareWeaponSkills);
+		if (ImGui::IsItemHovered())
+			ImGui::SetTooltip("requires game restart");
+
+		if (ImGui::Checkbox("Ignore equip vocation", &ignoreEquipVocation))
+			config.setBool("cheats", "ignoreEquipVocation", ignoreEquipVocation);
+		if (ImGui::IsItemHovered())
+			ImGui::SetTooltip("requires game restart");
+
 		bool prevState = runType >= 0;
 		if (ImGui::ComboEnum<int>("Outside run type", &runType, runTypeMapEV))
 		{
 			config.setInt("cheats", "runType", runType);
 			if (prevState != runType >= 0)
 				Hooks::SwitchHook("Cheat (runType)", pRunType, runType >= 0);
-		}
-
-		prevState = mWeight >= 0;
-		if (ImGui::InputFloatEx("Weight multiplicator", &mWeight, 0.01f, -1.0f, 1.0f))
-		{
-			config.setFloat("cheats", "weightMultiplicator", mWeight);
-			if (prevState != mWeight >= 0)
-				Hooks::SwitchHook("Cheat (weight)", pWeight, mWeight >= 0);
 		}
 
 		prevState = mTimeInterval >= 0;
@@ -451,14 +445,6 @@ void Hooks::Cheats()
 		CreateHook("Cheat (runType)", pRunType += 3, &HRunType, &oRunType, runType >= 0);
 	}
 
-	BYTE sigWeight[] = { 0xF3, 0x0F, 0x58, 0xAB, 0x4C, 0x02, 0x00, 0x00,	//addss		xmm5, dword ptr [ebx+24Ch]
-							0x45 };											//inc		ebp
-	if (FindSignature("Cheat (weight)", sigWeight, &pWeight))
-	{
-		mWeight = config.getFloat("cheats", "weightMultiplicator", -1);
-		CreateHook("Cheat (weight)", pWeight, &HWeight, &oWeight, mWeight >= 0);
-	}
-
 	BYTE sigTime[] = { 0x8B, 0x44, 0x24, 0x08, 0x01, 0x86, 0x68, 0x87, 0x0B, 0x00 };
 	if (FindSignature("Cheat (timeInterval)", sigTime, &pTimeInterval))
 	{
@@ -505,7 +491,7 @@ void Hooks::Cheats()
 			augmentModsParty[i & 0x7F][3] = true;
 	}
 
-	if (config.getBool("cheats", "shareWeaponSkills", false))
+	if ((shareWeaponSkills = config.getBool("cheats", "shareWeaponSkills", false)))
 	{
 		BYTE sig1[] = { 0x0F,0x84,0x97,0x00,0x00,0x00,0x8B,0xCC,0xCC,0xCC,0x8B,0xCC,0x8B };
 		BYTE sig2[] = { 0x75,0x06,0xC7,0x02,0xFF,0xFF,0xFF,0xFF,0x8B,0xCC,0xCC,0x83 };
@@ -530,7 +516,7 @@ void Hooks::Cheats()
 	else
 		logFile << "Cheat (shareWeaponSkills): disabled" << std::endl;
 
-	if (config.getBool("cheats", "ignoreEquipVocation", false))
+	if ((ignoreEquipVocation = config.getBool("cheats", "ignoreEquipVocation", false)))
 	{
 		BYTE sig1[] = { 0x0F, 0x94, 0xC0, 0xC2, 0x0C, 0x00 };
 		BYTE sig2[] = { 0x74, 0x0F, 0x3B, 0xC2, 0x74, 0x0E, 0x8B, 0x41, 0x04, 0x83 };
@@ -552,21 +538,6 @@ void Hooks::Cheats()
 	}
 	else
 		logFile << "Cheat (ignoreEquipVocation): disabled" << std::endl;
-
-	if (config.getBool("cheats", "ignoreSkillVocation", false))
-	{
-		BYTE sig1[] = { 0x74, 0x2F, 0x8B, 0x47, 0x10 };
-		BYTE sig2[] = { 0x74, 0x74, 0x8B, 0x44, 0x24, 0x1C };
-		BYTE sig3[] = { 0x74, 0x24, 0x83, 0xBD, 0xCC, 0xCC, 0xCC, 0xCC, 0x05 };
-		BYTE sig4[] = { 0x8B, 0x4A, 0x10, 0x49, 0x3B, 0xC1 };
-
-		if (FindSignature("Cheat (ignoreSkillVocation1)", sig1, &pOffset)) Set<BYTE>(pOffset, { 0x90, 0x90 });
-		if (FindSignature("Cheat (ignoreSkillVocation2)", sig2, &pOffset)) Set<BYTE>(pOffset, { 0x90, 0x90 });
-		if (FindSignature("Cheat (ignoreSkillVocation3)", sig3, &pOffset)) Set<BYTE>(pOffset, { 0x90, 0x90 });
-		if (FindSignature("Cheat (ignoreSkillVocation4)", sig4, &pOffset)) Set<BYTE>(pOffset, { 0x90, 0x90, 0x8B, 0xC1 });
-	}
-	else
-		logFile << "Cheat (ignoreSkillVocation): disabled" << std::endl;
 
 	InGameUIAdd(renderCheatsUI);
 }
