@@ -99,7 +99,7 @@ bool renderStatsSkills(const char *label, int offset, std::pair<bool, int> *stat
 	bool changed = false;
 	bool treeOpened = ImGui::TreeNode(label);
 	ImGui::SameLine(150.0f);
-	if (ImGui::SmallButton("Learned Skills"))
+	if (ImGui::SmallButton(string("Learned Skills##").append(label).c_str()))
 		state->first = true;
 	if (treeOpened)
 	{
@@ -152,7 +152,7 @@ void renderStatsLearnedSkills(const char *label, int offset, std::pair<bool, int
 
 		int learnedOffset = 0xA7E00 + offset;
 		auto skillList = SkillTypeList[state->second].second;
-		bool isCoreSkills = state->second == 9;
+		bool isCoreSkills = state->second != 9;
 		for (size_t i = 1; i < skillList->size(); i++)
 		{
 			ImGui::PushID(i);
@@ -183,6 +183,7 @@ void renderStatsUI()
 {
 	if (ImGui::CollapsingHeader("Stats"))
 	{
+		ImGui::PushID("Stats");
 		ImGui::Columns(2, nullptr, false);
 		ImGui::InputScalar<int>("Gold", GetBasePtr(0xA7A18), 0, INT_MAX, 1000);
 		ImGui::NextColumn();
@@ -193,11 +194,13 @@ void renderStatsUI()
 		renderStatsParty("Main Pawn", 0x7F0);
 		renderStatsParty("Pawn 1", 0x7F0 + 0x1660);
 		renderStatsParty("Pawn 2", 0x7F0 + 0x1660 + 0x1660);
+		ImGui::PopID();
 	}
 
 	static std::pair<bool, int> learnedSkills[4] = {};
 	if (ImGui::CollapsingHeader("Skills"))
 	{
+		ImGui::PushID("Skills");
 		if (renderStatsSkills("Player", 0, learnedSkills) && pEquipChanged)
 			pEquipChanged[0] = 1;
 		if (renderStatsSkills("Main Pawn", 0x7F0, learnedSkills + 1) && pEquipChanged)
@@ -206,11 +209,14 @@ void renderStatsUI()
 			pEquipChanged[2] = 1;
 		if (renderStatsSkills("Pawn 2", 0x7F0 + 0x1660 + 0x1660, learnedSkills + 3) && pEquipChanged)
 			pEquipChanged[3] = 1;
+		ImGui::PopID();
 	}
+	ImGui::PushID("Learned skills");
 	renderStatsLearnedSkills("Player", 0, learnedSkills);
 	renderStatsLearnedSkills("Main Pawn", 0x7F0, learnedSkills + 1);
 	renderStatsLearnedSkills("Pawn 1", 0x7F0 + 0x1660, learnedSkills + 2);
 	renderStatsLearnedSkills("Pawn 2", 0x7F0 + 0x1660 + 0x1660, learnedSkills + 3);
+	ImGui::PopID();
 }
 
 void Hooks::PlayerStats()

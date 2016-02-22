@@ -69,6 +69,8 @@ void renderClockUI()
 
 		if (ImGui::InputScalar<DWORD>("Size", &clockSize, 1, 1024))
 			config.setUInt("inGameUI", "clockSize", clockSize);
+		if (ImGui::IsItemHovered())
+			ImGui::SetTooltip("requires game restart");
 
 		if (ImGui::InputScalar<DWORD>("Timebase", &clockTimebase, 1, 24 * 60))
 			config.setUInt("inGameUI", "clockTimebase", clockTimebase);
