@@ -6,33 +6,30 @@
 #include "ItemEditor.h"
 #include "PlayerStats.h"
 
-bool thirdSkillLevels1[512] = {};
-bool thirdSkillLevels2[512] = {};
-bool thirdSkillLevels3[512] = {};
-bool thirdSkillLevels4[512] = {};
-void thirdSkillLevelsInit(bool *skillArray, std::vector<int> list)
+bool thirdSkillLevels[0x200][4] = {};
+void thirdSkillLevelsInit(int partyId, std::vector<int> list)
 {
 	if (list.empty())
 		return;
 	if (find(list.begin(), list.end(), -1) != list.end())
 		for (size_t i = 0; i < Hooks::ListItemEnchant.size() - 1; i++)
-			skillArray[Hooks::ListItemEnchant[i].first & 0x1FF] = true;
+			thirdSkillLevels[Hooks::ListItemEnchant[i].first & 0x1FF][partyId] = true;
 	else
 		for (size_t i = 0; i < list.size(); i++)
-			skillArray[list[i] & 0x1FF] = true;
+			thirdSkillLevels[list[i] & 0x1FF][partyId] = true;
 }
 
 int __stdcall GetSkillTier(UINT16 skill, DWORD address)
 {
 	address -= (DWORD)GetBasePtr(0);
 	if (address == 0xA7DFC)//player
-		return thirdSkillLevels1[skill & 0x1FF];
+		return thirdSkillLevels[skill & 0x1FF][0];
 	if (address == 0xA85EC)//main pawn
-		return thirdSkillLevels2[skill & 0x1FF];
+		return thirdSkillLevels[skill & 0x1FF][1];
 	if (address == 0xA9C4C)//pawn 1
-		return thirdSkillLevels3[skill & 0x1FF];
+		return thirdSkillLevels[skill & 0x1FF][2];
 	if (address == 0xAB2AC)//pawn 2
-		return thirdSkillLevels4[skill & 0x1FF];
+		return thirdSkillLevels[skill & 0x1FF][3];
 	return 0;
 }
 
@@ -156,9 +153,10 @@ void __declspec(naked) HAffinity()
 }
 
 const float floatZeroConstant = 0.0f;
-float augmentModsValues[0x80];
+bool augmentModsParty[0x80][4] = {};
+float augmentModsOn[0x80] = {}, augmentModsOff[0x80] = {};
 bool augmentMods;
-LPBYTE pAugmentMods, oAugmentMods1, oAugmentMods2;
+LPBYTE pAugmentMods, oAugmentMods;
 void __declspec(naked) HAugmentMods()
 {
 	__asm
@@ -168,46 +166,87 @@ void __declspec(naked) HAugmentMods()
 
 		add		eax, 0xA76D0;	//player
 		cmp		eax, ecx;
-		je		isParty;
+		jne		isMainPawn;
+		push	1;
+		jmp		hasAugment;
 
+	isMainPawn:
 		add		eax, 0x7F0;		//main Pawn
 		cmp		eax, ecx;
-		je		isParty;
+		jne		isPawn1;
+		push	2;
+		jmp		hasAugment;
 
+	isPawn1:
 		add		eax, 0x1660;	//pawn 2
 		cmp		eax, ecx;
-		je		isParty;
+		jne		isPawn2;
+		push	3;
+		jmp		hasAugment;
 
+	isPawn2:
 		add		eax, 0x1660;	//pawn 3
 		cmp		eax, ecx;
-		je		isParty;
+		jne		notParty;
+		push	4;
+		jmp		hasAugment;
 
-		jmp		oAugmentMods1;
+	notParty:
+		push	0;
 
-	isParty:
-		lea		eax, [augmentModsValues + edx * 4];
+	hasAugment:
+		xor     eax, eax;
+		add     ecx, 258h;
+
+	hasAugmentLoop:
+		cmp		dword ptr[ecx], edx;
+		je		foundAugment;
+		inc		eax;
+		add		ecx, 4;
+		cmp		eax, 6;
+		jb		hasAugmentLoop;
+		xor		al, al;
+		jmp		getValue;
+
+	foundAugment:
+		mov		al, 1;
+
+	getValue:
+		pop		ecx;
+		test	cl, cl;
+		jz		doNotMod;
+
+		test	al, al;
+		jnz		loadValue;
+		dec		ecx;
+		lea		eax, [augmentModsParty + edx * 4 + ecx];
+		mov		eax, [eax];
+
+	loadValue:
+		test	al, al;
+		jz		loadOff;
+		lea		eax, [augmentModsOn + edx * 4];
+		jmp		returnValue;
+
+	loadOff:
+		lea		eax, [augmentModsOff + edx * 4];
+
+	returnValue:
 		movss	xmm0, [eax];
 		comiss	xmm0, floatZeroConstant;
-		ja		modValue;
-		je		allowAug;
-		jmp		oAugmentMods1;
-
-	modValue:
+		jb		doNotMod;
 		movss	dword ptr[esi], xmm0;
-		mov		eax, 1;
 		retn	4;
 
-	allowAug:
-		mov		eax, 1;
-		jmp		oAugmentMods2;
+	doNotMod:
+		jmp		oAugmentMods;
 	}
 }
 
-std::vector<std::pair<int, LPCSTR>> augmentModsActive;
 void augmentModsLoad()
 {
-	std::fill_n(augmentModsValues, 0x80, -1.0f);
-	augmentModsActive.clear();
+	std::fill_n(augmentModsOn, 0x80, -1.0f);
+	std::fill_n(augmentModsOff, 0x80, -1.0f);
 	for (auto &key : config.getSection("augments"))
 	{
 		try
@@ -216,18 +255,17 @@ void augmentModsLoad()
 			for (size_t i = 1; i < Hooks::ListSkillsAugments.size(); i++)
 				if (Hooks::ListSkillsAugments[i].first == augmentId)
 				{
-					augmentModsActive.push_back(Hooks::ListSkillsAugments[i]);
-					augmentModsValues[augmentId] = config.getFloat("augments", std::to_string(augmentId).c_str(), -1);
+					auto values = config.getFloats("augments", std::to_string(augmentId).c_str());
+					augmentModsOn[augmentId] = values.at(0);
+					augmentModsOff[augmentId] = values.at(1);
 					break;
 				}
 		}
 		catch (...) {}
 	}
-	sort(augmentModsActive.begin(), augmentModsActive.end(),
-		[](const std::pair<int, LPCSTR> &a, const std::pair<int, LPCSTR> &b) { return a.first < b.first; });
 }
 
-void renderCheatsSkillLevel(const char *label, float position, bool *check, bool *skills, bool isHeader = false)
+void renderCheatsSkillLevel(const char *label, float position, bool *check, int partyId, bool isHeader = false)
 {
 	ImGui::SameLine(position);
 	if (isHeader)
@@ -238,37 +276,92 @@ void renderCheatsSkillLevel(const char *label, float position, bool *check, bool
 		std::vector<int> list;
 		for (size_t i = 0; i < Hooks::ListItemEnchant.size() - 1; i++)
 		{
+			int skillId = Hooks::ListItemEnchant[i].first;
 			if (isHeader)
-				skills[Hooks::ListItemEnchant[i].first] = *check;
-			if (skills[Hooks::ListItemEnchant[i].first])
-				list.push_back(Hooks::ListItemEnchant[i].first);
+				thirdSkillLevels[skillId][partyId] = *check;
+			if (thirdSkillLevels[skillId][partyId])
+				list.push_back(skillId);
 		}
-		config.setList("cheats", (string("thirdSkillLevel") + label).c_str(), list);
+		config.setInts("cheats", (string("thirdSkillLevel") + label).c_str(), list);
+	}
+}
+
+void renderCheatsAugment(const char *label, float position, int partyId, int skillId)
+{
+	ImGui::SameLine(position);
+	if (ImGui::Checkbox((string("##") + label).c_str(), augmentModsParty[skillId] + partyId))
+	{
+		std::vector<int> list;
+		for (size_t i = 1; i < Hooks::ListSkillsAugments.size(); i++)
+			if (augmentModsParty[Hooks::ListSkillsAugments[i].first][partyId])
+				list.push_back(Hooks::ListSkillsAugments[i].first);
+		config.setInts("augments", (string("augments") + label).c_str(), list);
 	}
 }
 
 std::vector<std::pair<int, LPCSTR>> runTypeMapEV = { { -1, "Disabled" },{ 0, "Town Animation" },{ 1, "Town Animation + Stamina" },{ 2, "Stamina" } };
 void renderCheatsUI()
 {
-	static bool setSkillsOpened = false;
+	static bool setSkillsOpened = false, setAugmentsOpened = false;
 	if (setSkillsOpened)
 	{
 		ImGui::Begin("Set 3rd level skills", &setSkillsOpened, ImVec2(525, 400));
 		static bool selectAll1 = false, selectAll2 = false, selectAll3 = false, selectAll4 = false;
-		renderCheatsSkillLevel("Player", 200.0f + 75.0f * 0, &selectAll1, thirdSkillLevels1, true);
-		renderCheatsSkillLevel("Pawn", 200.0f + 75.0f * 1, &selectAll2, thirdSkillLevels2, true);
-		renderCheatsSkillLevel("Pawn1", 200.0f + 75.0f * 2, &selectAll3, thirdSkillLevels3, true);
-		renderCheatsSkillLevel("Pawn2", 200.0f + 75.0f * 3, &selectAll4, thirdSkillLevels4, true);
+		renderCheatsSkillLevel("Player", 200.0f + 75.0f * 0, &selectAll1, 0, true);
+		renderCheatsSkillLevel("Pawn", 200.0f + 75.0f * 1, &selectAll2, 1, true);
+		renderCheatsSkillLevel("Pawn1", 200.0f + 75.0f * 2, &selectAll3, 2, true);
+		renderCheatsSkillLevel("Pawn2", 200.0f + 75.0f * 3, &selectAll4, 3, true);
 
 		for (size_t i = 0; i < Hooks::ListItemEnchant.size() - 1; i++)
 		{
 			ImGui::PushID(i);
 			ImGui::Text(Hooks::ListItemEnchant[i].second);
 			int skillId = Hooks::ListItemEnchant[i].first;
-			renderCheatsSkillLevel("Player", 200.0f + 75.0f * 0, thirdSkillLevels1 + skillId, thirdSkillLevels1);
-			renderCheatsSkillLevel("Pawn", 200.0f + 75.0f * 1, thirdSkillLevels2 + skillId, thirdSkillLevels2);
-			renderCheatsSkillLevel("Pawn1", 200.0f + 75.0f * 2, thirdSkillLevels3 + skillId, thirdSkillLevels3);
-			renderCheatsSkillLevel("Pawn2", 200.0f + 75.0f * 3, thirdSkillLevels4 + skillId, thirdSkillLevels4);
+			renderCheatsSkillLevel("Player", 200.0f + 75.0f * 0, thirdSkillLevels[skillId] + 0, 0);
+			renderCheatsSkillLevel("Pawn", 200.0f + 75.0f * 1, thirdSkillLevels[skillId] + 1, 1);
+			renderCheatsSkillLevel("Pawn1", 200.0f + 75.0f * 2, thirdSkillLevels[skillId] + 2, 2);
+			renderCheatsSkillLevel("Pawn2", 200.0f + 75.0f * 3, thirdSkillLevels[skillId] + 3, 3);
+			ImGui::PopID();
+		}
+		ImGui::End();
+	}
+
+	if (setAugmentsOpened)
+	{
+		ImGui::Begin("Set augment mods", &setAugmentsOpened, ImVec2(625, 400));
+		ImGui::TextUnformatted("On", 150.0f + 50.0f * 0);
+		ImGui::TextUnformatted("Off", 150.0f + 50.0f * 2.5f);
+		ImGui::TextUnformatted("Player", 150.0f + 50.0f * 5);
+		ImGui::TextUnformatted("Pawn", 150.0f + 50.0f * 6);
+		ImGui::TextUnformatted("Pawn1", 150.0f + 50.0f * 7);
+		ImGui::TextUnformatted("Pawn2", 150.0f + 50.0f * 8);
+
+		for (size_t i = 1; i < Hooks::ListSkillsAugments.size(); i++)
+		{
+			int skillId = Hooks::ListSkillsAugments[i].first;
+			if (skillId <= 100 && skillId % 10 == 0)
+				ImGui::Separator();
+			ImGui::PushID(i);
+			ImGui::TextUnformatted(Hooks::ListSkillsAugments[i].second);
+			ImGui::PushItemWidth(100.0f);
+			ImGui::SameLine(150.0f + 50.0f * 0);
+			bool changed = ImGui::InputFloatEx("##on", augmentModsOn + skillId, 1.0f, -1.0f);
+			ImGui::SameLine(150.0f + 50.0f * 2.5f);
+			changed |= ImGui::InputFloatEx("##off", augmentModsOff + skillId, 1.0f, -1.0f);
+			ImGui::PopItemWidth();
+
+			if (changed)
+			{
+				if (augmentModsOn[skillId] < 0.0f && augmentModsOff[skillId] < 0.0f)
+					config.removeKey("augments", std::to_string(skillId).c_str());
+				else
+					config.setFloats("augments", std::to_string(skillId).c_str(), { augmentModsOn[skillId], augmentModsOff[skillId] });
+			}
+
+			renderCheatsAugment("Player", 150.0f + 50.0f * 5, 0, skillId);
+			renderCheatsAugment("Pawn", 150.0f + 50.0f * 6, 1, skillId);
+			renderCheatsAugment("Pawn1", 150.0f + 50.0f * 7, 2, skillId);
+			renderCheatsAugment("Pawn2", 150.0f + 50.0f * 8, 3, skillId);
 			ImGui::PopID();
 		}
 		ImGui::End();
@@ -307,45 +400,19 @@ void renderCheatsUI()
 			Hooks::SwitchHook("Cheat (thirdSkillLevel)", pSkillLevel, skillLevel);
 		}
 		ImGui::SameLine();
-		if (ImGui::Button("Set"))
+		if (ImGui::Button("Set##skills"))
 			setSkillsOpened = true;
 
-		ImGui::Separator();
-		if (ImGui::TreeNode("Augment mods"))
+		if (ImGui::Checkbox("Augment mods", &augmentMods))
 		{
-			if (ImGui::Checkbox("Enabled", &augmentMods))
-			{
-				config.setBool("augments", "enabled", augmentMods);
-				Hooks::SwitchHook("Cheat (augmentMods)", pAugmentMods, augmentMods);
-			}
-
-			for (auto &augment : augmentModsActive)
-			{
-				ImGui::PushID(augment.first);
-				if (ImGui::Button("Remove"))
-				{
-					config.removeKey("augments", std::to_string(augment.first).c_str());
-					augmentModsLoad();
-				}
-				ImGui::SameLine();
-				ImGui::PushItemWidth(200.0f);
-				if (ImGui::InputFloatEx(augment.second, augmentModsValues + augment.first, 1.0f, -1.0f))
-					config.setFloat("augments", std::to_string(augment.first).c_str(), augmentModsValues[augment.first]);
-				ImGui::PopItemWidth();
-				ImGui::PopID();
-			}
-
-			static int augmentId = -1;
-			if (ImGui::Button("Add") && augmentId >= 0)
-			{
-				config.setFloat("augments", std::to_string(augmentId).c_str(), -1.0f);
-				augmentModsLoad();
-			}
-			ImGui::SameLine();
-			ImGui::ComboEnum<int>("##augment", &augmentId, Hooks::ListSkillsAugments);
-			ImGui::TreePop();
+			config.setBool("augments", "enabled", augmentMods);
+			Hooks::SwitchHook("Cheat (augmentMods)", pAugmentMods, augmentMods);
 		}
+		ImGui::SameLine();
+		if (ImGui::Button("Set##augments"))
+			setAugmentsOpened = true;
 
+		ImGui::Separator();
 		if (ImGui::TreeNode("Affinity mod"))
 		{
 			std::vector<std::pair<int, LPCSTR>> affinityModEV =
@@ -402,10 +469,10 @@ void Hooks::Cheats()
 		skillLevel = config.getBool("cheats", "thirdSkillLevel", false);
 		CreateHook("Cheat (thirdSkillLevel)", pSkillLevel, &HSkillLevel, &oSkillLevel, skillLevel);
 		oSkillLevel += 7;
-		thirdSkillLevelsInit(thirdSkillLevels1, config.getList("cheats", "thirdSkillLevelPlayer"));
-		thirdSkillLevelsInit(thirdSkillLevels2, config.getList("cheats", "thirdSkillLevelPawn"));
-		thirdSkillLevelsInit(thirdSkillLevels3, config.getList("cheats", "thirdSkillLevelPawn1"));
-		thirdSkillLevelsInit(thirdSkillLevels4, config.getList("cheats", "thirdSkillLevelPawn2"));
+		thirdSkillLevelsInit(0, config.getInts("cheats", "thirdSkillLevelPlayer"));
+		thirdSkillLevelsInit(1, config.getInts("cheats", "thirdSkillLevelPawn"));
+		thirdSkillLevelsInit(2, config.getInts("cheats", "thirdSkillLevelPawn1"));
+		thirdSkillLevelsInit(3, config.getInts("cheats", "thirdSkillLevelPawn2"));
 	}
 
 	BYTE *pOffset;
@@ -421,8 +488,17 @@ void Hooks::Cheats()
 	{
 		augmentMods = config.getBool("augments", "enabled", false);
 		augmentModsLoad();
-		CreateHook("Cheat (augmentMods)", pAugmentMods, &HAugmentMods, &oAugmentMods1, augmentMods);
-		oAugmentMods2 = pAugmentMods + sizeof sigAug - 2;
+		CreateHook("Cheat (augmentMods)", pAugmentMods, &HAugmentMods, nullptr, augmentMods);
+		oAugmentMods = pAugmentMods + sizeof sigAug - 2;
+
+		for (auto i : config.getInts("augments", "augmentsPlayer"))
+			augmentModsParty[i & 0x7F][0] = true;
+		for (auto i : config.getInts("augments", "augmentsPawn"))
+			augmentModsParty[i & 0x7F][1] = true;
+		for (auto i : config.getInts("augments", "augmentsPawn1"))
+			augmentModsParty[i & 0x7F][2] = true;
+		for (auto i : config.getInts("augments", "augmentsPawn2"))
+			augmentModsParty[i & 0x7F][3] = true;
 	}
 
 	if (config.getBool("cheats", "shareWeaponSkills", false))

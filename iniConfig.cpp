@@ -123,7 +123,7 @@ int iniConfig::getEnum(LPCSTR section, LPCSTR key, int defValue, std::pair<int, 
 	return printError(section, key, defValue);
 }
 
-std::vector<int> iniConfig::getList(LPCSTR section, LPCSTR key)
+std::vector<int> iniConfig::getInts(LPCSTR section, LPCSTR key)
 {
 	try
 	{
@@ -142,6 +142,27 @@ std::vector<int> iniConfig::getList(LPCSTR section, LPCSTR key)
 	catch (...) {}
 	printError(section, key, string());
 	return std::vector<int>();
+}
+
+std::vector<float> iniConfig::getFloats(LPCSTR section, LPCSTR key)
+{
+	try
+	{
+		if (get(section, key, true))
+		{
+			std::vector<float> list;
+			char *context, *token = strtok_s(buffer, ";", &context);
+			while (token != nullptr)
+			{
+				list.push_back(std::stof(token));
+				token = strtok_s(nullptr, ";", &context);
+			}
+			return list;
+		}
+	}
+	catch (...) {}
+	printError(section, key, string());
+	return std::vector<float>();
 }
 
 void iniConfig::setStr(LPCSTR section, LPCSTR key, string value) const
@@ -176,7 +197,19 @@ void iniConfig::setEnum(LPCSTR section, LPCSTR key, int value, std::pair<int, LP
 	setStr(section, key, std::to_string(value));
 }
 
-void iniConfig::setList(LPCSTR section, LPCSTR key, std::vector<int> list) const
+void iniConfig::setInts(LPCSTR section, LPCSTR key, std::vector<int> list) const
+{
+	string str;
+	for (size_t i = 0; i < list.size(); i++)
+	{
+		str += std::to_string(list[i]);
+		if (i < list.size() - 1)
+			str += ";";
+	}
+	setStr(section, key, str);
+}
+
+void iniConfig::setFloats(LPCSTR section, LPCSTR key, std::vector<float> list) const
 {
 	string str;
 	for (size_t i = 0; i < list.size(); i++)

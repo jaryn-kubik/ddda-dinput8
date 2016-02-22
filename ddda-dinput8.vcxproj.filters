@@ -155,6 +155,9 @@
     <Library Include="MinHook\libMinHook-x86-v140-mt.lib">
       <Filter>MinHook</Filter>
     </Library>
+    <Library Include="MinHook\libMinHook-x86-v140-mtd.lib">
+      <Filter>MinHook</Filter>
+    </Library>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Version.rc" />

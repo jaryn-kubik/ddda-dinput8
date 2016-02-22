@@ -543,6 +543,7 @@ const std::vector<std::pair<int, LPCSTR>> Hooks::ListSkillsAugments =
 	{ 84, "84: Suasion" },
 	{ 85, "85: Acuity" },
 	{ 86, "86: Awareness" },
+	{ 90, "90: Unknown" },
 	{ 91, "91: Suasion" },
 	{ 92, "92: Thrift" },
 	{ 93, "93: Weal" },

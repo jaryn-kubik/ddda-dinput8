@@ -87,7 +87,7 @@ void renderClockUI()
 				if (strcmp(w->Name, "InGameClock") == 0)
 					window = w;
 			if (window)
-				config.setList("inGameUI", "clockPosition", { (int)window->Pos.x, (int)window->Pos.y });
+				config.setInts("inGameUI", "clockPosition", { (int)window->Pos.x, (int)window->Pos.y });
 		}
 	}
 }
@@ -110,7 +110,7 @@ void Hooks::InGameClock()
 
 	ImU32 foreground = config.getUInt("inGameUI", "clockForeground", ImGui::ColorConvertFloat4ToU32(ImVec4(0.0f, 0.0f, 0.0f, 1.0f)));
 	ImU32 background = config.getUInt("inGameUI", "clockBackground", ImGui::ColorConvertFloat4ToU32(ImVec4(1.0f, 1.0f, 1.0f, 0.1f)));
-	auto position = config.getList("inGameUI", "clockPosition");
+	auto position = config.getInts("inGameUI", "clockPosition");
 	clockForeground = ImGui::ColorConvertU32ToFloat4(foreground);
 	clockBackground = ImGui::ColorConvertU32ToFloat4(background);
 	if (position.size() == 2)

@@ -116,4 +116,10 @@ namespace ImGui
 			*v = max;
 		return true;
 	}
+
+	void TextUnformatted(const char* label, float pos)
+	{
+		SameLine(pos);
+		TextUnformatted(label);
+	}
 }
