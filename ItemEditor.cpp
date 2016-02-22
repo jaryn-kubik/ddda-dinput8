@@ -43,7 +43,7 @@ void renderItemEditorUI()
 			ImGui::InputScalar<UINT16>("Power 2", pItem + 0x1C, 0, UINT16_MAX);
 			ImGui::TreePop();
 		}
-		if (ImGui::TreeNode("(for skill rings"))
+		if (ImGui::TreeNode("(for skill rings)"))
 		{
 			ImGui::ComboEnum<UINT16>("Enchant 1", pItem + 0x18, Hooks::ListItemEnchant);
 			ImGui::ComboEnum<UINT16>("Enchant 2", pItem + 0x1A, Hooks::ListItemEnchant);

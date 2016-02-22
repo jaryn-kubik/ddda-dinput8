@@ -176,7 +176,7 @@ void iniConfig::setUInt(LPCSTR section, LPCSTR key, unsigned value, bool hex) co
 	if (hex)
 	{
 		char buf[16];
-		snprintf(buf, sizeof buf, "0x%8X", value);
+		snprintf(buf, sizeof buf, "0x%08X", value);
 		setStr(section, key, buf);
 	}
 	else
