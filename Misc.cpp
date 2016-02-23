@@ -81,12 +81,18 @@ void __declspec(naked) HWeather()
 	}
 }
 
-float gatheringSpeed = 1.0f;
+float gatheringSpeed;
 bool charCustomization, extendVerticalCam, disableAutoCam;
 void renderMiscUI()
 {
 	if (ImGui::CollapsingHeader("Main"))
 	{
+		static bool borderlessFullscreen = config.getBool("main", "borderlessFullscreen", false);
+		if (ImGui::Checkbox("Borderless fullscreen", &borderlessFullscreen))
+			config.setBool("main", "borderlessFullscreen", borderlessFullscreen);
+		if (ImGui::IsItemHovered())
+			ImGui::SetTooltip("requires game restart");
+
 		if (ImGui::Checkbox("Char customization", &charCustomization))
 		{
 			config.setBool("main", "charCustomization", charCustomization);
@@ -174,6 +180,7 @@ void Hooks::Misc()
 		oWeather = pOffset + 7;
 	}
 
+	gatheringSpeed = config.getFloat("main", "gatheringSpeed", 1.0f);
 	BYTE sigGathering[] = { 0xBA, 0x68, 0x00, 0x00, 0x00, 0x8B, 0xCE, 0xE8, 0xCC, 0xCC, 0xCC, 0xCC, 0x84, 0xC0, 0x74 };
 	if (FindSignature("Gathering", sigGathering, &pOffset))
 	{
