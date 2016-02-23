@@ -22,7 +22,7 @@ namespace Hooks
 
 	template<size_t len> bool Find(LPCSTR msg, BYTE* start, BYTE* end, BYTE(&signature)[len], BYTE **offset)
 	{
-		return Find(start, end, signature, len, offset, msg);
+		return Find(msg, start, end, signature, len, offset);
 	}
 
 	template<size_t len> bool FindSignature(LPCSTR msg, BYTE(&signature)[len], BYTE **offset)

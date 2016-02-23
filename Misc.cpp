@@ -81,6 +81,7 @@ void __declspec(naked) HWeather()
 	}
 }
 
+float gatheringSpeed = 1.0f;
 bool charCustomization, extendVerticalCam, disableAutoCam;
 void renderMiscUI()
 {
@@ -111,6 +112,11 @@ void renderMiscUI()
 		std::pair<int, const char*> weather[]{ { 0, "Clear sky" }, { 1, "Cloudy" }, { 2, "Foggy" }, { 3, "Vulcanic" } };
 		ImGui::RadioButtons(GetBasePtr(0xB8780), weather);
 		ImGui::Checkbox("Weather - post game", GetBasePtr<bool>(0xB33A8));
+
+		ImGui::PushItemWidth(150.0f);
+		if (ImGui::InputFloatEx("Gathering/Mining speed", &gatheringSpeed, 0.1f, 1.0f, 100.0f, 1))
+			config.setFloat("main", "gatheringSpeed", gatheringSpeed);
+		ImGui::PopItemWidth();
 	}
 }
 
@@ -166,6 +172,20 @@ void Hooks::Misc()
 	{
 		CreateHook("Weather", pOffset, &HWeather, nullptr);
 		oWeather = pOffset + 7;
+	}
+
+	BYTE sigGathering[] = { 0xBA, 0x68, 0x00, 0x00, 0x00, 0x8B, 0xCE, 0xE8, 0xCC, 0xCC, 0xCC, 0xCC, 0x84, 0xC0, 0x74 };
+	if (FindSignature("Gathering", sigGathering, &pOffset))
+	{
+		pOffset += pOffset[sizeof sigGathering] + sizeof sigGathering + 5;
+		Set<float*>((float**)pOffset, { &gatheringSpeed });
+		for (int i = 0; i < 3; i++)
+		{
+			if (!Find("Gathering", pOffset, pOffset + 0x10000, sigGathering, &pOffset))
+				break;
+			pOffset += pOffset[sizeof sigGathering] + sizeof sigGathering + 5;
+			Set<float*>((float**)pOffset, { &gatheringSpeed });
+		}
 	}
 
 	InGameUIAdd(renderMiscUI);

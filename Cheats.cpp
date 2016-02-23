@@ -145,7 +145,7 @@ void __declspec(naked) HAffinity()
 
 const float floatZeroConstant = 0.0f;
 bool augmentModsParty[0x80][4] = {};
-float augmentModsOn[0x80] = {}, augmentModsOff[0x80] = {};
+float augmentModsValues[0x80][2] = {};
 bool augmentMods;
 LPBYTE pAugmentMods, oAugmentMods;
 void __declspec(naked) HAugmentMods()
@@ -210,20 +210,20 @@ void __declspec(naked) HAugmentMods()
 		test	al, al;
 		jnz		loadValue;
 		dec		ecx;
-		lea		eax, [augmentModsParty + edx * 4 + ecx];
-		mov		eax, [eax];
+		lea		ecx, [augmentModsParty + edx * 4 + ecx];
+		mov		al, byte ptr[ecx];
 
 	loadValue:
 		test	al, al;
 		jz		loadOff;
-		lea		eax, [augmentModsOn + edx * 4];
+		lea		ecx, [augmentModsValues + edx * 8 + 0];
 		jmp		returnValue;
 
 	loadOff:
-		lea		eax, [augmentModsOff + edx * 4];
+		lea		ecx, [augmentModsValues + edx * 8 + 4];
 
 	returnValue:
-		movss	xmm0, [eax];
+		movss	xmm0, [ecx];
 		comiss	xmm0, floatZeroConstant;
 		jb		doNotMod;
 		movss	dword ptr[esi], xmm0;
@@ -236,8 +236,8 @@ void __declspec(naked) HAugmentMods()
 
 void augmentModsLoad()
 {
-	std::fill_n(augmentModsOn, 0x80, -1.0f);
-	std::fill_n(augmentModsOff, 0x80, -1.0f);
+	for (int i = 0; i < 0x80; i++)
+		augmentModsValues[i][0] = augmentModsValues[i][1] = -1.0f;
 	for (auto &key : config.getSection("augments"))
 	{
 		try
@@ -247,8 +247,8 @@ void augmentModsLoad()
 				if (Hooks::ListSkillsAugments[i].first == augmentId)
 				{
 					auto values = config.getFloats("augments", std::to_string(augmentId).c_str());
-					augmentModsOn[augmentId] = values.at(0);
-					augmentModsOff[augmentId] = values.at(1);
+					augmentModsValues[augmentId][0] = values.at(0);
+					augmentModsValues[augmentId][1] = values.at(1);
 					break;
 				}
 		}
@@ -290,7 +290,7 @@ void renderCheatsAugment(const char *label, float position, int partyId, int ski
 	}
 }
 
-bool shareWeaponSkills, ignoreEquipVocation;
+bool shareWeaponSkills, ignoreEquipVocation, ignoreSkillVocation;
 std::vector<std::pair<int, LPCSTR>> runTypeMapEV = { { -1, "Disabled" },{ 0, "Town Animation" },{ 1, "Town Animation + Stamina" },{ 2, "Stamina" } };
 void renderCheatsUI()
 {
@@ -341,17 +341,17 @@ void renderCheatsUI()
 			ImGui::TextUnformatted(Hooks::ListSkillsAugments[i].second);
 			ImGui::PushItemWidth(100.0f);
 			ImGui::SameLine(150.0f + 50.0f * 0);
-			bool changed = ImGui::InputFloatEx("##on", augmentModsOn + skillId, 1.0f, -1.0f);
+			bool changed = ImGui::InputFloatEx("##on", augmentModsValues[skillId] + 0, 1.0f, -1.0f);
 			ImGui::SameLine(150.0f + 50.0f * 2.5f);
-			changed |= ImGui::InputFloatEx("##off", augmentModsOff + skillId, 1.0f, -1.0f);
+			changed |= ImGui::InputFloatEx("##off", augmentModsValues[skillId] + 1, 1.0f, -1.0f);
 			ImGui::PopItemWidth();
 
 			if (changed)
 			{
-				if (augmentModsOn[skillId] < 0.0f && augmentModsOff[skillId] < 0.0f)
+				if (augmentModsValues[skillId][0] < 0.0f && augmentModsValues[skillId][1] < 0.0f)
 					config.removeKey("augments", std::to_string(skillId).c_str());
 				else
-					config.setFloats("augments", std::to_string(skillId).c_str(), { augmentModsOn[skillId], augmentModsOff[skillId] });
+					config.setFloats("augments", std::to_string(skillId).c_str(), { augmentModsValues[skillId][0], augmentModsValues[skillId][1] });
 			}
 
 			renderCheatsAugment("Player", 150.0f + 50.0f * 5, 0, skillId);
@@ -372,6 +372,11 @@ void renderCheatsUI()
 
 		if (ImGui::Checkbox("Ignore equip vocation", &ignoreEquipVocation))
 			config.setBool("cheats", "ignoreEquipVocation", ignoreEquipVocation);
+		if (ImGui::IsItemHovered())
+			ImGui::SetTooltip("requires game restart");
+
+		if (ImGui::Checkbox("Ignore skill vocation", &ignoreSkillVocation))
+			config.setBool("cheats", "ignoreSkillVocation", ignoreSkillVocation);
 		if (ImGui::IsItemHovered())
 			ImGui::SetTooltip("requires game restart");
 
@@ -538,6 +543,21 @@ void Hooks::Cheats()
 	}
 	else
 		logFile << "Cheat (ignoreEquipVocation): disabled" << std::endl;
+
+	if ((ignoreSkillVocation = config.getBool("cheats", "ignoreSkillVocation", false)))
+	{
+		BYTE sig1[] = { 0x74, 0x2F, 0x8B, 0x47, 0x10 };
+		BYTE sig2[] = { 0x74, 0x74, 0x8B, 0x44, 0x24, 0x1C };
+		BYTE sig3[] = { 0x74, 0x24, 0x83, 0xBD, 0xCC, 0xCC, 0xCC, 0xCC, 0x05 };
+		BYTE sig4[] = { 0x8B, 0x4A, 0x10, 0x49, 0x3B, 0xC1 };
+
+		if (FindSignature("Cheat (ignoreSkillVocation1)", sig1, &pOffset)) Set<BYTE>(pOffset, { 0x90, 0x90 });
+		if (FindSignature("Cheat (ignoreSkillVocation2)", sig2, &pOffset)) Set<BYTE>(pOffset, { 0x90, 0x90 });
+		if (FindSignature("Cheat (ignoreSkillVocation3)", sig3, &pOffset)) Set<BYTE>(pOffset, { 0x90, 0x90 });
+		if (FindSignature("Cheat (ignoreSkillVocation4)", sig4, &pOffset)) Set<BYTE>(pOffset, { 0x90, 0x90, 0x8B, 0xC1 });
+	}
+	else
+		logFile << "Cheat (ignoreSkillVocation): disabled" << std::endl;
 
 	InGameUIAdd(renderCheatsUI);
 }
