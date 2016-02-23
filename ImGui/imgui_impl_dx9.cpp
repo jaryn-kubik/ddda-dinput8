@@ -126,6 +126,7 @@ void ImGui_ImplDX9_RenderDrawLists(ImDrawData* draw_data)
 		}
 		vtx_offset += cmd_list->VtxBuffer.size();
 	}
+	g_pd3dDevice->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE);
 	g_State->Apply();
 }
 
