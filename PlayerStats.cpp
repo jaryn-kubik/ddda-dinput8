@@ -122,7 +122,7 @@ bool renderStatsSkills(const char *label, int offset, std::pair<bool, int> *stat
 	return changed;
 }
 
-std::pair<LPCSTR, const std::vector<std::pair<int, LPCSTR>>*> SkillTypeList[] =
+std::vector<std::pair<LPCSTR, const std::vector<std::pair<int, LPCSTR>>*>> SkillTypeList =
 {
 	{ "Sword", &Hooks::ListSkillsSword },
 	{ "Longsword", &Hooks::ListSkillsLongsword },
@@ -133,7 +133,8 @@ std::pair<LPCSTR, const std::vector<std::pair<int, LPCSTR>>*> SkillTypeList[] =
 	{ "Bow", &Hooks::ListSkillsBow },
 	{ "MBow", &Hooks::ListSkillsMagickBow },
 	{ "Longbow", &Hooks::ListSkillsLongbow },
-	{ "Core", &Hooks::ListSkillsCore }
+	{ "Core", &Hooks::ListSkillsCore },
+	{ "Augments", &Hooks::ListSkillsAugments }
 };
 void renderStatsLearnedSkills(const char *label, int offset, std::pair<bool, int> *state)
 {
@@ -141,32 +142,36 @@ void renderStatsLearnedSkills(const char *label, int offset, std::pair<bool, int
 	{
 		ImGui::Begin(string("Learned skills - ").append(label).c_str(), &(state->first), ImVec2(500, 400));
 		ImGui::Columns(5, nullptr, false);
-		for (int i = 0; i < 10;)
+		for (size_t i = 0; i < SkillTypeList.size(); i++)
 		{
-			ImGui::RadioButton(SkillTypeList[i].first, &(state->second), i++);
-			ImGui::RadioButton(SkillTypeList[i].first, &(state->second), i++);
-			ImGui::NextColumn();
+			ImGui::RadioButton(SkillTypeList[i].first, &(state->second), i);
+			if (i % 2 == 1)
+				ImGui::NextColumn();
 		}
 		ImGui::Columns();
 		ImGui::Separator();
 
 		int learnedOffset = 0xA7E00 + offset;
+		if (state->second == 10)//augments
+			learnedOffset += 0x38 * 3 + 4;
 		auto skillList = SkillTypeList[state->second].second;
-		bool isCoreSkills = state->second != 9;
+		bool twoLevels = state->second < 9;
 		for (size_t i = 1; i < skillList->size(); i++)
 		{
+			int id = skillList->at(i).first;
+			if (id % 10 == 0 && i > 1)
+				ImGui::Separator();
+
 			ImGui::PushID(i);
 			ImGui::Text(skillList->at(i).second);
 			ImGui::SameLine(400.0f);
-
-			int id = skillList->at(i).first;
 			UINT32 *pLvl1 = GetBasePtr<UINT32>(learnedOffset + (id / 32) * 4);
 			UINT32 *pLvl2 = GetBasePtr<UINT32>(learnedOffset + 0x38 + (id / 32) * 4);
 			UINT32 flagBit = 1U << id % 32;
 
-			if (ImGui::CheckboxFlags("##lvl1", pLvl1, flagBit) && *pLvl1 & flagBit && !isCoreSkills)
+			if (ImGui::CheckboxFlags("##lvl1", pLvl1, flagBit) && *pLvl1 & flagBit && twoLevels)
 				*pLvl2 = *pLvl2 & ~flagBit;
-			if (isCoreSkills)
+			if (twoLevels)
 			{
 				ImGui::SameLine();
 				if (ImGui::CheckboxFlags("##lvl2", pLvl2, flagBit) && *pLvl2 & flagBit)
