@@ -93,18 +93,25 @@ void __declspec(naked) HJumpMod2()
 {
 	__asm
 	{
-		cmp		edx, 0x07;
-		je		loadNormal;
-		cmp		edx, 0x10;
-		je		loadRun;
-		jmp		oJumpMod2;
+		mov		ecx, [edi + 0x3DEC];
+		mov		ecx, [ecx + 8];
+		test	ecx, ecx;
+		jnz		getBack;
+
+		cmp		edx, 9;
+		jl		loadNormal;
+		cmp		edx, 18;
+		jl		loadRun;
+		jmp		getBack;
 
 	loadNormal:
 		lea		esi, jumpMods;
-		jmp		oJumpMod2;
+		jmp		getBack;
 
 	loadRun:
 		lea		esi, jumpModsRun;
+
+	getBack:
 		jmp		oJumpMod2;
 	}
 }
@@ -257,6 +264,12 @@ void Hooks::Misc()
 		if (Find("JumpMod", pJumpMod1, pJumpMod1 + 0x100, sigJump2, &pJumpMod2))
 		{
 			jumpMod = config.getBool("main", "jumpMod", false);
+			auto mods = config.getFloats("main", "jumpMods");
+			if (mods.size() == 5)
+				copy(mods.begin(), mods.end(), jumpMods + 1);
+			mods = config.getFloats("main", "jumpModsRun");
+			if (mods.size() == 5)
+				copy(mods.begin(), mods.end(), jumpModsRun + 1);
 			CreateHook("JumpMod", pJumpMod1, &HJumpMod1, &oJumpMod1, jumpMod);
 			CreateHook("JumpMod", pJumpMod2, &HJumpMod2, &oJumpMod2, jumpMod);
 		}
