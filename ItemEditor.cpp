@@ -129,7 +129,7 @@ const std::vector<std::pair<int, LPCSTR>> Hooks::ListItemEnchant =
 	{ 214, "214: Grand Frigor" },
 	{ 215, "215: Grand Brontide" },
 	{ 220, "220: Grand Anodyne" },
-	{ 222, "222: Fire Boon" },
+	{ 222, "222: Fire Pact" },
 	{ 223, "223: Ice Pact" },
 	{ 224, "224: Thunder Pact" },
 	{ 225, "225: Holy Pact" },

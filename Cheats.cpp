@@ -77,6 +77,15 @@ void __declspec(naked) HRunType()
 	}
 }
 
+float mWeight;
+LPBYTE pWeight, oWeight;
+void __declspec(naked) HWeight()
+{
+	__asm	movss	xmm0, mWeight;
+	__asm	mulss	xmm5, xmm0;
+	__asm	jmp		oWeight;
+}
+
 bool realTime;
 float mTimeInterval;
 UINT rTimeInterval;
@@ -388,6 +397,14 @@ void renderCheatsUI()
 				Hooks::SwitchHook("Cheat (runType)", pRunType, runType >= 0);
 		}
 
+		prevState = mWeight >= 0;
+		if (ImGui::InputFloatEx("Weight multiplicator", &mWeight, 0.01f, -1.0f, 1.0f))
+		{
+			config.setFloat("cheats", "weightMultiplicator", mWeight);
+			if (prevState != mWeight >= 0)
+				Hooks::SwitchHook("Cheat (weight)", pWeight, mWeight >= 0);
+		}
+
 		prevState = mTimeInterval >= 0;
 		if (ImGui::InputFloatEx("Time speed", &mTimeInterval, 0.1f, -1.0f, 60.0f))
 		{
@@ -448,6 +465,14 @@ void Hooks::Cheats()
 		if (runType > 2 || runType < -1)
 			runType = -1;
 		CreateHook("Cheat (runType)", pRunType += 3, &HRunType, &oRunType, runType >= 0);
+	}
+
+	BYTE sigWeight[] = { 0xF3, 0x0F, 0x58, 0xAB, 0x4C, 0x02, 0x00, 0x00,	//addss		xmm5, dword ptr [ebx+24Ch]
+						0x45 };												//inc		ebp
+	if (FindSignature("Cheat (weight)", sigWeight, &pWeight))
+	{
+		mWeight = config.getFloat("cheats", "weightMultiplicator", -1);
+		CreateHook("Cheat (weight)", pWeight, &HWeight, &oWeight, mWeight >= 0);
 	}
 
 	BYTE sigTime[] = { 0x8B, 0x44, 0x24, 0x08, 0x01, 0x86, 0x68, 0x87, 0x0B, 0x00 };

@@ -100,6 +100,6 @@ namespace ImGui
 	}
 
 	bool InputFloatN(const char* label, float* v, int count, float item_width = 0.0f, float min = 0.0f, float max = FLT_MAX, int precision = 2);
-	bool InputFloatEx(const char* label, float* v, float step, float min = 0.0f, float max = FLT_MAX, int precision = 2);
+	bool InputFloatEx(const char* label, float* v, float step, float min = -FLT_MAX, float max = FLT_MAX, int precision = 2);
 	void TextUnformatted(const char* label, float pos);
 }

@@ -4,8 +4,7 @@
 #include "stdafx.h"
 #include "Misc.h"
 
-LPBYTE pCharCustomization;
-LPVOID oCharCustomization;
+LPBYTE pCharCustomization, oCharCustomization;
 void __declspec(naked) HCharCustomization()
 {
 	__asm
@@ -45,8 +44,7 @@ void __declspec(naked) HExtendVerticalBow2()
 	__asm	jmp		oExtendVerticalBow2;
 }
 
-LPBYTE pAutoCamV, pAutoCamH;
-LPVOID oAutoCamV, oAutoCamH;
+LPBYTE pAutoCamV, pAutoCamH, oAutoCamV, oAutoCamH;
 void __declspec(naked) HAutoCamV()
 {
 	__asm	cmp		esi, 0;
@@ -78,6 +76,36 @@ void __declspec(naked) HWeather()
 	unsetZero:
 		cmp		ecx, 0;
 		jmp		oWeather;
+	}
+}
+
+bool jumpMod;
+float jumpMods[6] = { 0.0f, 19.00f, 13.95f, -2.00f, 0.30f, 4.25f };
+float jumpModsRun[6] = { 0.0f, 15.25f, 22.90f, -1.25f, 0.30f, 4.25f };
+LPBYTE pJumpMod1, pJumpMod2, oJumpMod1, oJumpMod2;
+void __declspec(naked) HJumpMod1()
+{
+	__asm	mov		edx, ecx;
+	__asm	jmp		oJumpMod1;
+}
+
+void __declspec(naked) HJumpMod2()
+{
+	__asm
+	{
+		cmp		edx, 0x07;
+		je		loadNormal;
+		cmp		edx, 0x10;
+		je		loadRun;
+		jmp		oJumpMod2;
+
+	loadNormal:
+		lea		esi, jumpMods;
+		jmp		oJumpMod2;
+
+	loadRun:
+		lea		esi, jumpModsRun;
+		jmp		oJumpMod2;
 	}
 }
 
@@ -123,6 +151,30 @@ void renderMiscUI()
 		if (ImGui::InputFloatEx("Gathering/Mining speed", &gatheringSpeed, 0.1f, 1.0f, 100.0f, 1))
 			config.setFloat("main", "gatheringSpeed", gatheringSpeed);
 		ImGui::PopItemWidth();
+
+		if (ImGui::TreeNode("Jump mod"))
+		{
+			if (ImGui::Checkbox("Enabled", &jumpMod))
+			{
+				config.setBool("main", "jumpMod", jumpMod);
+				Hooks::SwitchHook("JumpMod", pJumpMod1, jumpMod);
+				Hooks::SwitchHook("JumpMod", pJumpMod2, jumpMod);
+			}
+
+			ImGui::PushItemWidth(150.0f);
+			int i = 1;
+			for (auto str : { "Height", "Length", "Gravity", "Damping", "MoveSpeed" })
+			{
+				if (ImGui::InputFloatEx(string("##1").append(str).c_str(), jumpMods + i, 0.1f))
+					config.setFloats("main", "jumpMods", std::vector<float>(jumpMods + 1, jumpMods + 6));
+				ImGui::SameLine();
+				if (ImGui::InputFloatEx(str, jumpModsRun + i, 0.1f))
+					config.setFloats("main", "jumpModsRun", std::vector<float>(jumpModsRun + 1, jumpModsRun + 6));
+				i++;
+			}
+			ImGui::PopItemWidth();
+			ImGui::TreePop();
+		}
 	}
 }
 
@@ -192,6 +244,19 @@ void Hooks::Misc()
 				break;
 			pOffset += pOffset[sizeof sigGathering] + sizeof sigGathering + 5;
 			Set<float*>((float**)pOffset, { &gatheringSpeed });
+		}
+	}
+
+	BYTE sigJump[] = { 0x8B, 0x40, 0x70, 0x56, 0x8B, 0x34, 0x88, 0x8B, 0x16, 0x8B, 0x42, 0x10 };
+	if (FindSignature("JumpMod", sigJump, &pJumpMod1))
+	{
+		pJumpMod1 += sizeof sigJump;
+		BYTE sigJump2[] = { 0xD9, 0x46, 0x04, 0xD9, 0x9F, 0xD8, 0x38, 0x00, 0x00 };
+		if (Find("JumpMod", pJumpMod1, pJumpMod1 + 0x100, sigJump2, &pJumpMod2))
+		{
+			jumpMod = config.getBool("main", "jumpMod", false);
+			CreateHook("JumpMod", pJumpMod1, &HJumpMod1, &oJumpMod1, jumpMod);
+			CreateHook("JumpMod", pJumpMod2, &HJumpMod2, &oJumpMod2, jumpMod);
 		}
 	}
 
