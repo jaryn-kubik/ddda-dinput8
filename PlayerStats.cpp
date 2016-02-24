@@ -48,6 +48,8 @@ void renderStatsParty(const char *label, int offset)
 
 	if (ImGui::TreeNode("Vocations"))
 	{
+		ImGui::ComboEnum<UINT32>("Current", GetBasePtr(baseOffset + 0x6E0), Hooks::ListVocations);
+
 		int vocationOffset = statsOffset + 13 * 4;
 		renderStatsVocation("Fighter", vocationOffset += 0);
 		renderStatsVocation("Strider", vocationOffset += 4);
@@ -56,7 +58,7 @@ void renderStatsParty(const char *label, int offset)
 		{
 			renderStatsVocation("Mystic Knight", vocationOffset += 4);
 			renderStatsVocation("Assassin", vocationOffset += 4);
-			renderStatsVocation("Magic Archer", vocationOffset += 4);
+			renderStatsVocation("Magick Archer", vocationOffset += 4);
 		}
 		renderStatsVocation("Warrior", vocationOffset += 4);
 		renderStatsVocation("Ranger", vocationOffset += 4);
@@ -235,6 +237,19 @@ void Hooks::PlayerStats()
 		pEquipChanged = nullptr;
 	InGameUIAdd(renderStatsUI);
 }
+
+const std::vector<std::pair<int, LPCSTR>> Hooks::ListVocations =
+{
+	{ 1, "Fighter"},
+	{ 2, "Strider"},
+	{ 3, "Mage"},
+	{ 4, "Mystic Knight"},
+	{ 5, "Assassin"},
+	{ 6, "Magick Archer"},
+	{ 7, "Warrior"},
+	{ 8, "Ranger"},
+	{ 9, "Sorcerer"}
+};
 
 const std::vector<std::pair<int, LPCSTR>> Hooks::ListSkillsCore =
 {

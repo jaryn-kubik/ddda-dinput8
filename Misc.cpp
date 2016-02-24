@@ -161,6 +161,8 @@ void renderMiscUI()
 				Hooks::SwitchHook("JumpMod", pJumpMod2, jumpMod);
 			}
 
+			ImGui::TextUnformatted("Walking Jump");
+			ImGui::TextUnformatted("Running Jump", 190.0f);
 			ImGui::PushItemWidth(150.0f);
 			int i = 1;
 			for (auto str : { "Height", "Length", "Gravity", "Damping", "MoveSpeed" })

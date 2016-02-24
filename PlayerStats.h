@@ -4,6 +4,7 @@ namespace Hooks
 {
 	void PlayerStats();
 
+	extern const std::vector<std::pair<int, LPCSTR>> ListVocations;
 	extern const std::vector<std::pair<int, LPCSTR>> ListSkillsCore;
 	extern const std::vector<std::pair<int, LPCSTR>> ListSkillsSword;
 	extern const std::vector<std::pair<int, LPCSTR>> ListSkillsLongsword;
