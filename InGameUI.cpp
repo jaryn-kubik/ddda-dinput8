@@ -108,7 +108,7 @@ namespace ImGui
 
 	bool InputFloatEx(const char* label, float* v, float step, float min, float max, int precision)
 	{
-		if (!InputFloat(label, v, step, 0.0f, precision, 0))
+		if (!InputFloat(label, v, step, step * 100, precision, 0))
 			return false;
 		if (*v < min)
 			*v = min;
