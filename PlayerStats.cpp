@@ -51,18 +51,18 @@ void renderStatsParty(const char *label, int offset)
 		ImGui::ComboEnum<UINT32>("Current", GetBasePtr(baseOffset + 0x6E0), Hooks::ListVocations);
 
 		int vocationOffset = statsOffset + 13 * 4;
-		renderStatsVocation("Fighter", vocationOffset += 0);
-		renderStatsVocation("Strider", vocationOffset += 4);
-		renderStatsVocation("Mage", vocationOffset += 4);
+		renderStatsVocation("Fighter", vocationOffset  + 4 * 0);
+		renderStatsVocation("Strider", vocationOffset + 4 * 1);
+		renderStatsVocation("Mage", vocationOffset + 4 * 2);
 		if (!offset)// player
 		{
-			renderStatsVocation("Mystic Knight", vocationOffset += 4);
-			renderStatsVocation("Assassin", vocationOffset += 4);
-			renderStatsVocation("Magick Archer", vocationOffset += 4);
+			renderStatsVocation("Mystic Knight", vocationOffset + 4 * 3);
+			renderStatsVocation("Assassin", vocationOffset + 4 * 4);
+			renderStatsVocation("Magick Archer", vocationOffset + 4 * 5);
 		}
-		renderStatsVocation("Warrior", vocationOffset += 4);
-		renderStatsVocation("Ranger", vocationOffset += 4);
-		renderStatsVocation("Sorcerer", vocationOffset += 4);
+		renderStatsVocation("Warrior", vocationOffset + 4 * 6);
+		renderStatsVocation("Ranger", vocationOffset + 4 * 7);
+		renderStatsVocation("Sorcerer", vocationOffset + 4 * 8);
 		ImGui::TreePop();
 	}
 

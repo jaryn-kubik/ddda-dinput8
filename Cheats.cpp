@@ -192,12 +192,26 @@ void __declspec(naked) HIsAugmentEquipped()
 	}
 }
 
+struct augmentInfo
+{
+	LPVOID Zero;
+	float Activated;
+	float Deactivated;
+	UINT32 Unknown1;
+	UINT32 Unknown2;
+
+	std::vector<float> getList() const
+	{
+		return std::vector<float> {Activated, Deactivated, static_cast<float>(Unknown1), static_cast<float>(Unknown2)};
+	}
+};
+
 bool augmentMods;
 bool augmentModsEnabled[0x80] = {};
-float augmentModsValues[0x80][5] = {};
-float *****pAugments;
-LPBYTE pAugmentMods, oAugmentMods1, oAugmentMods2;
-void __declspec(naked) HAugmentMods()
+augmentInfo augmentModsValues[0x80] = {};
+augmentInfo *****pAugments;
+LPBYTE pAugmentMods1, oAugmentMods1Orig, oAugmentMods1Mod;
+void __declspec(naked) HAugmentMods1()
 {
 	__asm
 	{
@@ -215,15 +229,66 @@ void __declspec(naked) HAugmentMods()
 
 		imul	ecx, edx, 4 * 5;
 		lea		ecx, [augmentModsValues + ecx];
-		jmp		oAugmentMods2;
+		jmp		oAugmentMods1Mod;
 
 	doNotMod:
-		jmp		oAugmentMods1;
+		jmp		oAugmentMods1Orig;
 	}
+}
+
+LPBYTE pAugmentMods2, oAugmentMods2;
+void __declspec(naked) HAugmentMods2()
+{
+	__asm
+	{
+		push	ebx;
+		push	edx;
+		call	HIsAugmentEquipped;
+		test	al, al;
+		jnz		returnValue;
+		pop		edi;
+		pop		esi;
+		pop		ebx;
+		retn	8;
+
+	returnValue:
+		mov		edx, [edx + 8];
+		cmp		edx, -1;
+		je		getBack;
+
+		mov		dl, byte ptr[augmentModsEnabled + ebx];
+		test	dl, dl;
+		jz		getBack;
+
+		imul	esi, ebx, 4 * 5;
+		lea		esi, [augmentModsValues + esi];
+
+	getBack:
+		xor		al, al;
+		jmp		oAugmentMods2;
+	}
+}
+
+LPBYTE pAugmentMods3;
+void __declspec(naked) HAugmentMods3()
+{
+	__asm	push	edx;
+	__asm	push	ecx;
+	__asm	call	HIsAugmentEquipped;
+	__asm	retn;
 }
 
 void augmentModsLoad()
 {
+	augmentMods = config.getBool("augments", "enabled", false);
+	for (auto i : config.getInts("augments", "augmentsPlayer"))
+		augmentsActive[i & 0x7F][0] = true;
+	for (auto i : config.getInts("augments", "augmentsPawn"))
+		augmentsActive[i & 0x7F][1] = true;
+	for (auto i : config.getInts("augments", "augmentsPawn1"))
+		augmentsActive[i & 0x7F][2] = true;
+	for (auto i : config.getInts("augments", "augmentsPawn2"))
+		augmentsActive[i & 0x7F][3] = true;
 	for (auto key : config.getSection("augments"))
 	{
 		try
@@ -235,7 +300,10 @@ void augmentModsLoad()
 					auto values = config.getFloats("augments", std::to_string(augmentId).c_str());
 					if (values.size() == 4)
 					{
-						copy(values.begin(), values.end(), augmentModsValues[augmentId] + 1);
+						augmentModsValues[augmentId].Activated = values[0];
+						augmentModsValues[augmentId].Deactivated = values[1];
+						augmentModsValues[augmentId].Unknown1 = static_cast<UINT32>(values[2]);
+						augmentModsValues[augmentId].Unknown2 = static_cast<UINT32>(values[3]);
 						augmentModsEnabled[augmentId] = true;
 						break;
 					}
@@ -343,15 +411,15 @@ void renderCheatsUI()
 			augmentModsEnabled[addMod] = true;
 			if (pAugments && *pAugments)
 			{
-				float ***ptr = (*pAugments)[0x8C8 / 4];
+				augmentInfo ***ptr = (*pAugments)[0x8C8 / 4];
 				if (ptr)
 				{
-					float **ptr2 = ptr[0x70 / 4];
+					augmentInfo **ptr2 = ptr[0x70 / 4];
 					if (ptr2)
-						std::copy(ptr2[addMod] + 1, ptr2[addMod] + 5, augmentModsValues[addMod] + 1);
+						augmentModsValues[addMod] = *ptr2[addMod];
 				}
 			}
-			config.setFloats("augments", std::to_string(addMod).c_str(), std::vector<float>(augmentModsValues[addMod] + 1, augmentModsValues[addMod] + 5));
+			config.setFloats("augments", std::to_string(addMod).c_str(), augmentModsValues[addMod].getList());
 		}
 
 		ImGui::Separator();
@@ -371,13 +439,13 @@ void renderCheatsUI()
 			bool changed = false;
 			ImGui::PushItemWidth(100.0f);
 			ImGui::SameLine(150.0f + 105.0f * 0);
-			changed |= ImGui::InputFloatEx("##val1", augmentModsValues[skillId] + 1, 0.1f, 0.0f);
+			changed |= ImGui::InputFloatEx("##val1", &augmentModsValues[skillId].Activated, 0.1f, 0.0f);
 			ImGui::SameLine(150.0f + 105.0f * 1);
-			changed |= ImGui::InputFloatEx("##val2", augmentModsValues[skillId] + 2, 0.1f, 0.0f);
+			changed |= ImGui::InputFloatEx("##val2", &augmentModsValues[skillId].Deactivated, 0.1f, 0.0f);
 			ImGui::SameLine(150.0f + 105.0f * 2);
-			changed |= ImGui::InputFloatEx("##val3", augmentModsValues[skillId] + 3, 0.1f, 0.0f);
+			changed |= ImGui::InputScalar<UINT32>("##val3", &augmentModsValues[skillId].Unknown1, 0);
 			ImGui::SameLine(150.0f + 105.0f * 3);
-			changed |= ImGui::InputFloatEx("##val4", augmentModsValues[skillId] + 4, 0.1f, 0.0f);
+			changed |= ImGui::InputScalar<UINT32>("##val4", &augmentModsValues[skillId].Unknown2, 0);
 			ImGui::PopItemWidth();
 
 			ImGui::SameLine(150.0f + 105.0f * 4);
@@ -388,7 +456,7 @@ void renderCheatsUI()
 			}
 
 			if (changed)
-				config.setFloats("augments", std::to_string(skillId).c_str(), std::vector<float>(augmentModsValues[skillId] + 1, augmentModsValues[skillId] + 5));
+				config.setFloats("augments", std::to_string(skillId).c_str(), augmentModsValues[skillId].getList());
 			ImGui::PopID();
 		}
 		ImGui::End();
@@ -448,7 +516,9 @@ void renderCheatsUI()
 		if (ImGui::Checkbox("Augment mods", &augmentMods))
 		{
 			config.setBool("augments", "enabled", augmentMods);
-			Hooks::SwitchHook("Cheat (augmentMods)", pAugmentMods, augmentMods);
+			Hooks::SwitchHook("Cheat (augmentMods)", pAugmentMods1, augmentMods);
+			Hooks::SwitchHook("Cheat (augmentMods)", pAugmentMods2, augmentMods);
+			Hooks::SwitchHook("Cheat (augmentMods)", pAugmentMods3, augmentMods);
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("Active"))
@@ -528,24 +598,24 @@ void Hooks::Cheats()
 		CreateHook("Cheat (affinity)", pOffset, &HAffinity, &oAffinity);
 	}
 
-	BYTE sigAug[] = { 0x33, 0xC0, 0x81, 0xC1, 0x58, 0x02, 0x00, 0x00,  0x39, 0x11, 0x74, 0xCC, 0x40, 0x83, 0xC1, 0x04, 0x83, 0xF8, 0x06, 0x72, 0xCC, 0x32, 0xC0, 0x8B, 0x0D };
-	if (FindSignature("Cheat (augmentMods)", sigAug, &pAugmentMods))
+	BYTE sigAug1[] = { 0x33, 0xC0, 0x81, 0xC1, 0x58, 0x02, 0x00, 0x00,  0x39, 0x11, 0x74, 0xCC, 0x40, 0x83, 0xC1, 0x04, 0x83, 0xF8, 0x06, 0x72, 0xCC, 0x32, 0xC0, 0x8B, 0x0D };
+	BYTE sigAug2[] = { 0x32, 0xC0, 0x33, 0xC9, 0x81, 0xC2, 0x58, 0x02, 0x00, 0x00, 0x39, 0x1A, 0x74 };
+	BYTE sigAug3[] = { 0x8B, 0x89, 0xEC, 0x3D, 0x00, 0x00, 0x85, 0xC9, 0x74, 0xCC, 0x33, 0xC0 };
+	if (FindSignature("Cheat (augmentMods)", sigAug1, &pAugmentMods1) &&
+		FindSignature("Cheat (augmentMods)", sigAug2, &pAugmentMods2) &&
+		FindSignature("Cheat (augmentMods)", sigAug3, &pAugmentMods3))
 	{
-		augmentMods = config.getBool("augments", "enabled", false);
 		augmentModsLoad();
-		CreateHook("Cheat (augmentMods)", pAugmentMods, &HAugmentMods, nullptr, augmentMods);
-		oAugmentMods1 = pAugmentMods + sizeof sigAug - 2;
-		oAugmentMods2 = oAugmentMods1 + 6 + 6 + 3 + 3;
-		pAugments = *(float******)(oAugmentMods1 + 2);
+		CreateHook("Cheat (augmentMods)", pAugmentMods1, &HAugmentMods1, nullptr, augmentMods);
+		oAugmentMods1Orig = pAugmentMods1 + sizeof sigAug1 - 2;
+		oAugmentMods1Mod = oAugmentMods1Orig + 6 + 6 + 3 + 3;
+		pAugments = *(augmentInfo******)(oAugmentMods1Orig + 2);
 
-		for (auto i : config.getInts("augments", "augmentsPlayer"))
-			augmentsActive[i & 0x7F][0] = true;
-		for (auto i : config.getInts("augments", "augmentsPawn"))
-			augmentsActive[i & 0x7F][1] = true;
-		for (auto i : config.getInts("augments", "augmentsPawn1"))
-			augmentsActive[i & 0x7F][2] = true;
-		for (auto i : config.getInts("augments", "augmentsPawn2"))
-			augmentsActive[i & 0x7F][3] = true;
+		CreateHook("Cheat (augmentMods)", pAugmentMods2, &HAugmentMods2, nullptr, augmentMods);
+		oAugmentMods2 = pAugmentMods2 + sizeof sigAug2 + pAugmentMods2[sizeof sigAug2] + 1;
+
+		pAugmentMods3 += sizeof sigAug3 - 2;
+		CreateHook("Cheat (augmentMods)", pAugmentMods3, &HAugmentMods3, nullptr, augmentMods);
 	}
 
 	if ((shareWeaponSkills = config.getBool("cheats", "shareWeaponSkills", false)))
