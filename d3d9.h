@@ -3,50 +3,17 @@
 
 namespace Hooks
 {
-	void D3D9(void(*onCreateDevice)(LPDIRECT3DDEVICE9), void(*onLostDevice)(), void(*onResetDevice)(), void(*onEndScene)());
+	bool D3D9(void(*onInit)(LPDIRECT3DDEVICE9), void(*onLostDevice)(), void(*onResetDevice)(), void(*onEndScene)());
 }
-
-class fIDirect3D9 : public IDirect3D9
-{
-public:
-	LPDIRECT3D9 pD3D9;
-
-	virtual ~fIDirect3D9() { }
-	fIDirect3D9() : fIDirect3D9(nullptr) { }
-	fIDirect3D9(LPDIRECT3D9 pD3D9) { this->pD3D9 = pD3D9; }
-
-	HRESULT __stdcall QueryInterface(const IID& riid, void** ppvObj) override;
-	ULONG __stdcall AddRef() override;
-	ULONG __stdcall Release() override;
-	HRESULT __stdcall RegisterSoftwareDevice(void* pInitializeFunction) override;
-	UINT __stdcall GetAdapterCount() override;
-	HRESULT __stdcall GetAdapterIdentifier(UINT Adapter, DWORD Flags, D3DADAPTER_IDENTIFIER9* pIdentifier) override;
-	UINT __stdcall GetAdapterModeCount(UINT Adapter, D3DFORMAT Format) override;
-	HRESULT __stdcall EnumAdapterModes(UINT Adapter, D3DFORMAT Format, UINT Mode, D3DDISPLAYMODE* pMode) override;
-	HRESULT __stdcall GetAdapterDisplayMode(UINT Adapter, D3DDISPLAYMODE* pMode) override;
-	HRESULT __stdcall CheckDeviceType(UINT Adapter, D3DDEVTYPE DevType, D3DFORMAT AdapterFormat, D3DFORMAT BackBufferFormat, BOOL bWindowed) override;
-	HRESULT __stdcall CheckDeviceFormat(UINT Adapter, D3DDEVTYPE DeviceType, D3DFORMAT AdapterFormat, DWORD Usage, D3DRESOURCETYPE RType, D3DFORMAT CheckFormat) override;
-	HRESULT __stdcall CheckDeviceMultiSampleType(UINT Adapter, D3DDEVTYPE DeviceType, D3DFORMAT SurfaceFormat, BOOL Windowed, D3DMULTISAMPLE_TYPE MultiSampleType, DWORD* pQualityLevels) override;
-	HRESULT __stdcall CheckDepthStencilMatch(UINT Adapter, D3DDEVTYPE DeviceType, D3DFORMAT AdapterFormat, D3DFORMAT RenderTargetFormat, D3DFORMAT DepthStencilFormat) override;
-	HRESULT __stdcall CheckDeviceFormatConversion(UINT Adapter, D3DDEVTYPE DeviceType, D3DFORMAT SourceFormat, D3DFORMAT TargetFormat) override;
-	HRESULT __stdcall GetDeviceCaps(UINT Adapter, D3DDEVTYPE DeviceType, D3DCAPS9* pCaps) override;
-	HMONITOR __stdcall GetAdapterMonitor(UINT Adapter) override;
-	HRESULT __stdcall CreateDevice(UINT Adapter, D3DDEVTYPE DeviceType, HWND hFocusWindow, DWORD BehaviorFlags, D3DPRESENT_PARAMETERS* pPresentationParameters, IDirect3DDevice9** ppReturnedDeviceInterface) override;
-};
 
 class fIDirect3DDevice9 : public IDirect3DDevice9
 {
 public:
 	LPDIRECT3DDEVICE9 pD3DDevice;
-	fIDirect3D9 *pD3D9;
 
 	virtual ~fIDirect3DDevice9() { }
-	fIDirect3DDevice9() : fIDirect3DDevice9(nullptr, nullptr) {	}
-	fIDirect3DDevice9(LPDIRECT3DDEVICE9 pD3DDevice, fIDirect3D9 *pD3D9)
-	{
-		this->pD3DDevice = pD3DDevice;
-		this->pD3D9 = pD3D9;
-	}
+	fIDirect3DDevice9() : fIDirect3DDevice9(nullptr) {	}
+	fIDirect3DDevice9(LPDIRECT3DDEVICE9 pD3DDevice) { this->pD3DDevice = pD3DDevice; }
 
 	HRESULT __stdcall QueryInterface(const IID& riid, void** ppvObj) override;
 	ULONG __stdcall AddRef() override;

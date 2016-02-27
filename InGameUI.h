@@ -3,7 +3,6 @@
 namespace Hooks
 {
 	bool InGameUI();
-	LRESULT InGameUIEvent(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 	void InGameUIAdd(void(*callback)());
 	void InGameUIAddWindow(void(*callback)());
 	void InGameUIAddInit(void(*callback)());

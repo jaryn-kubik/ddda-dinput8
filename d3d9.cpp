@@ -1,32 +1,33 @@
 ﻿#include "stdafx.h"
 #include "d3d9.h"
 
-typedef LPDIRECT3D9(WINAPI *tDirect3DCreate9)(UINT SDKVersion);
-tDirect3DCreate9 oDirect3DCreate9;
-LPDIRECT3D9 WINAPI HDirect3DCreate9(UINT SDKVersion) { return new fIDirect3D9(oDirect3DCreate9(SDKVersion)); }
-
-void(*onCreateDevice)(LPDIRECT3DDEVICE9);
 void(*onLostDevice)();
 void(*onResetDevice)();
 void(*onEndScene)();
-void Hooks::D3D9(void(*onCreate)(LPDIRECT3DDEVICE9), void(*onLost)(), void(*onReset)(), void(*onEnd)())
+IDirect3DDevice9 ***pD3D9Info = nullptr;
+bool Hooks::D3D9(void(*onInit)(LPDIRECT3DDEVICE9), void(*onLost)(), void(*onReset)(), void(*onEnd)())
 {
-	HMODULE hMod = LoadLibrary("d3d9.dll");
-	oDirect3DCreate9 = (tDirect3DCreate9)GetProcAddress(hMod, "Direct3DCreate9");
-	CreateHook("D3D9", Direct3DCreate9, &HDirect3DCreate9, &oDirect3DCreate9);
-	onCreateDevice = onCreate;
-	onLostDevice = onLost;
-	onResetDevice = onReset;
-	onEndScene = onEnd;
-}
-
-HRESULT fIDirect3D9::CreateDevice(UINT Adapter, D3DDEVTYPE DeviceType, HWND hFocusWindow, DWORD BehaviorFlags, D3DPRESENT_PARAMETERS* pPresentationParameters, IDirect3DDevice9** ppReturnedDeviceInterface)
-{
-	IDirect3DDevice9* pDirect3DDevice9;
-	HRESULT hr = pD3D9->CreateDevice(Adapter, DeviceType, hFocusWindow, BehaviorFlags, pPresentationParameters, &pDirect3DDevice9);
-	*ppReturnedDeviceInterface = new fIDirect3DDevice9(pDirect3DDevice9, this);
-	onCreateDevice(pDirect3DDevice9);
-	return hr;
+	if (!pD3D9Info)
+	{
+		BYTE sig[] = { 0x89, 0x35, 0xCC, 0xCC, 0xCC, 0xCC, 0x89, 0x96, 0x34, 0x3E, 0x43, 0x00 };
+		BYTE *pOffset;
+		if (FindSignature("BaseD3D9", sig, &pOffset))
+			pD3D9Info = *(IDirect3DDevice9****)(pOffset + 2);
+	}
+	else if(*pD3D9Info)
+	{
+		IDirect3DDevice9 **pD3D3Device = *pD3D9Info + 0x98 / 4;
+		if (pD3D3Device && *pD3D3Device)
+		{
+			onInit(*pD3D3Device);
+			onLostDevice = onLost;
+			onResetDevice = onReset;
+			onEndScene = onEnd;
+			*pD3D3Device = new fIDirect3DDevice9(*pD3D3Device);
+			return true;
+		}
+	}
+	return false;
 }
 
 HRESULT fIDirect3DDevice9::EndScene()
@@ -42,97 +43,14 @@ HRESULT fIDirect3DDevice9::Reset(D3DPRESENT_PARAMETERS* pPresentationParameters)
 	onResetDevice();
 	return hr;
 }
-
-HRESULT fIDirect3DDevice9::GetDirect3D(IDirect3D9 **ppD3D9)
-{
-	*ppD3D9 = pD3D9;
-	return D3D_OK;
-}
-/*---------------------------------------------------------------------------
----------------------------------------------------------------------------
----------------------------------------------------------------------------*/
-ULONG fIDirect3D9::AddRef()
-{
-	return pD3D9->AddRef();
-}
-
-HRESULT fIDirect3D9::QueryInterface(const IID& riid, void **ppvObj)
-{
-	return pD3D9->QueryInterface(riid, ppvObj);
-}
-
-ULONG fIDirect3D9::Release()
-{
-	return pD3D9->Release();
-}
-
-HRESULT fIDirect3D9::EnumAdapterModes(UINT Adapter, D3DFORMAT Format, UINT Mode, D3DDISPLAYMODE* pMode)
-{
-	return pD3D9->EnumAdapterModes(Adapter, Format, Mode, pMode);
-}
-
-UINT fIDirect3D9::GetAdapterCount()
-{
-	return pD3D9->GetAdapterCount();
-}
-
-HRESULT fIDirect3D9::GetAdapterDisplayMode(UINT Adapter, D3DDISPLAYMODE *pMode)
-{
-	return pD3D9->GetAdapterDisplayMode(Adapter, pMode);
-}
-
-HRESULT fIDirect3D9::GetAdapterIdentifier(UINT Adapter, DWORD Flags, D3DADAPTER_IDENTIFIER9 *pIdentifier)
-{
-	return pD3D9->GetAdapterIdentifier(Adapter, Flags, pIdentifier);
-}
-
-UINT fIDirect3D9::GetAdapterModeCount(UINT Adapter, D3DFORMAT Format)
-{
-	return pD3D9->GetAdapterModeCount(Adapter, Format);
-}
-
-HMONITOR fIDirect3D9::GetAdapterMonitor(UINT Adapter)
-{
-	return pD3D9->GetAdapterMonitor(Adapter);
-}
-
-HRESULT fIDirect3D9::GetDeviceCaps(UINT Adapter, D3DDEVTYPE DeviceType, D3DCAPS9 *pCaps)
-{
-	return pD3D9->GetDeviceCaps(Adapter, DeviceType, pCaps);
-}
-
-HRESULT fIDirect3D9::RegisterSoftwareDevice(void *pInitializeFunction)
-{
-	return pD3D9->RegisterSoftwareDevice(pInitializeFunction);
-}
-
-HRESULT fIDirect3D9::CheckDepthStencilMatch(UINT Adapter, D3DDEVTYPE DeviceType, D3DFORMAT AdapterFormat, D3DFORMAT RenderTargetFormat, D3DFORMAT DepthStencilFormat)
-{
-	return pD3D9->CheckDepthStencilMatch(Adapter, DeviceType, AdapterFormat, RenderTargetFormat, DepthStencilFormat);
-}
-
-HRESULT fIDirect3D9::CheckDeviceFormat(UINT Adapter, D3DDEVTYPE DeviceType, D3DFORMAT AdapterFormat, DWORD Usage, D3DRESOURCETYPE RType, D3DFORMAT CheckFormat)
-{
-	return pD3D9->CheckDeviceFormat(Adapter, DeviceType, AdapterFormat, Usage, RType, CheckFormat);
-}
-
-HRESULT fIDirect3D9::CheckDeviceMultiSampleType(UINT Adapter, D3DDEVTYPE DeviceType, D3DFORMAT SurfaceFormat, BOOL Windowed, D3DMULTISAMPLE_TYPE MultiSampleType, DWORD* pQualityLevels)
-{
-	return pD3D9->CheckDeviceMultiSampleType(Adapter, DeviceType, SurfaceFormat, Windowed, MultiSampleType, pQualityLevels);
-}
-
-HRESULT fIDirect3D9::CheckDeviceType(UINT Adapter, D3DDEVTYPE CheckType, D3DFORMAT DisplayFormat, D3DFORMAT BackBufferFormat, BOOL Windowed)
-{
-	return pD3D9->CheckDeviceType(Adapter, CheckType, DisplayFormat, BackBufferFormat, Windowed);
-}
-
-HRESULT fIDirect3D9::CheckDeviceFormatConversion(UINT Adapter, D3DDEVTYPE DeviceType, D3DFORMAT SourceFormat, D3DFORMAT TargetFormat)
-{
-	return pD3D9->CheckDeviceFormatConversion(Adapter, DeviceType, SourceFormat, TargetFormat);
-}
 /*---------------------------------------------------------------------------
   ---------------------------------------------------------------------------
   ---------------------------------------------------------------------------*/
+HRESULT fIDirect3DDevice9::GetDirect3D(IDirect3D9 **ppD3D9)
+{
+	return pD3DDevice->GetDirect3D(ppD3D9);
+}
+
 HRESULT fIDirect3DDevice9::QueryInterface(const IID& riid, void** ppvObj)
 {
 	return pD3DDevice->QueryInterface(riid, ppvObj);

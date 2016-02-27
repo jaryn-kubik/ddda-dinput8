@@ -49,13 +49,13 @@ void setBorderlessFullscreen(HWND hwnd)
 }
 
 BYTE **pSave = nullptr;
-WNDPROC oWndProc;
+WNDPROC oWndProc, wndProcHandler = nullptr;
 LRESULT CALLBACK HWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	if (msg == WM_SIZE && borderlessFullscreen)
 		setBorderlessFullscreen(hwnd);
 
-	if (Hooks::InGameUIEvent(hwnd, msg, wParam, lParam))
+	if (wndProcHandler(hwnd, msg, wParam, lParam))
 		return 0;
 	if (msg != WM_KEYDOWN || (HIWORD(lParam) & KF_REPEAT) != 0)
 		return oWndProc(hwnd, msg, wParam, lParam);
@@ -71,6 +71,7 @@ void loadHotkey(LPCSTR name, WORD defVal, void(*func)())
 	keys[config.getUInt("hotkeys", name, defVal) & 0xFF] = func;
 }
 
+void Hooks::HotkeysHandler(WNDPROC proc) { wndProcHandler = proc; }
 void Hooks::Hotkeys()
 {
 	if (config.getBool("hotkeys", "enabled", false))

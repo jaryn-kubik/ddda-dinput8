@@ -1,5 +1,6 @@
 ﻿#include "stdafx.h"
 #include "d3d9.h"
+#include "Hotkeys.h"
 #include "ImGui/imgui_impl_dx9.h"
 #include "ImGui/imgui_internal.h"
 
@@ -54,6 +55,20 @@ void __declspec(naked) HInGameUI()
 }
 
 WPARAM inGameUIHotkey;
+LRESULT CALLBACK inGameUIEvent(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	if (msg == WM_KEYDOWN && (HIWORD(lParam) & KF_REPEAT) == 0 && wParam == inGameUIHotkey)
+		Hooks::SwitchHook("InGameUI", pInGameUI, inGameUIEnabled = !inGameUIEnabled);
+	return inGameUIEnabled ? ImGui_ImplDX9_WndProcHandler(hwnd, msg, wParam, lParam) : 0;
+}
+
+LRESULT CALLBACK inGameUIInit(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	if (Hooks::D3D9(onCreateDevice, onLostDevice, onResetDevice, onEndScene))
+		Hooks::HotkeysHandler(inGameUIEvent);
+	return 0;
+}
+
 bool Hooks::InGameUI()
 {
 	if (!config.getBool("inGameUI", "enabled", false))
@@ -72,19 +87,13 @@ bool Hooks::InGameUI()
 
 	inGameUIHotkey = config.getUInt("hotkeys", "keyUI", VK_F12) & 0xFF;
 	InGameUIAddWindow(renderDDDAFixUI);
-	D3D9(onCreateDevice, onLostDevice, onResetDevice, onEndScene);
+	HotkeysHandler(inGameUIInit);
 	return true;
 }
 
 void Hooks::InGameUIAdd(void(*callback)()) { content.push_back(callback); }
 void Hooks::InGameUIAddWindow(void(*callback)()) { windows.push_back(callback); }
 void Hooks::InGameUIAddInit(void(*callback)()) { init.push_back(callback); }
-LRESULT Hooks::InGameUIEvent(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-	if (msg == WM_KEYDOWN && (HIWORD(lParam) & KF_REPEAT) == 0 && wParam == inGameUIHotkey)
-		SwitchHook("InGameUI", pInGameUI, inGameUIEnabled = !inGameUIEnabled);
-	return inGameUIEnabled ? ImGui_ImplDX9_WndProcHandler(hwnd, msg, wParam, lParam) : 0;
-}
 
 namespace ImGui
 {
