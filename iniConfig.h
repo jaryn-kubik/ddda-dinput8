@@ -10,7 +10,7 @@ public:
 	explicit iniConfig(LPCSTR fileName);
 
 	void removeKey(LPCSTR section, LPCSTR key) const;
-	std::vector<string> getSection(LPCSTR section);
+	std::vector<int> getSectionInts(LPCSTR section);
 
 	string getStr(LPCSTR section, LPCSTR key, string defValue = string());
 	int getInt(LPCSTR section, LPCSTR key, int defValue);

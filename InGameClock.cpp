@@ -1,6 +1,7 @@
 ﻿#include "stdafx.h"
 #include "InGameClock.h"
 #include "ImGui/imgui_internal.h"
+#include "WeaponSets.h"
 
 bool clockEnabled;
 ImFont *clockFont;
@@ -8,7 +9,6 @@ ImVec2 clockPosition;
 ImVec4 clockForeground, clockBackground;
 UINT32 clockTimebase, clockSize;
 ImGuiWindowFlags clockFlags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoTitleBar;
-//ImGuiWindowFlags_NoInputs
 void renderClock()
 {
 	if (!clockEnabled)
@@ -35,11 +35,17 @@ void renderClock()
 	ImGui::SetNextWindowPos(clockPosition, ImGuiSetCond_Once);
 	if (ImGui::Begin("InGameClock", nullptr, clockFlags))
 	{
-		ImGui::PushFont(ImGui::GetIO().Fonts->Fonts.back());
 		ImGui::PushStyleColor(ImGuiCol_Text, clockForeground);
+		ImGui::PushFont(ImGui::GetIO().Fonts->Fonts.back());
 		ImGui::TextUnformatted(clockBuf);
-		ImGui::PopStyleColor();
 		ImGui::PopFont();
+		if (strlen(Hooks::weaponSetsText))
+		{
+			ImVec2 size = ImGui::CalcTextSize(Hooks::weaponSetsText);
+			ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - size.x / 2);
+			ImGui::TextUnformatted(Hooks::weaponSetsText);
+		}
+		ImGui::PopStyleColor();
 	}
 	ImGui::End();
 	ImGui::PopStyleVar();

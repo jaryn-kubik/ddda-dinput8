@@ -10,6 +10,7 @@
 #include "PlayerStats.h"
 #include "Server.h"
 #include "Portcrystals.h"
+#include "WeaponSets.h"
 
 typedef HRESULT(WINAPI *tDirectInput8Create)(HINSTANCE inst_handle, DWORD version, const IID& r_iid, LPVOID* out_wrapper, LPUNKNOWN p_unk);
 tDirectInput8Create oDirectInput8Create = nullptr;
@@ -31,6 +32,7 @@ void InitHooks()
 	Hooks::Misc();
 	Hooks::Cheats();
 	Hooks::Server();
+	Hooks::WeaponSets();
 	if (Hooks::InGameUI())
 	{
 		Hooks::Portcrystals();

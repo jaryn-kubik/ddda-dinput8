@@ -68,6 +68,9 @@
     <ClCompile Include="ImGui\imgui_impl_dx9.cpp">
       <Filter>ImGui</Filter>
     </ClCompile>
+    <ClCompile Include="WeaponSets.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dinput8.h">
@@ -141,6 +144,9 @@
       <Filter>MinHook</Filter>
     </ClInclude>
     <ClInclude Include="resource.h" />
+    <ClInclude Include="WeaponSets.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="dinput8.def">

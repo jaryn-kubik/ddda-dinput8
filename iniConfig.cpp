@@ -19,15 +19,16 @@ bool iniConfig::get(LPCSTR section, LPCSTR key, bool allowEmpty)
 }
 
 void iniConfig::removeKey(LPCSTR section, LPCSTR key) const { WritePrivateProfileStringA(section, key, nullptr, fileName); }
-std::vector<string> iniConfig::getSection(LPCSTR section)
+std::vector<int> iniConfig::getSectionInts(LPCSTR section)
 {
-	std::vector<string> keys;
+	std::vector<int> keys;
 	if (get(section, nullptr, false))
 	{
 		LPSTR nextKey = buffer;
 		while (*nextKey != '\0')
 		{
-			keys.push_back(nextKey);
+			try { keys.push_back(std::stoi(nextKey)); }
+			catch (...) {}
 			nextKey = nextKey + strlen(nextKey) + 1;
 		}
 	}

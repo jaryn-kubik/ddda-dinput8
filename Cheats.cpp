@@ -289,28 +289,21 @@ void augmentModsLoad()
 		augmentsActive[i & 0x7F][2] = true;
 	for (auto i : config.getInts("augments", "augmentsPawn2"))
 		augmentsActive[i & 0x7F][3] = true;
-	for (auto key : config.getSection("augments"))
-	{
-		try
-		{
-			int augmentId = stoi(key);
-			for (size_t i = 1; i < Hooks::ListSkillsAugments.size(); i++)
-				if (Hooks::ListSkillsAugments[i].first == augmentId)
+	for (auto augmentId : config.getSectionInts("augments"))
+		for (size_t i = 1; i < Hooks::ListSkillsAugments.size(); i++)
+			if (Hooks::ListSkillsAugments[i].first == augmentId)
+			{
+				auto values = config.getFloats("augments", std::to_string(augmentId).c_str());
+				if (values.size() == 4)
 				{
-					auto values = config.getFloats("augments", std::to_string(augmentId).c_str());
-					if (values.size() == 4)
-					{
-						augmentModsValues[augmentId].Activated = values[0];
-						augmentModsValues[augmentId].Deactivated = values[1];
-						augmentModsValues[augmentId].Unknown1 = static_cast<UINT32>(values[2]);
-						augmentModsValues[augmentId].Unknown2 = static_cast<UINT32>(values[3]);
-						augmentModsEnabled[augmentId] = true;
-						break;
-					}
+					augmentModsValues[augmentId].Activated = values[0];
+					augmentModsValues[augmentId].Deactivated = values[1];
+					augmentModsValues[augmentId].Unknown1 = static_cast<UINT32>(values[2]);
+					augmentModsValues[augmentId].Unknown2 = static_cast<UINT32>(values[3]);
+					augmentModsEnabled[augmentId] = true;
+					break;
 				}
-		}
-		catch (...) {}
-	}
+			}
 }
 
 void renderCheatsSkillLevel(const char *label, float position, bool *check, int partyId, bool isHeader = false)
