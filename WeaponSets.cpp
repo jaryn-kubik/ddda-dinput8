@@ -89,7 +89,6 @@ void __declspec(naked) HWeaponSets()
 {
 	__asm
 	{
-		pushad;
 		sub		esp, 16;
 		movdqu	xmmword ptr[esp], xmm1;
 		sub		esp, 16;
@@ -105,6 +104,9 @@ void __declspec(naked) HWeaponSets()
 		sub		esp, 16;
 		movdqu	xmmword ptr[esp], xmm7;
 
+		test	byte ptr[eax + 0x273C], 4;
+		jne		originalcode;
+
 		mov		al, bRefreshSkillFileLinksStatus;
 		test	al, al;
 		jnz		refreshskillfilelinks;
@@ -112,8 +114,8 @@ void __declspec(naked) HWeaponSets()
 		call	WeaponSetsCycle;
 		test	al, al;
 		jz		originalcode;
-		call	HEquipSkills;
 
+		call	HEquipSkills;
 	refreshskillfilelinks:
 		call	HRefreshSkillFileLinks;
 
@@ -132,7 +134,6 @@ void __declspec(naked) HWeaponSets()
 		add		esp, 16;
 		movdqu	xmm1, xmmword ptr[esp];
 		add		esp, 16;
-		popad;
 		ret;
 	}
 }
@@ -140,14 +141,20 @@ void __declspec(naked) HWeaponSets()
 LPBYTE pWeaponSetsP, oWeaponSetsP;
 void __declspec(naked) HWeaponSetsP()
 {
+	__asm	pushad;
+	__asm	mov		eax, edx;
 	__asm	call	HWeaponSets;
+	__asm	popad;
 	__asm	jmp		oWeaponSetsP;
 }
 
 LPBYTE pWeaponSetsS, oWeaponSetsS;
 void __declspec(naked) HWeaponSetsS()
 {
+	__asm	pushad;
+	__asm	mov		eax, ecx;
 	__asm	call	HWeaponSets;
+	__asm	popad;
 	__asm	jmp		oWeaponSetsS;
 }
 
@@ -251,8 +258,11 @@ void renderWeaponSetsUI()
 
 void Hooks::WeaponSets()
 {
+	QueryPerformanceFrequency(&timerFrequency);
+	InGameUIAdd(renderWeaponSetsUI);
+
 	weaponSetsEnabled = config.getBool("weaponSets", "enabled", false);
-	weaponSetsTimeout = config.getInt("weaponSets", "timeout", 2000);
+	weaponSetsTimeout = config.getInt("weaponSets", "timeout", 1000);
 	weaponSetsHotkey = config.getInt("hotkeys", "keyWeaponSets", 'R') & 0xFF;
 	for (auto setId : config.getSectionInts("weaponSets"))
 	{
@@ -312,13 +322,10 @@ void Hooks::WeaponSets()
 		return;
 
 	BYTE sigP[] = { 0x03, 0xD3, 0x03, 0xD0, 0x80, 0x7C, 0x24, 0x44, 0x01 };
-	BYTE sigS[] = { 0x03, 0x4C, 0x24, 0x28, 0x80, 0x7C, 0x24, 0x44, 0x01 };
+	BYTE sigS[] = { 0x03, 0xCB, 0x03, 0x4C, 0x24, 0x28, 0x80, 0x7C, 0x24, 0x44, 0x01 };
 	if (!FindSignature("WeaponSets", sigP, &pWeaponSetsP) ||
 		!FindSignature("WeaponSets", sigS, &pWeaponSetsS))
 		return;
 	CreateHook("WeaponSets", pWeaponSetsP, &HWeaponSetsP, &oWeaponSetsP, weaponSetsEnabled);
 	CreateHook("WeaponSets", pWeaponSetsS, &HWeaponSetsS, &oWeaponSetsS, weaponSetsEnabled);
-
-	QueryPerformanceFrequency(&timerFrequency);
-	InGameUIAdd(renderWeaponSetsUI);
 }
