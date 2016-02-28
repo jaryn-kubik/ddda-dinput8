@@ -57,7 +57,7 @@ void __declspec(naked) HRefreshSkillFileLinks()
 std::vector<std::array<int, 12 * 6>> weaponSets;
 size_t weaponSetsCurrent = 0;
 char Hooks::weaponSetsText[16] = {};
-UINT32 timerTimeout;
+int weaponSetsTimeout, weaponSetsHotkey;
 LARGE_INTEGER timerFrequency, timerLast = {}, timerCurrent = {};
 bool __stdcall WeaponSetsCycle()
 {
@@ -65,10 +65,10 @@ bool __stdcall WeaponSetsCycle()
 	timerCurrent.QuadPart *= 1000;
 	timerCurrent.QuadPart /= timerFrequency.QuadPart;
 
-	if (weaponSets.size() == 0 || timerCurrent.QuadPart - timerLast.QuadPart < timerTimeout)
+	if (weaponSets.size() == 0 || timerCurrent.QuadPart - timerLast.QuadPart < weaponSetsTimeout)
 		return false;
 
-	if (GetKeyState('R') & 0x8000)
+	if (GetKeyState(weaponSetsHotkey) & 0x8000)
 	{
 		if (bWeaponModKeyPressed)
 			return false;
@@ -225,6 +225,9 @@ void renderWeaponSetsUI()
 {
 	if (ImGui::CollapsingHeader("Weapon sets"))
 	{
+		if (ImGui::InputScalar<UINT32>("Timeout", &weaponSetsTimeout, 500, INT_MAX, 100, 200.0f))
+			config.setUInt("weaponSets", "timeout", weaponSetsTimeout);
+
 		if (ImGui::Checkbox("Enabled", &weaponSetsEnabled))
 		{
 			config.setBool("weaponSets", "enabled", weaponSetsEnabled);
@@ -232,9 +235,7 @@ void renderWeaponSetsUI()
 			Hooks::SwitchHook("WeaponSets", pWeaponSetsS, weaponSetsEnabled);
 		}
 
-		if (ImGui::InputScalar<UINT32>("Timeout", &timerTimeout, 500, INT_MAX, 100))
-			config.setUInt("weaponSets", "timeout", timerTimeout);
-
+		ImGui::SameLine();
 		if (ImGui::Button("Add set"))
 		{
 			weaponSets.emplace_back();
@@ -251,7 +252,8 @@ void renderWeaponSetsUI()
 void Hooks::WeaponSets()
 {
 	weaponSetsEnabled = config.getBool("weaponSets", "enabled", false);
-	timerTimeout = config.getUInt("weaponSets", "timeout", 2000);
+	weaponSetsTimeout = config.getInt("weaponSets", "timeout", 2000);
+	weaponSetsHotkey = config.getInt("hotkeys", "keyWeaponSets", 'R') & 0xFF;
 	for (auto setId : config.getSectionInts("weaponSets"))
 	{
 		auto list = config.getInts("weaponSets", std::to_string(setId).c_str());
