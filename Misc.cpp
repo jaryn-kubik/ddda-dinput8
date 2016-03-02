@@ -138,6 +138,38 @@ void __declspec(naked) HFallHeight()
 	}
 }
 
+float movementSpeed;
+LPBYTE pMovementSpeed, oMovementSpeed;
+void __declspec(naked) HMovementSpeed()
+{
+	__asm
+	{
+		mov		esi, [edi + 0x3DEC];
+		mov		esi, [esi + 8];
+		cmp		esi, -1;
+		je		getBack;
+
+		mov		esi, [edi + 0x2DD4];
+		dec		esi;
+		js		getBack;
+
+		cmp		esi, 124;//sprint
+		je		modValue;
+		cmp		esi, 4;//sprint
+		je		modValue;
+		cmp		esi, 1;//run
+		je		modValue;
+		cmp		esi, 0;//walk
+		je		modValue;
+		jmp		getBack;
+
+	modValue:
+		mulss	xmm0, movementSpeed;
+	getBack:
+		jmp		oMovementSpeed;
+	}
+}
+
 float gatheringSpeed;
 bool charCustomization, extendVerticalCam, disableAutoCam;
 void renderMiscUI()
@@ -186,6 +218,14 @@ void renderMiscUI()
 			config.setFloat("main", "fallHeight", fallHeight);
 			if (prevState != fallHeight < 0)
 				Hooks::SwitchHook("FallHeight", pFallHeight, fallHeight < 0);
+		}
+
+		prevState = movementSpeed >= 0;
+		if (ImGui::InputFloatEx("Movement speed", &movementSpeed, 0.1f, -1.0f))
+		{
+			config.setFloat("main", "movementSpeed", movementSpeed);
+			if (prevState != movementSpeed >= 0)
+				Hooks::SwitchHook("MovementSpeed", pMovementSpeed, movementSpeed >= 0);
 		}
 		ImGui::PopItemWidth();
 
@@ -290,6 +330,11 @@ void Hooks::Misc()
 	BYTE sigFall[] = { 0xD9, 0x5C, 0x24, 0x0C, 0x80, 0xBE, 0xD0, 0x1E, 0x00, 0x00, 0x00 };
 	if (FindSignature("FallHeight", sigFall, &pFallHeight))
 		CreateHook("FallHeight", pFallHeight, &HFallHeight, &oFallHeight, fallHeight < 0);
+
+	movementSpeed = config.getFloat("main", "movementSpeed", -1.0f);
+	BYTE sigMovement[] = { 0xF3, 0x0F, 0x11, 0x87, 0xE4, 0x0E, 0x00, 0x00, 0x5E, 0x0F, 0x28, 0xC1 };
+	if (FindSignature("MovementSpeed", sigMovement, &pMovementSpeed))
+		CreateHook("MovementSpeed", pMovementSpeed, &HMovementSpeed, &oMovementSpeed, movementSpeed >= 0);
 
 	BYTE sigJump[] = { 0x8B, 0x40, 0x70, 0x56, 0x8B, 0x34, 0x88, 0x8B, 0x16, 0x8B, 0x42, 0x10 };
 	if (FindSignature("JumpMod", sigJump, &pJumpMod1))

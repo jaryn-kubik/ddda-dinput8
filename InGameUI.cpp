@@ -32,7 +32,7 @@ void renderDDDAFixUI()
 		return;
 
 	static char titleBuffer[64];
-	sprintf_s(titleBuffer, "DDDAFix - %.1f FPS - %d###DDDAFix", ImGui::GetIO().Framerate);
+	sprintf_s(titleBuffer, "DDDAFix - %.1f FPS###DDDAFix", ImGui::GetIO().Framerate);
 	ImGui::SetNextWindowPos(ImVec2(5, 5), ImGuiSetCond_Once);
 	if (ImGui::Begin(titleBuffer, nullptr, ImVec2(450, 600)))
 	{
