@@ -106,7 +106,8 @@ void initClockUI()
 	GetWindowsDirectory(syspath, MAX_PATH);
 	strcat_s(syspath, "\\Fonts\\arial.ttf");
 	ImGui::GetIO().Fonts->AddFontDefault();
-	ImGui::GetIO().Fonts->AddFontFromFileTTF(syspath, (float)clockSize);
+	if (!ImGui::GetIO().Fonts->AddFontFromFileTTF(syspath, (float)clockSize))
+		logFile << "InGameClock: failed to load font - " << syspath << std::endl;
 }
 
 void Hooks::InGameClock()

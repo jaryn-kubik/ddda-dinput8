@@ -2,20 +2,14 @@
 #include "WeaponSets.h"
 #include "PlayerStats.h"
 
-LPBYTE getEquippedSkillsBaseCall;
-LPBYTE emptyEquippedSkillsCall;
-LPBYTE setEquippedSkillsCall;
-LPBYTE getSetEquippedSkillsFilesReadyFlagCall;
-LPBYTE getEquippedSkillsFilesBaseCall;
-LPBYTE setEquippedSkillsFilesCall;
+LPBYTE getEquippedSkillsBaseCall, emptyEquippedSkillsCall, setEquippedSkillsCall;
+LPBYTE getSetEquippedSkillsFilesReadyFlagCall, getEquippedSkillsFilesBaseCall, setEquippedSkillsFilesCall;
 LPVOID pSomeBase2, pSomeBase3;
 int iSomeOffsetPreEquippedSkillChange;
-bool bRefreshSkillFileLinksStatus = false, bWeaponModKeyPressed = false;
 void __declspec(naked) HEquipSkills()
 {
 	__asm
 	{
-		mov		bRefreshSkillFileLinksStatus, 1;
 		mov		ecx, pSomeBase3;
 		mov		ecx, [ecx];
 		add		ecx, iSomeOffsetPreEquippedSkillChange;
@@ -31,7 +25,7 @@ void __declspec(naked) HEquipSkills()
 	}
 }
 
-void __declspec(naked) HRefreshSkillFileLinks()
+bool __declspec(naked) HRefreshSkillFileLinks()
 {
 	__asm
 	{
@@ -39,15 +33,15 @@ void __declspec(naked) HRefreshSkillFileLinks()
 		mov		edi, [edi];
 		call	getSetEquippedSkillsFilesReadyFlagCall;
 		test	al, al;
-		je		getBack;
+		jz		getBack;
 
-		mov		bRefreshSkillFileLinksStatus, 0;
 		mov		ecx, pSomeBase2;
 		mov		ecx, [ecx];
 		xor		eax, eax;
 		call	getEquippedSkillsFilesBaseCall;
 		push	eax;
 		call	setEquippedSkillsFilesCall;
+		mov		eax, 1;
 
 	getBack:
 		ret;
@@ -55,85 +49,69 @@ void __declspec(naked) HRefreshSkillFileLinks()
 }
 
 std::vector<std::array<int, 12 * 6>> weaponSets;
-size_t weaponSetsCurrent = 0;
-char Hooks::weaponSetsText[16] = {};
-int weaponSetsTimeout, weaponSetsHotkey;
+size_t weaponSetsCurrent = 0, weaponSetsTimeout;
+CRITICAL_SECTION weaponSetsSync;
 LARGE_INTEGER timerFrequency, timerLast = {}, timerCurrent = {};
-bool __stdcall WeaponSetsCycle()
+bool weaponSetsRefresh = false;
+char Hooks::weaponSetsText[16] = {};
+void Hooks::WeaponSetsCycle()
+{
+	if (weaponSets.size() == 0)
+		return;
+		
+	EnterCriticalSection(&weaponSetsSync);
+	if (++weaponSetsCurrent >= weaponSets.size())
+		weaponSetsCurrent = 0;
+	snprintf(weaponSetsText, 16, "(Set %u)", weaponSetsCurrent);
+	copy(weaponSets[weaponSetsCurrent].begin(), weaponSets[weaponSetsCurrent].end(), GetBasePtr<int>(0xA7808));
+	HEquipSkills();
+	weaponSetsRefresh = true;
+	LeaveCriticalSection(&weaponSetsSync);
+}
+
+void __stdcall HWeaponSetsRefresh()
 {
 	QueryPerformanceCounter(&timerCurrent);
 	timerCurrent.QuadPart *= 1000;
 	timerCurrent.QuadPart /= timerFrequency.QuadPart;
+	if (timerCurrent.QuadPart - timerLast.QuadPart < weaponSetsTimeout)
+		return;
+	timerLast.QuadPart = timerCurrent.QuadPart;
 
-	if (weaponSets.size() == 0 || timerCurrent.QuadPart - timerLast.QuadPart < weaponSetsTimeout)
-		return false;
-
-	if (GetKeyState(weaponSetsHotkey) & 0x8000)
-	{
-		if (bWeaponModKeyPressed)
-			return false;
-
-		timerLast.QuadPart = timerCurrent.QuadPart;
-		if (++weaponSetsCurrent >= weaponSets.size())
-			weaponSetsCurrent = 0;
-		snprintf(Hooks::weaponSetsText, 16, "(Set %u)", weaponSetsCurrent);
-		copy(weaponSets[weaponSetsCurrent].begin(), weaponSets[weaponSetsCurrent].end(), GetBasePtr<int>(0xA7808));
-		bWeaponModKeyPressed = true;
-	}
-	else
-		bWeaponModKeyPressed = false;
-	return bWeaponModKeyPressed;
+	EnterCriticalSection(&weaponSetsSync);
+	if (weaponSetsRefresh && HRefreshSkillFileLinks())
+		weaponSetsRefresh = false;
+	LeaveCriticalSection(&weaponSetsSync);
 }
 
 void __declspec(naked) HWeaponSets()
 {
 	__asm
 	{
-		sub		esp, 16;
-		movdqu	xmmword ptr[esp], xmm1;
-		sub		esp, 16;
-		movdqu	xmmword ptr[esp], xmm2;
-		sub		esp, 16;
-		movdqu	xmmword ptr[esp], xmm3;
-		sub		esp, 16;
-		movdqu	xmmword ptr[esp], xmm4;
-		sub		esp, 16;
-		movdqu	xmmword ptr[esp], xmm5;
-		sub		esp, 16;
-		movdqu	xmmword ptr[esp], xmm6;
-		sub		esp, 16;
-		movdqu	xmmword ptr[esp], xmm7;
+		pushad;
+		sub		esp, 16 * 8;
+		movdqu	xmmword ptr[esp + 16 * 0], xmm0;
+		movdqu	xmmword ptr[esp + 16 * 1], xmm1;
+		movdqu	xmmword ptr[esp + 16 * 2], xmm2;
+		movdqu	xmmword ptr[esp + 16 * 3], xmm3;
+		movdqu	xmmword ptr[esp + 16 * 4], xmm4;
+		movdqu	xmmword ptr[esp + 16 * 5], xmm5;
+		movdqu	xmmword ptr[esp + 16 * 6], xmm6;
+		movdqu	xmmword ptr[esp + 16 * 7], xmm7;
 
-		test	byte ptr[eax + 0x273C], 4;
-		jne		originalcode;
-
-		mov		al, bRefreshSkillFileLinksStatus;
-		test	al, al;
-		jnz		refreshskillfilelinks;
-
-		call	WeaponSetsCycle;
-		test	al, al;
-		jz		originalcode;
-
-		call	HEquipSkills;
-	refreshskillfilelinks:
-		call	HRefreshSkillFileLinks;
+		call	HWeaponSetsRefresh;
 
 	originalcode:
-		movdqu	xmm7, xmmword ptr[esp];
-		add		esp, 16;
-		movdqu	xmm6, xmmword ptr[esp];
-		add		esp, 16;
-		movdqu	xmm5, xmmword ptr[esp];
-		add		esp, 16;
-		movdqu	xmm4, xmmword ptr[esp];
-		add		esp, 16;
-		movdqu	xmm3, xmmword ptr[esp];
-		add		esp, 16;
-		movdqu	xmm2, xmmword ptr[esp];
-		add		esp, 16;
-		movdqu	xmm1, xmmword ptr[esp];
-		add		esp, 16;
+		movdqu	xmm7, xmmword ptr[esp + 16 * 7];
+		movdqu	xmm6, xmmword ptr[esp + 16 * 6];
+		movdqu	xmm5, xmmword ptr[esp + 16 * 5];
+		movdqu	xmm4, xmmword ptr[esp + 16 * 4];
+		movdqu	xmm3, xmmword ptr[esp + 16 * 3];
+		movdqu	xmm2, xmmword ptr[esp + 16 * 2];
+		movdqu	xmm1, xmmword ptr[esp + 16 * 1];
+		movdqu	xmm0, xmmword ptr[esp + 16 * 0];
+		add		esp, 16 * 8;
+		popad;
 		ret;
 	}
 }
@@ -141,20 +119,14 @@ void __declspec(naked) HWeaponSets()
 LPBYTE pWeaponSetsP, oWeaponSetsP;
 void __declspec(naked) HWeaponSetsP()
 {
-	__asm	pushad;
-	__asm	mov		eax, edx;
 	__asm	call	HWeaponSets;
-	__asm	popad;
 	__asm	jmp		oWeaponSetsP;
 }
 
 LPBYTE pWeaponSetsS, oWeaponSetsS;
 void __declspec(naked) HWeaponSetsS()
 {
-	__asm	pushad;
-	__asm	mov		eax, ecx;
 	__asm	call	HWeaponSets;
-	__asm	popad;
 	__asm	jmp		oWeaponSetsS;
 }
 
@@ -232,7 +204,7 @@ void renderWeaponSetsUI()
 {
 	if (ImGui::CollapsingHeader("Weapon sets"))
 	{
-		if (ImGui::InputScalar<UINT32>("Timeout", &weaponSetsTimeout, 500, INT_MAX, 100, 200.0f))
+		if (ImGui::InputScalar<size_t>("Timeout", &weaponSetsTimeout, 0, INT_MAX, 100, 200.0f))
 			config.setUInt("weaponSets", "timeout", weaponSetsTimeout);
 
 		if (ImGui::Checkbox("Enabled", &weaponSetsEnabled))
@@ -258,12 +230,12 @@ void renderWeaponSetsUI()
 
 void Hooks::WeaponSets()
 {
+	InitializeCriticalSection(&weaponSetsSync);
 	QueryPerformanceFrequency(&timerFrequency);
 	InGameUIAdd(renderWeaponSetsUI);
 
 	weaponSetsEnabled = config.getBool("weaponSets", "enabled", false);
-	weaponSetsTimeout = config.getInt("weaponSets", "timeout", 1000);
-	weaponSetsHotkey = config.getInt("hotkeys", "keyWeaponSets", 'R') & 0xFF;
+	weaponSetsTimeout = config.getUInt("weaponSets", "timeout", 500);
 	for (auto setId : config.getSectionInts("weaponSets"))
 	{
 		auto list = config.getInts("weaponSets", std::to_string(setId).c_str());

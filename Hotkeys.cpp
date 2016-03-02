@@ -1,6 +1,7 @@
 ﻿#include "stdafx.h"
 #include "Hotkeys.h"
 #include "InGameClock.h"
+#include "WeaponSets.h"
 
 INPUT keyInput = { INPUT_KEYBOARD, {} };
 DWORD menuPause;
@@ -57,13 +58,14 @@ LRESULT CALLBACK HWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 	if (wndProcHandler(hwnd, msg, wParam, lParam))
 		return 0;
-	if (msg != WM_KEYDOWN || (HIWORD(lParam) & KF_REPEAT) != 0)
-		return oWndProc(hwnd, msg, wParam, lParam);
-
-	if (wParam > 0xFF || keys[wParam] == nullptr)
-		return oWndProc(hwnd, msg, wParam, lParam);
-	keys[wParam]();
-	return 0;
+	if ((msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN) &&
+		(HIWORD(lParam) & KF_REPEAT) == 0 &&
+		wParam < 0xFF && keys[wParam] != nullptr)
+	{
+		keys[wParam]();
+		return 0;
+	}
+	return oWndProc(hwnd, msg, wParam, lParam);
 }
 
 void loadHotkey(LPCSTR name, WORD defVal, void(*func)())
@@ -89,6 +91,7 @@ void Hooks::Hotkeys()
 		loadHotkey("keyClockMinInc", VK_NUMPAD6, []() { InGameClockInc(1); });
 		loadHotkey("keyClockHourDec", VK_NUMPAD2, []() { InGameClockDec(60); });
 		loadHotkey("keyClockHourInc", VK_NUMPAD8, []() { InGameClockInc(60); });
+		loadHotkey("keyWeaponSets", 'R', []() { WeaponSetsCycle(); });
 
 		BYTE sig[] = { 0x83, 0xEC, 0x50,			//sub	esp, 50h
 						0x53,						//push	ebx
