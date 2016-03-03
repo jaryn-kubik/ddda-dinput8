@@ -1,6 +1,7 @@
 ﻿#include "stdafx.h"
 #include "WeaponSets.h"
 #include "PlayerStats.h"
+#include "ItemEditor.h"
 
 LPBYTE getEquippedSkillsBaseCall, emptyEquippedSkillsCall, setEquippedSkillsCall;
 LPBYTE getSetEquippedSkillsFilesReadyFlagCall, getEquippedSkillsFilesBaseCall, setEquippedSkillsFilesCall;
@@ -48,22 +49,38 @@ bool __declspec(naked) HRefreshSkillFileLinks()
 	}
 }
 
-std::vector<std::array<int, 12 * 6>> weaponSets;
-size_t weaponSetsCurrent = 0, weaponSetsTimeout;
+std::vector<std::array<int, 12 * 6>> weaponSetsSkills;
+std::vector<std::array<int, 2>> weaponSetsWeapons;
+size_t weaponSetsSkillsC = 0, weaponSetsWeaponsC = 0, weaponSetsTimeout;
 CRITICAL_SECTION weaponSetsSync;
 LARGE_INTEGER timerFrequency, timerLast = {}, timerCurrent = {};
 bool weaponSetsRefresh = false;
 char Hooks::weaponSetsText[16] = {};
-void Hooks::WeaponSetsCycle()
+void Hooks::WeaponSetsSkills()
 {
-	if (weaponSets.size() == 0)
+	if (weaponSetsSkills.size() == 0)
 		return;
-		
+
 	EnterCriticalSection(&weaponSetsSync);
-	if (++weaponSetsCurrent >= weaponSets.size())
-		weaponSetsCurrent = 0;
-	snprintf(weaponSetsText, 16, "(Set %u)", weaponSetsCurrent);
-	copy(weaponSets[weaponSetsCurrent].begin(), weaponSets[weaponSetsCurrent].end(), GetBasePtr<int>(0xA7808));
+	if (++weaponSetsSkillsC >= weaponSetsSkills.size())
+		weaponSetsSkillsC = 0;
+	snprintf(weaponSetsText, 16, "W%u | S%u", weaponSetsWeaponsC, weaponSetsSkillsC);
+	copy(weaponSetsSkills[weaponSetsSkillsC].begin(), weaponSetsSkills[weaponSetsSkillsC].end(), GetBasePtr<int>(0xA7808));
+	HEquipSkills();
+	weaponSetsRefresh = true;
+	LeaveCriticalSection(&weaponSetsSync);
+}
+
+void Hooks::WeaponSetsWeapons()
+{
+	if (weaponSetsWeapons.size() == 0)
+		return;
+
+	EnterCriticalSection(&weaponSetsSync);
+	if (++weaponSetsWeaponsC >= weaponSetsWeapons.size())
+		weaponSetsWeaponsC = 0;
+	snprintf(weaponSetsText, 16, "W%u | S%u", weaponSetsWeaponsC, weaponSetsSkillsC);
+	copy(weaponSetsWeapons[weaponSetsWeaponsC].begin(), weaponSetsWeapons[weaponSetsWeaponsC].end(), GetBasePtr<int>(0xA76E4));
 	HEquipSkills();
 	weaponSetsRefresh = true;
 	LeaveCriticalSection(&weaponSetsSync);
@@ -101,7 +118,6 @@ void __declspec(naked) HWeaponSets()
 
 		call	HWeaponSetsRefresh;
 
-	originalcode:
 		movdqu	xmm7, xmmword ptr[esp + 16 * 7];
 		movdqu	xmm6, xmmword ptr[esp + 16 * 6];
 		movdqu	xmm5, xmmword ptr[esp + 16 * 5];
@@ -130,36 +146,13 @@ void __declspec(naked) HWeaponSetsS()
 	__asm	jmp		oWeaponSetsS;
 }
 
-void weaponSetsSave()
-{
-	for (auto setId : config.getSectionInts("weaponSets"))
-		config.removeKey("weaponSets", std::to_string(setId).c_str());
-	for (size_t setId = 0; setId < weaponSets.size(); setId++)
-	{
-		std::vector<int> list;
-		for (size_t i = 0; i < weaponSets[setId].size(); i += 6)
-		{
-			list.push_back(weaponSets[setId][i + 0]);
-			list.push_back(weaponSets[setId][i + 1]);
-			list.push_back(weaponSets[setId][i + 2]);
-			if (i / 6 == 4 || i / 6 == 5)
-			{
-				list.push_back(weaponSets[setId][i + 3]);
-				list.push_back(weaponSets[setId][i + 4]);
-				list.push_back(weaponSets[setId][i + 5]);
-			}
-		}
-		config.setInts("weaponSets", std::to_string(setId).c_str(), list);
-	}
-}
-
 bool renderWeaponSkill(int index, int weaponId, int skillCount, const char *label, const std::vector<std::pair<int, LPCSTR>> &items)
 {
 	bool changed = false;
 	if (ImGui::TreeNode(label))
 	{
 		for (int i = 0; i < skillCount; i++)
-			changed |= ImGui::ComboEnum<UINT32>(("##" + std::to_string(i)).c_str(), &weaponSets[index][weaponId * 6 + i], items);
+			changed |= ImGui::ComboEnum<UINT32>(("##" + std::to_string(i)).c_str(), &weaponSetsSkills[index][weaponId * 6 + i], items);
 		ImGui::TreePop();
 	}
 	return changed;
@@ -168,17 +161,13 @@ bool renderWeaponSkill(int index, int weaponId, int skillCount, const char *labe
 bool renderWeaponSet(int index)
 {
 	ImGui::PushID(index);
-	bool treeOpened = ImGui::TreeNode(string("Set ").append(std::to_string(index)).c_str());
+	bool treeOpened = ImGui::TreeNode(string("Skills ").append(std::to_string(index)).c_str());
 	ImGui::SameLine(100.0f);
-	if (ImGui::SmallButton("Remove"))
-	{
-		weaponSets.erase(weaponSets.begin() + index);
-		weaponSetsSave();
-		if (weaponSets.size() == 0)
-			Hooks::weaponSetsText[0] = '\0';
-	}
 
 	bool changed = false;
+	if (changed |= ImGui::SmallButton("Remove"))
+		weaponSetsSkills.erase(weaponSetsSkills.begin() + index);
+
 	if (treeOpened)
 	{
 		changed |= renderWeaponSkill(index, 0, 3, "Sword", Hooks::ListSkillsSword);
@@ -214,17 +203,86 @@ void renderWeaponSetsUI()
 			Hooks::SwitchHook("WeaponSets", pWeaponSetsS, weaponSetsEnabled);
 		}
 
+		bool changed = false;
 		ImGui::SameLine();
-		if (ImGui::Button("Add set"))
+		if (changed |= ImGui::Button("Add skill set"))
 		{
-			weaponSets.emplace_back();
-			std::copy(GetBasePtr<int>(0xA7808), GetBasePtr<int>(0xA7808 + 12 * 6 * sizeof(int)), weaponSets.back().data());
-			weaponSetsSave();
+			weaponSetsSkills.emplace_back();
+			std::copy(GetBasePtr<int>(0xA7808), GetBasePtr<int>(0xA7808 + 12 * 6 * sizeof(int)), weaponSetsSkills.back().data());
 		}
 
-		for (size_t i = 0; i < weaponSets.size(); i++)
-			if (renderWeaponSet(i))
-				weaponSetsSave();
+		for (size_t i = 0; i < weaponSetsSkills.size(); i++)
+			changed |= renderWeaponSet(i);
+
+		ImGui::Separator();
+		if (ImGui::TreeNode("Weapons"))
+		{
+			ImGui::TextUnformatted("Primary");
+			ImGui::TextUnformatted("Secondary", 150.0f);
+			ImGui::SameLine(270.0f);
+			if (changed |= ImGui::Button("Add"))
+			{
+				weaponSetsWeapons.emplace_back();
+				weaponSetsWeapons.back().fill(-1);
+			}
+
+			for (size_t i = 0; i < weaponSetsWeapons.size(); i++)
+			{
+				ImGui::PushID(i);
+				changed |= ImGui::InputScalar<UINT32>("##wP", &weaponSetsWeapons[i][0], 0, UINT32_MAX, 0, 75.0f, ImGuiInputTextFlags_CharsHexadecimal);
+				ImGui::SameLine();
+				if (changed |= ImGui::SmallButton("Set##sP") && Hooks::pItem)
+					weaponSetsWeapons[i][0] = (*(UINT32**)(Hooks::pItem + 0x04))[0x40 / 4];
+				ImGui::SameLine();
+
+				changed |= ImGui::InputScalar<UINT32>("##wS", &weaponSetsWeapons[i][1], 0, UINT32_MAX, 0, 75.0f, ImGuiInputTextFlags_CharsHexadecimal);
+				ImGui::SameLine();
+				if (changed |= ImGui::SmallButton("Set##sS") && Hooks::pItem)
+					weaponSetsWeapons[i][1] = (*(UINT32**)(Hooks::pItem + 0x04))[0x40 / 4];
+				ImGui::SameLine();
+
+				if (changed |= ImGui::Button("Remove"))
+					weaponSetsWeapons.erase(weaponSetsWeapons.begin() + i);
+				ImGui::SameLine();
+				ImGui::Text("Weapon %u", i);
+				ImGui::PopID();
+			}
+			ImGui::TreePop();
+		}
+
+		if (changed)
+		{
+			if (weaponSetsSkills.size() == 0 && weaponSetsWeapons.size() == 0)
+				Hooks::weaponSetsText[0] = '\0';
+			for (auto setId : config.getSectionInts("weaponSets"))
+				config.removeKey("weaponSets", std::to_string(setId).c_str());
+
+			for (size_t setId = 0; setId < weaponSetsSkills.size(); setId++)
+			{
+				std::vector<int> list;
+				for (size_t i = 0; i < weaponSetsSkills[setId].size(); i += 6)
+				{
+					list.push_back(weaponSetsSkills[setId][i + 0]);
+					list.push_back(weaponSetsSkills[setId][i + 1]);
+					list.push_back(weaponSetsSkills[setId][i + 2]);
+					if (i / 6 == 4 || i / 6 == 5)
+					{
+						list.push_back(weaponSetsSkills[setId][i + 3]);
+						list.push_back(weaponSetsSkills[setId][i + 4]);
+						list.push_back(weaponSetsSkills[setId][i + 5]);
+					}
+				}
+				config.setInts("weaponSets", std::to_string(setId).c_str(), list);
+			}
+
+			std::vector<int> list;
+			for (size_t i = 0; i < weaponSetsWeapons.size(); i++)
+			{
+				list.push_back(weaponSetsWeapons[i][0]);
+				list.push_back(weaponSetsWeapons[i][1]);
+			}
+			config.setInts("weaponSets", "weapons", list);
+		}
 	}
 }
 
@@ -241,21 +299,30 @@ void Hooks::WeaponSets()
 		auto list = config.getInts("weaponSets", std::to_string(setId).c_str());
 		if (list.size() != 12 * 3 + 6)
 			continue;
-		weaponSets.emplace_back();
+		weaponSetsSkills.emplace_back();
 
-		for (size_t i = 0, j = 0; i < weaponSets.back().size(); i += 6)
+		for (size_t i = 0, j = 0; i < weaponSetsSkills.back().size(); i += 6)
 		{
-			weaponSets.back()[i + 0] = list[j++];
-			weaponSets.back()[i + 1] = list[j++];
-			weaponSets.back()[i + 2] = list[j++];
+			weaponSetsSkills.back()[i + 0] = list[j++];
+			weaponSetsSkills.back()[i + 1] = list[j++];
+			weaponSetsSkills.back()[i + 2] = list[j++];
 			if (i / 6 == 4 || i / 6 == 5)
 			{
-				weaponSets.back()[i + 3] = list[j++];
-				weaponSets.back()[i + 4] = list[j++];
-				weaponSets.back()[i + 5] = list[j++];
+				weaponSetsSkills.back()[i + 3] = list[j++];
+				weaponSetsSkills.back()[i + 4] = list[j++];
+				weaponSetsSkills.back()[i + 5] = list[j++];
 			}
 		}
 	}
+
+	auto list = config.getInts("weaponSets", "weapons");
+	if (list.size() % 2 == 0)
+		for (size_t i = 0; i < list.size();)
+		{
+			weaponSetsWeapons.emplace_back();
+			weaponSetsWeapons.back()[0] = list[i++];
+			weaponSetsWeapons.back()[1] = list[i++];
+		}
 
 	BYTE *pOffset;
 	BYTE sig1[] = { 0x8B, 0x0D, 0xCC, 0xCC, 0xCC, 0xCC, 0xC6, 0x81, 0xCC, 0xCC, 0xCC, 0xCC, 0x01, 0x33, 0xF6 };

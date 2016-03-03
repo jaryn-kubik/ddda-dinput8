@@ -91,7 +91,8 @@ void Hooks::Hotkeys()
 		loadHotkey("keyClockMinInc", VK_NUMPAD6, []() { InGameClockInc(1); });
 		loadHotkey("keyClockHourDec", VK_NUMPAD2, []() { InGameClockDec(60); });
 		loadHotkey("keyClockHourInc", VK_NUMPAD8, []() { InGameClockInc(60); });
-		loadHotkey("keyWeaponSets", 'R', []() { WeaponSetsCycle(); });
+		loadHotkey("keyWeaponSetsS", 'R', []() { WeaponSetsSkills(); });
+		loadHotkey("keyWeaponSetsW", 'C', []() { WeaponSetsWeapons(); });
 
 		BYTE sig[] = { 0x83, 0xEC, 0x50,			//sub	esp, 50h
 						0x53,						//push	ebx

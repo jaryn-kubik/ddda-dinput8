@@ -2,11 +2,11 @@
 #include "ItemEditor.h"
 
 bool pItemChanged = true;
-LPBYTE pItem;
+LPBYTE Hooks::pItem;
 LPVOID oItemIDRead;
 void __declspec(naked) HItemIDRead()
 {
-	__asm	mov		dword ptr[pItem], ecx;
+	__asm	mov		dword ptr[Hooks::pItem], ecx;
 	__asm	mov		pItemChanged, 1;
 	__asm	jmp		oItemIDRead;
 }
@@ -20,6 +20,7 @@ enum ItemStarType : UINT16
 
 void renderItemEditorUI()
 {
+	using namespace Hooks;
 	if (ImGui::CollapsingHeader("Item Editor") && pItem)
 	{
 		static ImGuiTextFilter itemFilter;

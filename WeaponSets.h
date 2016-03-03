@@ -4,5 +4,6 @@ namespace Hooks
 {
 	extern char weaponSetsText[16];
 	void WeaponSets();
-	void WeaponSetsCycle();
+	void WeaponSetsSkills();
+	void WeaponSetsWeapons();
 }

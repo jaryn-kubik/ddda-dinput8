@@ -2,6 +2,7 @@
 
 namespace Hooks
 {
+	extern LPBYTE pItem;
 	void ItemEditor();
 
 	extern const std::vector<std::pair<int, LPCSTR>> ListItemStarType;

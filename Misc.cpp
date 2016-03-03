@@ -138,6 +138,9 @@ void __declspec(naked) HFallHeight()
 	}
 }
 
+bool movementSpeedDebug = false;
+void __stdcall HMovementSpeedDebug(LPVOID animId) { logFile << animId << std::endl; }
+
 float movementSpeed;
 LPBYTE pMovementSpeed, oMovementSpeed;
 void __declspec(naked) HMovementSpeed()
@@ -146,20 +149,56 @@ void __declspec(naked) HMovementSpeed()
 	{
 		mov		esi, [edi + 0x3DEC];
 		mov		esi, [esi + 8];
-		cmp		esi, -1;
-		je		getBack;
+		cmp		esi, 0;
+		jl		getBack;
 
 		mov		esi, [edi + 0x2DD4];
-		dec		esi;
-		js		getBack;
+		cmp		esi, 0;
+		jle		getBack;
 
-		cmp		esi, 124;//sprint
+		cmp		movementSpeedDebug, 1;
+		jne		skipDebug;
+
+		push	esi;
+		mov		esi, [edi + 0x3DEC];
+		mov		esi, [esi + 8];
+		cmp		esi, 0;
+		pop		esi;
+		jne		skipDebug;
+
+		pushad;
+		sub		esp, 16 * 8;
+		movdqu	xmmword ptr[esp + 16 * 0], xmm0;
+		movdqu	xmmword ptr[esp + 16 * 1], xmm1;
+		movdqu	xmmword ptr[esp + 16 * 2], xmm2;
+		movdqu	xmmword ptr[esp + 16 * 3], xmm3;
+		movdqu	xmmword ptr[esp + 16 * 4], xmm4;
+		movdqu	xmmword ptr[esp + 16 * 5], xmm5;
+		movdqu	xmmword ptr[esp + 16 * 6], xmm6;
+		movdqu	xmmword ptr[esp + 16 * 7], xmm7;
+
+		push	esi;
+		call	HMovementSpeedDebug;
+
+		movdqu	xmm7, xmmword ptr[esp + 16 * 7];
+		movdqu	xmm6, xmmword ptr[esp + 16 * 6];
+		movdqu	xmm5, xmmword ptr[esp + 16 * 5];
+		movdqu	xmm4, xmmword ptr[esp + 16 * 4];
+		movdqu	xmm3, xmmword ptr[esp + 16 * 3];
+		movdqu	xmm2, xmmword ptr[esp + 16 * 2];
+		movdqu	xmm1, xmmword ptr[esp + 16 * 1];
+		movdqu	xmm0, xmmword ptr[esp + 16 * 0];
+		add		esp, 16 * 8;
+		popad;
+
+	skipDebug:
+		cmp		esi, 0x7D;//sprint
 		je		modValue;
-		cmp		esi, 4;//sprint
+		cmp		esi, 0x05;//sprint
 		je		modValue;
-		cmp		esi, 1;//run
+		cmp		esi, 0x02;//run
 		je		modValue;
-		cmp		esi, 0;//walk
+		cmp		esi, 0x01;//walk
 		je		modValue;
 		jmp		getBack;
 
@@ -228,6 +267,8 @@ void renderMiscUI()
 				Hooks::SwitchHook("MovementSpeed", pMovementSpeed, movementSpeed >= 0);
 		}
 		ImGui::PopItemWidth();
+		ImGui::SameLine();
+		ImGui::Checkbox("Log", &movementSpeedDebug);
 
 		if (ImGui::TreeNode("Jump mod"))
 		{
