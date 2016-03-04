@@ -66,7 +66,6 @@ void Hooks::WeaponSetsSkills()
 		weaponSetsSkillsC = 0;
 	snprintf(weaponSetsText, 16, "W%u | S%u", weaponSetsWeaponsC, weaponSetsSkillsC);
 	copy(weaponSetsSkills[weaponSetsSkillsC].begin(), weaponSetsSkills[weaponSetsSkillsC].end(), GetBasePtr<int>(0xA7808));
-	HEquipSkills();
 	weaponSetsRefresh = true;
 	LeaveCriticalSection(&weaponSetsSync);
 }
@@ -81,7 +80,6 @@ void Hooks::WeaponSetsWeapons()
 		weaponSetsWeaponsC = 0;
 	snprintf(weaponSetsText, 16, "W%u | S%u", weaponSetsWeaponsC, weaponSetsSkillsC);
 	copy(weaponSetsWeapons[weaponSetsWeaponsC].begin(), weaponSetsWeapons[weaponSetsWeaponsC].end(), GetBasePtr<int>(0xA76E4));
-	HEquipSkills();
 	weaponSetsRefresh = true;
 	LeaveCriticalSection(&weaponSetsSync);
 }
@@ -96,8 +94,12 @@ void __stdcall HWeaponSetsRefresh()
 	timerLast.QuadPart = timerCurrent.QuadPart;
 
 	EnterCriticalSection(&weaponSetsSync);
-	if (weaponSetsRefresh && HRefreshSkillFileLinks())
-		weaponSetsRefresh = false;
+	if (weaponSetsRefresh)
+	{
+		HEquipSkills();
+		if (HRefreshSkillFileLinks())
+			weaponSetsRefresh = false;
+	}
 	LeaveCriticalSection(&weaponSetsSync);
 }
 
@@ -115,9 +117,7 @@ void __declspec(naked) HWeaponSets()
 		movdqu	xmmword ptr[esp + 16 * 5], xmm5;
 		movdqu	xmmword ptr[esp + 16 * 6], xmm6;
 		movdqu	xmmword ptr[esp + 16 * 7], xmm7;
-
 		call	HWeaponSetsRefresh;
-
 		movdqu	xmm7, xmmword ptr[esp + 16 * 7];
 		movdqu	xmm6, xmmword ptr[esp + 16 * 6];
 		movdqu	xmm5, xmmword ptr[esp + 16 * 5];
@@ -205,7 +205,7 @@ void renderWeaponSetsUI()
 
 		bool changed = false;
 		ImGui::SameLine();
-		if (changed |= ImGui::Button("Add skill set"))
+		if (ImGui::Button("Add skill set") && ((changed = true)))
 		{
 			weaponSetsSkills.emplace_back();
 			std::copy(GetBasePtr<int>(0xA7808), GetBasePtr<int>(0xA7808 + 12 * 6 * sizeof(int)), weaponSetsSkills.back().data());
@@ -220,7 +220,7 @@ void renderWeaponSetsUI()
 			ImGui::TextUnformatted("Primary");
 			ImGui::TextUnformatted("Secondary", 150.0f);
 			ImGui::SameLine(270.0f);
-			if (changed |= ImGui::Button("Add"))
+			if (ImGui::Button("Add") && ((changed = true)))
 			{
 				weaponSetsWeapons.emplace_back();
 				weaponSetsWeapons.back().fill(-1);
@@ -231,17 +231,17 @@ void renderWeaponSetsUI()
 				ImGui::PushID(i);
 				changed |= ImGui::InputScalar<UINT32>("##wP", &weaponSetsWeapons[i][0], 0, UINT32_MAX, 0, 75.0f, ImGuiInputTextFlags_CharsHexadecimal);
 				ImGui::SameLine();
-				if (changed |= ImGui::SmallButton("Set##sP") && Hooks::pItem)
+				if (ImGui::SmallButton("Set##sP") && Hooks::pItem && ((changed = true)))
 					weaponSetsWeapons[i][0] = (*(UINT32**)(Hooks::pItem + 0x04))[0x40 / 4];
 				ImGui::SameLine();
 
 				changed |= ImGui::InputScalar<UINT32>("##wS", &weaponSetsWeapons[i][1], 0, UINT32_MAX, 0, 75.0f, ImGuiInputTextFlags_CharsHexadecimal);
 				ImGui::SameLine();
-				if (changed |= ImGui::SmallButton("Set##sS") && Hooks::pItem)
+				if (ImGui::SmallButton("Set##sS") && Hooks::pItem && ((changed = true)))
 					weaponSetsWeapons[i][1] = (*(UINT32**)(Hooks::pItem + 0x04))[0x40 / 4];
 				ImGui::SameLine();
 
-				if (changed |= ImGui::Button("Remove"))
+				if (ImGui::Button("Remove") && ((changed = true)))
 					weaponSetsWeapons.erase(weaponSetsWeapons.begin() + i);
 				ImGui::SameLine();
 				ImGui::Text("Weapon %u", i);
