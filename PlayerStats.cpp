@@ -1,5 +1,178 @@
 ﻿#include "stdafx.h"
 #include "PlayerStats.h"
+#include "Cheats.h"
+
+struct levelInfo
+{
+	LPVOID Zero;
+	UINT16 mLevel;
+	UINT16 mHPMax;
+	UINT16 mStaminaMax;
+	UINT16 mAttack;
+	UINT16 mDefend;
+	UINT16 mMgcAttack;
+	UINT16 mMgcDefend;
+	UINT16 mNextExp;
+
+	levelInfo& operator+=(const levelInfo *lvlInfo)
+	{
+		if (lvlInfo)
+		{
+			this->mHPMax += lvlInfo->mHPMax;
+			this->mStaminaMax += lvlInfo->mStaminaMax;
+			this->mAttack += lvlInfo->mAttack;
+			this->mDefend += lvlInfo->mDefend;
+			this->mMgcAttack += lvlInfo->mMgcAttack;
+			this->mMgcDefend += lvlInfo->mMgcDefend;
+		}
+		return *this;
+	}
+};
+
+levelInfo* getLevelInfo(int vocation, int level)
+{
+	if (level == 1)
+		level = 1;
+	else if (level >= 2 && level < 11)
+		level = 2;
+	else if (level >= 11 && level < 101)
+		level = 3;
+	else if (level >= 101 && level < 201)
+		level = 4;
+	else if (level >= 201)
+		level = 5;
+	else
+		level = 0;
+
+	levelInfo *****pLevels = (levelInfo*****)Hooks::pGameMain;
+	if (pLevels && *pLevels)
+	{
+		levelInfo ***pLevelVocation = (*pLevels)[0x86C / 4 + vocation];
+		if (pLevelVocation)
+		{
+			levelInfo **pLevelInfo = pLevelVocation[0x70 / 4];
+			if (pLevelInfo)
+				return pLevelInfo[level];
+		}
+	}
+	return nullptr;
+}
+
+void renderStatsRespec(const char *label, int offset, bool *respecShow)
+{
+	if (!*respecShow || !getLevelInfo(0, 0))
+	{
+		*respecShow = false;
+		return;
+	}
+
+	static levelInfo lvlResult = {};
+	static int respecStart = 1;
+	static int respecAbove10[9] = {}, respecAbove100[9] = {};
+	static bool changed = true;
+	if (changed)
+	{
+		changed = false;
+		lvlResult = {};
+
+		while (lvlResult.mLevel < 10)
+			lvlResult += getLevelInfo(respecStart, ++lvlResult.mLevel);
+
+		for (int vocation = 0; vocation < 9; vocation++)
+			for (int i = 0; i < respecAbove10[vocation]; i++)
+				lvlResult += getLevelInfo(vocation + 1, ++lvlResult.mLevel);
+
+		if (lvlResult.mLevel >= 100)
+			for (int vocation = 0; vocation < 9; vocation++)
+				for (int i = 0; i < respecAbove100[vocation]; i++)
+					lvlResult += getLevelInfo(vocation + 1, ++lvlResult.mLevel);
+	}
+
+	int baseOffset = 0xA7000 + offset;
+	int statsOffset = baseOffset + 0x96C;
+	if (ImGui::Begin(string("Respec - ").append(label).c_str(), respecShow, ImVec2(400, 625)))
+	{
+		ImGui::Columns(3);
+		ImGui::PushItemWidth(50.0f);
+		ImGui::LabelText("HP", "%hu", lvlResult.mHPMax);
+		ImGui::LabelText("Stamina", "%hu", lvlResult.mStaminaMax + static_cast<UINT16>(*GetBasePtr<float>(statsOffset + 4 * 4)));
+		ImGui::LabelText("Level", "%hu", lvlResult.mLevel);
+		ImGui::PopItemWidth();
+		ImGui::NextColumn();
+		ImGui::PushItemWidth(50.0f);
+		ImGui::LabelText("Strength", "%hu", lvlResult.mAttack);
+		ImGui::LabelText("Defenses", "%hu", lvlResult.mDefend);
+		if (ImGui::Button("Reset"))
+		{
+			changed = true;
+			respecStart = 1;
+			std::fill_n(respecAbove10, 9, 0);
+			std::fill_n(respecAbove100, 9, 0);
+		}
+		ImGui::PopItemWidth();
+		ImGui::NextColumn();
+		ImGui::PushItemWidth(50.0f);
+		ImGui::LabelText("Magick", "%hu", lvlResult.mMgcAttack);
+		ImGui::LabelText("MDefenses", "%hu", lvlResult.mMgcDefend);
+		if (ImGui::Button("Confirm"))
+		{
+			*GetBasePtr<UINT16>(baseOffset + 0xDD0) = lvlResult.mLevel;
+			*GetBasePtr<UINT16>(baseOffset + 0x994) = 0; //XP
+			//*GetBasePtr<UINT16>(baseOffset + 0x998) = 0; //next XP
+
+			*GetBasePtr<float>(statsOffset + 4 * 0) = static_cast<float>(lvlResult.mHPMax);
+			*GetBasePtr<float>(statsOffset + 4 * 1) = static_cast<float>(lvlResult.mHPMax);
+			*GetBasePtr<float>(statsOffset + 4 * 2) = static_cast<float>(lvlResult.mHPMax);
+
+			*GetBasePtr<float>(statsOffset + 4 * 3) = static_cast<float>(lvlResult.mStaminaMax);
+			*GetBasePtr<float>(statsOffset + 4 * 5) = static_cast<float>(lvlResult.mStaminaMax);
+
+			*GetBasePtr<float>(statsOffset + 4 * 6) = static_cast<float>(lvlResult.mAttack);
+			*GetBasePtr<float>(statsOffset + 4 * 7) = static_cast<float>(lvlResult.mDefend);
+			*GetBasePtr<float>(statsOffset + 4 * 8) = static_cast<float>(lvlResult.mMgcAttack);
+			*GetBasePtr<float>(statsOffset + 4 * 9) = static_cast<float>(lvlResult.mMgcDefend);
+		}
+		ImGui::PopItemWidth();
+		ImGui::Columns();
+		ImGui::Separator();
+
+		ImGui::TextUnformatted("Starting vocation:");
+		ImGui::Columns(3, nullptr, false);
+		changed |= ImGui::RadioButton("Fighter", &respecStart, 1);
+		ImGui::NextColumn();
+		changed |= ImGui::RadioButton("Strider", &respecStart, 2);
+		ImGui::NextColumn();
+		changed |= ImGui::RadioButton("Mage", &respecStart, 3);
+		ImGui::Columns();
+		ImGui::Separator();
+
+		ImGui::TextUnformatted("Levels 11 - 100:");
+		ImGui::PushID("Levels11-100");
+		int respecAbove10Sum = std::accumulate(respecAbove10, respecAbove10 + 9, 0);
+		for (auto &vocation : Hooks::ListVocations)
+		{
+			if (offset && (vocation.first == 4 || vocation.first == 5 || vocation.first == 6))
+				continue;
+			int *val = respecAbove10 + vocation.first - 1;
+			changed |= ImGui::SliderInt(vocation.second, val, 0, 90 - respecAbove10Sum + *val);
+		}
+		ImGui::PopID();
+
+		ImGui::Separator();
+		ImGui::TextUnformatted("Levels 101 - 200:");
+		ImGui::PushID("Levels101-200");
+		int respecAbove100Sum = std::accumulate(respecAbove100, respecAbove100 + 9, 0);
+		for (auto &vocation : Hooks::ListVocations)
+		{
+			if (offset && (vocation.first == 4 || vocation.first == 5 || vocation.first == 6))
+				continue;
+			int *val = respecAbove100 + vocation.first - 1;
+			changed |= ImGui::SliderInt(vocation.second, val, 0, 100 - respecAbove100Sum + *val);
+		}
+		ImGui::PopID();
+	}
+	ImGui::End();
+}
 
 void renderStatsVocation(const char *label, int offset)
 {
@@ -14,8 +187,9 @@ void renderStatsVocation(const char *label, int offset)
 	ImGui::PopID();
 }
 
-void renderStatsParty(const char *label, int offset)
+void renderStatsParty(const char *label, int offset, bool *respecShow)
 {
+	ImGui::PushID(label);
 	if (!ImGui::TreeNode(label))
 		return;
 
@@ -25,10 +199,15 @@ void renderStatsParty(const char *label, int offset)
 	{
 		ImGui::Columns(3, nullptr, false);
 		ImGui::InputScalar<int>("Level", GetBasePtr(baseOffset + 0xDD0), 0, 200, -1);
-		ImGui::NextColumn();
 		ImGui::InputScalar<int>("DP", GetBasePtr(baseOffset + 0xA14), 0, INT_MAX, -1);
 		ImGui::NextColumn();
 		ImGui::InputScalar<int>("XP", GetBasePtr(baseOffset + 0x994), 0, INT_MAX, -1);
+		ImGui::InputScalar<int>("Next", GetBasePtr(baseOffset + 0x998), 0, INT_MAX, -1);
+		ImGui::NextColumn();
+		if (ImGui::Button("Level Up"))
+			*GetBasePtr<UINT32>(baseOffset + 0x994) = *GetBasePtr<UINT32>(baseOffset + 0x998);
+		if (ImGui::Button("Respec"))
+			*respecShow = true;
 		ImGui::Columns();
 
 		ImGui::Separator();
@@ -51,7 +230,7 @@ void renderStatsParty(const char *label, int offset)
 		ImGui::ComboEnum<UINT32>("Current", GetBasePtr(baseOffset + 0x6E0), Hooks::ListVocations);
 
 		int vocationOffset = statsOffset + 13 * 4;
-		renderStatsVocation("Fighter", vocationOffset  + 4 * 0);
+		renderStatsVocation("Fighter", vocationOffset + 4 * 0);
 		renderStatsVocation("Strider", vocationOffset + 4 * 1);
 		renderStatsVocation("Mage", vocationOffset + 4 * 2);
 		if (!offset)// player
@@ -82,6 +261,7 @@ void renderStatsParty(const char *label, int offset)
 		ImGui::TreePop();
 	}
 	ImGui::TreePop();
+	ImGui::PopID();
 }
 
 bool renderStatsSkill(int offset, int skillCount, const char *label, const std::vector<std::pair<int, LPCSTR>> &items)
@@ -188,6 +368,12 @@ void renderStatsLearnedSkills(const char *label, int offset, std::pair<bool, int
 LPBYTE pEquipChanged;
 void renderStatsUI()
 {
+	static bool respecPlayer = false, respectPawn1 = false, respectPawn2 = false, respectPawn3 = false;
+	renderStatsRespec("Player", 0, &respecPlayer);
+	renderStatsRespec("Main Pawn", 0x7F0, &respectPawn1);
+	renderStatsRespec("Pawn 1", 0x7F0 + 0x1660, &respectPawn2);
+	renderStatsRespec("Pawn 2", 0x7F0 + 0x1660 + 0x1660, &respectPawn3);
+
 	if (ImGui::CollapsingHeader("Stats"))
 	{
 		ImGui::PushID("Stats");
@@ -197,10 +383,10 @@ void renderStatsUI()
 		ImGui::InputScalar<int>("RC", GetBasePtr(0xA7A1C), 0, INT_MAX, 100);
 		ImGui::Columns();
 
-		renderStatsParty("Player", 0);
-		renderStatsParty("Main Pawn", 0x7F0);
-		renderStatsParty("Pawn 1", 0x7F0 + 0x1660);
-		renderStatsParty("Pawn 2", 0x7F0 + 0x1660 + 0x1660);
+		renderStatsParty("Player", 0, &respecPlayer);
+		renderStatsParty("Main Pawn", 0x7F0, &respectPawn1);
+		renderStatsParty("Pawn 1", 0x7F0 + 0x1660, &respectPawn2);
+		renderStatsParty("Pawn 2", 0x7F0 + 0x1660 + 0x1660, &respectPawn3);
 		ImGui::PopID();
 	}
 

@@ -209,7 +209,7 @@ struct augmentInfo
 bool augmentMods;
 bool augmentModsEnabled[0x80] = {};
 augmentInfo augmentModsValues[0x80] = {};
-augmentInfo *****pAugments;
+void *****Hooks::pGameMain;
 LPBYTE pAugmentMods1, oAugmentMods1Orig, oAugmentMods1Mod;
 void __declspec(naked) HAugmentMods1()
 {
@@ -402,6 +402,7 @@ void renderCheatsUI()
 		if (ImGui::Button("Add") && addMod >= 0)
 		{
 			augmentModsEnabled[addMod] = true;
+			augmentInfo *****pAugments =  (augmentInfo*****)Hooks::pGameMain;
 			if (pAugments && *pAugments)
 			{
 				augmentInfo ***ptr = (*pAugments)[0x8C8 / 4];
@@ -602,7 +603,7 @@ void Hooks::Cheats()
 		CreateHook("Cheat (augmentMods)", pAugmentMods1, &HAugmentMods1, nullptr, augmentMods);
 		oAugmentMods1Orig = pAugmentMods1 + sizeof sigAug1 - 2;
 		oAugmentMods1Mod = oAugmentMods1Orig + 6 + 6 + 3 + 3;
-		pAugments = *(augmentInfo******)(oAugmentMods1Orig + 2);
+		pGameMain = *(void******)(oAugmentMods1Orig + 2);
 
 		CreateHook("Cheat (augmentMods)", pAugmentMods2, &HAugmentMods2, nullptr, augmentMods);
 		oAugmentMods2 = pAugmentMods2 + sizeof sigAug2 + pAugmentMods2[sizeof sigAug2] + 1;

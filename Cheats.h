@@ -2,5 +2,6 @@
 
 namespace Hooks
 {
+	extern void *****pGameMain;
 	void Cheats();
 }

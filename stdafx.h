@@ -10,6 +10,7 @@
 #include <vector>
 #include <algorithm>
 #include <array>
+#include <numeric>
 
 using std::string;
 #pragma comment(lib, "d3dx9.lib")
