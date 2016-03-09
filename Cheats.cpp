@@ -3,8 +3,6 @@
 
 #include "stdafx.h"
 #include "Cheats.h"
-#include "ItemEditor.h"
-#include "PlayerStats.h"
 
 bool thirdSkillLevels[0x200][4] = {};
 void thirdSkillLevelsInit(int partyId, std::vector<int> list)

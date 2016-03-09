@@ -1,6 +1,5 @@
 ﻿#include "stdafx.h"
 #include "WeaponSets.h"
-#include "PlayerStats.h"
 #include "ItemEditor.h"
 
 LPBYTE getEquippedSkillsBaseCall, emptyEquippedSkillsCall, setEquippedSkillsCall;
