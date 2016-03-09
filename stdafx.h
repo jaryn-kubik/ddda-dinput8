@@ -23,6 +23,7 @@ using std::string;
 
 namespace Hooks
 {
+	extern const std::vector<std::pair<int, LPCSTR>> ListStatus;
 	extern const std::vector<std::pair<int, LPCSTR>> ListVocations;
 	extern const std::vector<std::pair<int, LPCSTR>> ListSkillsCore;
 	extern const std::vector<std::pair<int, LPCSTR>> ListSkillsSword;

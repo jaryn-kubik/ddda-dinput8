@@ -198,10 +198,7 @@ struct augmentInfo
 	UINT32 Unknown1;
 	UINT32 Unknown2;
 
-	std::vector<float> getList() const
-	{
-		return std::vector<float> {Activated, Deactivated, static_cast<float>(Unknown1), static_cast<float>(Unknown2)};
-	}
+	std::vector<float> getList() const { return{ Activated, Deactivated, static_cast<float>(Unknown1), static_cast<float>(Unknown2) }; }
 };
 
 bool augmentMods;
@@ -276,32 +273,89 @@ void __declspec(naked) HAugmentMods3()
 	__asm	retn;
 }
 
-void augmentModsLoad()
+struct buffInfo
 {
-	augmentMods = config.getBool("augments", "enabled", false);
-	for (auto i : config.getInts("augments", "augmentsPlayer"))
-		augmentsActive[i & 0x7F][0] = true;
-	for (auto i : config.getInts("augments", "augmentsPawn"))
-		augmentsActive[i & 0x7F][1] = true;
-	for (auto i : config.getInts("augments", "augmentsPawn1"))
-		augmentsActive[i & 0x7F][2] = true;
-	for (auto i : config.getInts("augments", "augmentsPawn2"))
-		augmentsActive[i & 0x7F][3] = true;
-	for (auto augmentId : config.getSectionInts("augments"))
-		for (size_t i = 1; i < Hooks::ListSkillsAugments.size(); i++)
-			if (Hooks::ListSkillsAugments[i].first == augmentId)
-			{
-				auto values = config.getFloats("augments", std::to_string(augmentId).c_str());
-				if (values.size() == 4)
-				{
-					augmentModsValues[augmentId].Activated = values[0];
-					augmentModsValues[augmentId].Deactivated = values[1];
-					augmentModsValues[augmentId].Unknown1 = static_cast<UINT32>(values[2]);
-					augmentModsValues[augmentId].Unknown2 = static_cast<UINT32>(values[3]);
-					augmentModsEnabled[augmentId] = true;
-					break;
-				}
-			}
+	BOOL Enabled;
+	UINT32 Category;
+	float Timer;
+	float Param0;
+	float Param1;
+
+	std::vector<float> getList() const { return{ Timer, Param0, Param1 }; }
+};
+
+bool buffMods;
+buffInfo **pBuffInfos = nullptr;
+buffInfo buffModsValues[0x30] = {};
+LPBYTE pBuffMods1, oBuffMods1;
+void __declspec(naked) HBuffMods1()
+{
+	__asm	mov		ecx, [eax + 0x70];
+	__asm	mov		pBuffInfos, ecx;
+	__asm	jmp		oBuffMods1;
+}
+
+bool buffModsLog = false;
+void __stdcall HBuffmodsDebug(int buffId) { logFile << buffId << std::endl; }
+
+LPBYTE pBuffMods2, oBuffMods2;
+void __declspec(naked) HBuffMods2()
+{
+	__asm
+	{
+		test	eax, eax;
+		jz		getBack;
+		mov		ebx, [eax + 0x3DEC];
+		test	ebx, ebx;
+		jz		getBack;
+		mov		ebx, [ebx + 8];
+		cmp		ebx, 0;
+		jl		getBack;
+
+		cmp		buffModsLog, 0;
+		je		skipDebug;
+
+		pushad;
+		sub		esp, 16 * 8;
+		movdqu	xmmword ptr[esp + 16 * 0], xmm0;
+		movdqu	xmmword ptr[esp + 16 * 1], xmm1;
+		movdqu	xmmword ptr[esp + 16 * 2], xmm2;
+		movdqu	xmmword ptr[esp + 16 * 3], xmm3;
+		movdqu	xmmword ptr[esp + 16 * 4], xmm4;
+		movdqu	xmmword ptr[esp + 16 * 5], xmm5;
+		movdqu	xmmword ptr[esp + 16 * 6], xmm6;
+		movdqu	xmmword ptr[esp + 16 * 7], xmm7;
+
+		push	esi;
+		call	HBuffmodsDebug;
+
+		movdqu	xmm7, xmmword ptr[esp + 16 * 7];
+		movdqu	xmm6, xmmword ptr[esp + 16 * 6];
+		movdqu	xmm5, xmmword ptr[esp + 16 * 5];
+		movdqu	xmm4, xmmword ptr[esp + 16 * 4];
+		movdqu	xmm3, xmmword ptr[esp + 16 * 3];
+		movdqu	xmm2, xmmword ptr[esp + 16 * 2];
+		movdqu	xmm1, xmmword ptr[esp + 16 * 1];
+		movdqu	xmm0, xmmword ptr[esp + 16 * 0];
+		add		esp, 16 * 8;
+		popad;
+
+	skipDebug:
+		cmp		esi, 0x30;
+		jae		getBack;
+
+		imul	ebx, esi, 4 * 5;
+		lea		ebx, [buffModsValues + ebx];
+		cmp		byte ptr[ebx], 1;
+		jne		getBack;
+
+		movss	xmm0, dword ptr[ebx + 0x08];
+		movss	xmm1, dword ptr[ebx + 0x0C];
+		movss	xmm2, dword ptr[ebx + 0x10];
+
+	getback:
+		jmp		oBuffMods2;
+	}
 }
 
 void renderCheatsSkillLevel(const char *label, float position, bool *check, int partyId, bool isHeader = false)
@@ -342,9 +396,10 @@ bool shareWeaponSkills, ignoreEquipVocation, ignoreSkillVocation;
 std::vector<std::pair<int, LPCSTR>> runTypeMapEV = { { -1, "Disabled" },{ 0, "Town Animation" },{ 1, "Town Animation + Stamina" },{ 2, "Stamina" } };
 void renderCheatsUI()
 {
-	static bool setSkillsOpened = false, setAugmentsOpened = false, setAugmentModsOpened = false;
+	static bool setSkillsOpened = false, setAugmentsOpened = false, setAugmentModsOpened = false, setBuffModsOpened = false;
 	if (setSkillsOpened)
 	{
+		ImGui::PushID("Set 3rd level skills");
 		ImGui::Begin("Set 3rd level skills", &setSkillsOpened, ImVec2(525, 400));
 		static bool selectAll1 = false, selectAll2 = false, selectAll3 = false, selectAll4 = false;
 		renderCheatsSkillLevel("Player", 200.0f + 75.0f * 0, &selectAll1, 0, true);
@@ -364,10 +419,12 @@ void renderCheatsUI()
 			ImGui::PopID();
 		}
 		ImGui::End();
+		ImGui::PopID();
 	}
 
 	if (setAugmentsOpened)
 	{
+		ImGui::PushID("Active augments");
 		ImGui::Begin("Active augments", &setAugmentsOpened, ImVec2(375, 400));
 		ImGui::TextUnformatted("Player", 150.0f + 50.0f * 0);
 		ImGui::TextUnformatted("Pawn", 150.0f + 50.0f * 1);
@@ -388,10 +445,12 @@ void renderCheatsUI()
 			ImGui::PopID();
 		}
 		ImGui::End();
+		ImGui::PopID();
 	}
 
 	if (setAugmentModsOpened)
 	{
+		ImGui::PushID("Augment mods");
 		ImGui::Begin("Augment mods", &setAugmentModsOpened, ImVec2(625, 400));
 
 		static int addMod = 0;
@@ -400,7 +459,7 @@ void renderCheatsUI()
 		if (ImGui::Button("Add") && addMod >= 0)
 		{
 			augmentModsEnabled[addMod] = true;
-			augmentInfo *****pAugments =  (augmentInfo*****)Hooks::pGameMain;
+			augmentInfo *****pAugments = (augmentInfo*****)Hooks::pGameMain;
 			if (pAugments && *pAugments)
 			{
 				augmentInfo ***ptr = (*pAugments)[0x8C8 / 4];
@@ -452,6 +511,63 @@ void renderCheatsUI()
 			ImGui::PopID();
 		}
 		ImGui::End();
+		ImGui::PopID();
+	}
+
+	if (setBuffModsOpened)
+	{
+		ImGui::PushID("Buff mods");
+		ImGui::Begin("Buff mods", &setBuffModsOpened, ImVec2(600, 400));
+
+		static int addMod = 0;
+		ImGui::ComboEnum<int>("##add", &addMod, Hooks::ListStatus);
+		ImGui::SameLine();
+		if (ImGui::Button("Add") && pBuffInfos && pBuffInfos[addMod])
+		{
+			buffModsValues[addMod].Enabled = TRUE;
+			buffModsValues[addMod].Timer = pBuffInfos[addMod]->Timer;
+			buffModsValues[addMod].Param0 = pBuffInfos[addMod]->Param0;
+			buffModsValues[addMod].Param1 = pBuffInfos[addMod]->Param1;
+			config.setFloats("buffs", std::to_string(addMod).c_str(), buffModsValues[addMod].getList());
+		}
+
+		ImGui::Separator();
+		ImGui::TextUnformatted("Timer", 150.0f + 105.0f * 0);
+		ImGui::TextUnformatted("Param0", 150.0f + 105.0f * 1);
+		ImGui::TextUnformatted("Param1", 150.0f + 105.0f * 2);
+
+		for (size_t i = 0; i < Hooks::ListStatus.size(); i++)
+		{
+			int buffId = Hooks::ListStatus[i].first;
+			if (!buffModsValues[buffId].Enabled)
+				continue;
+			ImGui::PushID(i);
+			ImGui::TextUnformatted(Hooks::ListStatus[i].second);
+
+			bool changed = false;
+			ImGui::PushItemWidth(100.0f);
+			ImGui::SameLine(150.0f + 105.0f * 0);
+			changed |= ImGui::InputFloatEx("##val1", &buffModsValues[buffId].Timer, 1.0f, 0.0f);
+			ImGui::SameLine(150.0f + 105.0f * 1);
+			changed |= ImGui::InputFloatEx("##val2", &buffModsValues[buffId].Param0, 1.0f, 0.0f);
+			ImGui::SameLine(150.0f + 105.0f * 2);
+			changed |= ImGui::InputFloatEx("##val3", &buffModsValues[buffId].Param1, 1.0f, 0.0f);
+			ImGui::PopItemWidth();
+
+			ImGui::SameLine(150.0f + 105.0f * 3);
+			if (ImGui::Button("Remove"))
+			{
+				config.removeKey("buffs", std::to_string(buffId).c_str());
+				buffModsValues[buffId].Enabled = FALSE;
+			}
+
+			if (changed)
+				config.setFloats("buffs", std::to_string(buffId).c_str(), buffModsValues[buffId].getList());
+			ImGui::PopID();
+		}
+
+		ImGui::End();
+		ImGui::PopID();
 	}
 
 	if (ImGui::CollapsingHeader("Cheats"))
@@ -502,7 +618,7 @@ void renderCheatsUI()
 			Hooks::SwitchHook("Cheat (thirdSkillLevel)", pSkillLevel, skillLevel);
 		}
 		ImGui::SameLine();
-		if (ImGui::Button("Set"))
+		if (ImGui::Button("Set##setSkillsOpened"))
 			setSkillsOpened = true;
 
 		if (ImGui::Checkbox("Augment mods", &augmentMods))
@@ -513,11 +629,22 @@ void renderCheatsUI()
 			Hooks::SwitchHook("Cheat (augmentMods)", pAugmentMods3, augmentMods);
 		}
 		ImGui::SameLine();
-		if (ImGui::Button("Active"))
+		if (ImGui::Button("Active##setAugmentsOpened"))
 			setAugmentsOpened = true;
 		ImGui::SameLine();
-		if (ImGui::Button("Mods"))
+		if (ImGui::Button("Mods##setAugmentModsOpened"))
 			setAugmentModsOpened = true;
+
+		if (ImGui::Checkbox("Buff mods", &buffMods))
+		{
+			config.setBool("buffs", "enabled", buffMods);
+			Hooks::SwitchHook("Cheat (buffMods)", pBuffMods2, buffMods);
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Set##setBuffModsOpened"))
+			setBuffModsOpened = true;
+		ImGui::SameLine();
+		ImGui::Checkbox("Log", &buffModsLog);
 
 		ImGui::Separator();
 		if (ImGui::TreeNode("Affinity mod"))
@@ -597,7 +724,31 @@ void Hooks::Cheats()
 		FindSignature("Cheat (augmentMods)", sigAug2, &pAugmentMods2) &&
 		FindSignature("Cheat (augmentMods)", sigAug3, &pAugmentMods3))
 	{
-		augmentModsLoad();
+		augmentMods = config.getBool("augments", "enabled", false);
+		for (auto i : config.getInts("augments", "augmentsPlayer"))
+			augmentsActive[i & 0x7F][0] = true;
+		for (auto i : config.getInts("augments", "augmentsPawn"))
+			augmentsActive[i & 0x7F][1] = true;
+		for (auto i : config.getInts("augments", "augmentsPawn1"))
+			augmentsActive[i & 0x7F][2] = true;
+		for (auto i : config.getInts("augments", "augmentsPawn2"))
+			augmentsActive[i & 0x7F][3] = true;
+		for (auto augmentId : config.getSectionInts("augments"))
+			for (size_t i = 1; i < ListSkillsAugments.size(); i++)
+				if (ListSkillsAugments[i].first == augmentId)
+				{
+					auto values = config.getFloats("augments", std::to_string(augmentId).c_str());
+					if (values.size() == 4)
+					{
+						augmentModsValues[augmentId].Activated = values[0];
+						augmentModsValues[augmentId].Deactivated = values[1];
+						augmentModsValues[augmentId].Unknown1 = static_cast<UINT32>(values[2]);
+						augmentModsValues[augmentId].Unknown2 = static_cast<UINT32>(values[3]);
+						augmentModsEnabled[augmentId] = true;
+						break;
+					}
+				}
+
 		CreateHook("Cheat (augmentMods)", pAugmentMods1, &HAugmentMods1, nullptr, augmentMods);
 		oAugmentMods1Orig = pAugmentMods1 + sizeof sigAug1 - 2;
 		oAugmentMods1Mod = oAugmentMods1Orig + 6 + 6 + 3 + 3;
@@ -608,6 +759,31 @@ void Hooks::Cheats()
 
 		pAugmentMods3 += sizeof sigAug3 - 2;
 		CreateHook("Cheat (augmentMods)", pAugmentMods3, &HAugmentMods3, nullptr, augmentMods);
+	}
+
+	BYTE sigBuff1[] = { 0x8B, 0x8D, 0x10, 0x27, 0x00, 0x00, 0x8D, 0xBD, 0x98, 0x26, 0x00, 0x00 };
+	BYTE sigBuff2[] = { 0xF3, 0x0F, 0x10, 0x48, 0x0C, 0xF3, 0x0F, 0x10, 0x50, 0x10, 0x8B, 0x43, 0x74 };
+	if (FindSignature("Cheat (buffMods)", sigBuff1, &pBuffMods1) &&
+		FindSignature("Cheat (buffMods)", sigBuff2, &pBuffMods2))
+	{
+		buffMods = config.getBool("buffs", "enabled", false);
+		for (auto buffId : config.getSectionInts("buffs"))
+			for (size_t i = 0; i < ListStatus.size(); i++)
+				if (ListStatus[i].first == buffId)
+				{
+					auto values = config.getFloats("buffs", std::to_string(buffId).c_str());
+					if (values.size() == 3)
+					{
+						buffModsValues[buffId].Enabled = TRUE;
+						buffModsValues[buffId].Timer = values[0];
+						buffModsValues[buffId].Param0 = values[1];
+						buffModsValues[buffId].Param1 = values[2];
+						break;
+					}
+				}
+
+		CreateHook("Cheat (buffMods)", pBuffMods1, &HBuffMods1, &oBuffMods1);
+		CreateHook("Cheat (buffMods)", pBuffMods2 += sizeof sigBuff2, &HBuffMods2, &oBuffMods2, buffMods);
 	}
 
 	if ((shareWeaponSkills = config.getBool("cheats", "shareWeaponSkills", false)))
