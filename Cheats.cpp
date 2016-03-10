@@ -204,7 +204,6 @@ struct augmentInfo
 bool augmentMods;
 bool augmentModsEnabled[0x80] = {};
 augmentInfo augmentModsValues[0x80] = {};
-void *****Hooks::pGameMain;
 LPBYTE pAugmentMods1, oAugmentMods1Orig, oAugmentMods1Mod;
 void __declspec(naked) HAugmentMods1()
 {
@@ -284,22 +283,13 @@ struct buffInfo
 	std::vector<float> getList() const { return{ Timer, Param0, Param1 }; }
 };
 
-bool buffMods;
-buffInfo **pBuffInfos = nullptr;
-buffInfo buffModsValues[0x30] = {};
-LPBYTE pBuffMods1, oBuffMods1;
-void __declspec(naked) HBuffMods1()
-{
-	__asm	mov		ecx, [eax + 0x70];
-	__asm	mov		pBuffInfos, ecx;
-	__asm	jmp		oBuffMods1;
-}
-
 bool buffModsLog = false;
 void __stdcall HBuffmodsDebug(int buffId) { logFile << buffId << std::endl; }
 
-LPBYTE pBuffMods2, oBuffMods2;
-void __declspec(naked) HBuffMods2()
+bool buffMods;
+buffInfo buffModsValues[0x30] = {};
+LPBYTE pBuffMods, oBuffMods;
+void __declspec(naked) HBuffMods()
 {
 	__asm
 	{
@@ -354,7 +344,7 @@ void __declspec(naked) HBuffMods2()
 		movss	xmm2, dword ptr[ebx + 0x10];
 
 	getback:
-		jmp		oBuffMods2;
+		jmp		oBuffMods;
 	}
 }
 
@@ -458,19 +448,13 @@ void renderCheatsUI()
 		ImGui::SameLine();
 		if (ImGui::Button("Add") && addMod >= 0)
 		{
-			augmentModsEnabled[addMod] = true;
-			augmentInfo *****pAugments = (augmentInfo*****)Hooks::pGameMain;
-			if (pAugments && *pAugments)
+			augmentInfo *augmentOriginal = GetWorldPtr<augmentInfo>({ 0x8C8, 0x70, addMod * 4 });
+			if (augmentOriginal)
 			{
-				augmentInfo ***ptr = (*pAugments)[0x8C8 / 4];
-				if (ptr)
-				{
-					augmentInfo **ptr2 = ptr[0x70 / 4];
-					if (ptr2)
-						augmentModsValues[addMod] = *ptr2[addMod];
-				}
+				augmentModsEnabled[addMod] = true;
+				augmentModsValues[addMod] = *augmentOriginal;
+				config.setFloats("augments", std::to_string(addMod).c_str(), augmentModsValues[addMod].getList());
 			}
-			config.setFloats("augments", std::to_string(addMod).c_str(), augmentModsValues[addMod].getList());
 		}
 
 		ImGui::Separator();
@@ -522,13 +506,17 @@ void renderCheatsUI()
 		static int addMod = 0;
 		ImGui::ComboEnum<int>("##add", &addMod, Hooks::ListStatus);
 		ImGui::SameLine();
-		if (ImGui::Button("Add") && pBuffInfos && pBuffInfos[addMod])
+		if (ImGui::Button("Add"))
 		{
-			buffModsValues[addMod].Enabled = TRUE;
-			buffModsValues[addMod].Timer = pBuffInfos[addMod]->Timer;
-			buffModsValues[addMod].Param0 = pBuffInfos[addMod]->Param0;
-			buffModsValues[addMod].Param1 = pBuffInfos[addMod]->Param1;
-			config.setFloats("buffs", std::to_string(addMod).c_str(), buffModsValues[addMod].getList());
+			buffInfo *buffOriginal = GetWorldPtr<buffInfo>({ 0x99C, 0x2710, 0x70, addMod * 4 });
+			if (buffOriginal)
+			{
+				buffModsValues[addMod].Enabled = TRUE;
+				buffModsValues[addMod].Timer = buffOriginal->Timer;
+				buffModsValues[addMod].Param0 = buffOriginal->Param0;
+				buffModsValues[addMod].Param1 = buffOriginal->Param1;
+				config.setFloats("buffs", std::to_string(addMod).c_str(), buffModsValues[addMod].getList());
+			}
 		}
 
 		ImGui::Separator();
@@ -638,7 +626,7 @@ void renderCheatsUI()
 		if (ImGui::Checkbox("Buff mods", &buffMods))
 		{
 			config.setBool("buffs", "enabled", buffMods);
-			Hooks::SwitchHook("Cheat (buffMods)", pBuffMods2, buffMods);
+			Hooks::SwitchHook("Cheat (buffMods)", pBuffMods, buffMods);
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("Set##setBuffModsOpened"))
@@ -752,7 +740,6 @@ void Hooks::Cheats()
 		CreateHook("Cheat (augmentMods)", pAugmentMods1, &HAugmentMods1, nullptr, augmentMods);
 		oAugmentMods1Orig = pAugmentMods1 + sizeof sigAug1 - 2;
 		oAugmentMods1Mod = oAugmentMods1Orig + 6 + 6 + 3 + 3;
-		pGameMain = *(void******)(oAugmentMods1Orig + 2);
 
 		CreateHook("Cheat (augmentMods)", pAugmentMods2, &HAugmentMods2, nullptr, augmentMods);
 		oAugmentMods2 = pAugmentMods2 + sizeof sigAug2 + pAugmentMods2[sizeof sigAug2] + 1;
@@ -761,10 +748,8 @@ void Hooks::Cheats()
 		CreateHook("Cheat (augmentMods)", pAugmentMods3, &HAugmentMods3, nullptr, augmentMods);
 	}
 
-	BYTE sigBuff1[] = { 0x8B, 0x8D, 0x10, 0x27, 0x00, 0x00, 0x8D, 0xBD, 0x98, 0x26, 0x00, 0x00 };
-	BYTE sigBuff2[] = { 0xF3, 0x0F, 0x10, 0x48, 0x0C, 0xF3, 0x0F, 0x10, 0x50, 0x10, 0x8B, 0x43, 0x74 };
-	if (FindSignature("Cheat (buffMods)", sigBuff1, &pBuffMods1) &&
-		FindSignature("Cheat (buffMods)", sigBuff2, &pBuffMods2))
+	BYTE sigBuff[] = { 0xF3, 0x0F, 0x10, 0x48, 0x0C, 0xF3, 0x0F, 0x10, 0x50, 0x10, 0x8B, 0x43, 0x74 };
+	if (FindSignature("Cheat (buffMods)", sigBuff, &pBuffMods))
 	{
 		buffMods = config.getBool("buffs", "enabled", false);
 		for (auto buffId : config.getSectionInts("buffs"))
@@ -782,8 +767,7 @@ void Hooks::Cheats()
 					}
 				}
 
-		CreateHook("Cheat (buffMods)", pBuffMods1, &HBuffMods1, &oBuffMods1);
-		CreateHook("Cheat (buffMods)", pBuffMods2 += sizeof sigBuff2, &HBuffMods2, &oBuffMods2, buffMods);
+		CreateHook("Cheat (buffMods)", pBuffMods += sizeof sigBuff, &HBuffMods, &oBuffMods, buffMods);
 	}
 
 	if ((shareWeaponSkills = config.getBool("cheats", "shareWeaponSkills", false)))

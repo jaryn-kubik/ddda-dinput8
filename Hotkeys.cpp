@@ -1,7 +1,5 @@
 ﻿#include "stdafx.h"
 #include "Hotkeys.h"
-#include "InGameClock.h"
-#include "WeaponSets.h"
 
 INPUT keyInput = { INPUT_KEYBOARD, {} };
 DWORD menuPause;
@@ -68,9 +66,11 @@ LRESULT CALLBACK HWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	return oWndProc(hwnd, msg, wParam, lParam);
 }
 
-void loadHotkey(LPCSTR name, WORD defVal, void(*func)())
+void Hooks::HotkeysAdd(LPCSTR name, WORD defKey, void(*func)())
 {
-	keys[config.getUInt("hotkeys", name, defVal) & 0xFF] = func;
+	unsigned int key = config.getUInt("hotkeys", name, defKey);
+	if (key < 0xFF)
+		keys[key] = func;
 }
 
 void Hooks::HotkeysHandler(WNDPROC proc) { wndProcHandler = proc; }
@@ -80,19 +80,12 @@ void Hooks::Hotkeys()
 	{
 		borderlessFullscreen = config.getBool("main", "borderlessFullscreen", false);
 		menuPause = config.getUInt("hotkeys", "menuPause", 500);
-		loadHotkey("keySave", VK_F5, []() { if (pSave && *pSave) (*pSave)[0x21AFD6] = 1; });
-		loadHotkey("keyCheckpoint", VK_F9, []() { if (pSave && *pSave) (*pSave)[0x21AFD5] = 1; });
-		loadHotkey("keyMap", 'M', []() { hotkeyStart(0); });
-		loadHotkey("keyJournal", 'J', []() { hotkeyStart(VK_LEFT); });
-		loadHotkey("keyEquipment", 'U', []() { hotkeyStart(VK_RIGHT); });
-		loadHotkey("keyStatus", 'K', []() { hotkeyStart(VK_DOWN); });
-		loadHotkey("keyClock", VK_NUMPAD5, []() { InGameClockSwitch(); });
-		loadHotkey("keyClockMinDec", VK_NUMPAD4, []() { InGameClockDec(1); });
-		loadHotkey("keyClockMinInc", VK_NUMPAD6, []() { InGameClockInc(1); });
-		loadHotkey("keyClockHourDec", VK_NUMPAD2, []() { InGameClockDec(60); });
-		loadHotkey("keyClockHourInc", VK_NUMPAD8, []() { InGameClockInc(60); });
-		loadHotkey("keyWeaponSetsS", 'R', []() { WeaponSetsSkills(); });
-		loadHotkey("keyWeaponSetsW", 'C', []() { WeaponSetsWeapons(); });
+		HotkeysAdd("keySave", VK_F5, []() { if (pSave && *pSave) (*pSave)[0x21AFD6] = 1; });
+		HotkeysAdd("keyCheckpoint", VK_F9, []() { if (pSave && *pSave) (*pSave)[0x21AFD5] = 1; });
+		HotkeysAdd("keyMap", 'M', []() { hotkeyStart(0); });
+		HotkeysAdd("keyJournal", 'J', []() { hotkeyStart(VK_LEFT); });
+		HotkeysAdd("keyEquipment", 'U', []() { hotkeyStart(VK_RIGHT); });
+		HotkeysAdd("keyStatus", 'K', []() { hotkeyStart(VK_DOWN); });
 
 		BYTE sig[] = { 0x83, 0xEC, 0x50,			//sub	esp, 50h
 						0x53,						//push	ebx

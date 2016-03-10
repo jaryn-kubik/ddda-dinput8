@@ -20,6 +20,7 @@ using std::string;
 #include "ImGui\imgui.h"
 #include "InGameUI.h"
 #include "steam_api.h"
+#include "Hotkeys.h"
 
 namespace Hooks
 {

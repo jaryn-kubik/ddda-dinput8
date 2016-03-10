@@ -55,7 +55,7 @@ CRITICAL_SECTION weaponSetsSync;
 LARGE_INTEGER timerFrequency, timerLast = {}, timerCurrent = {};
 bool weaponSetsRefresh = false;
 char Hooks::weaponSetsText[16] = {};
-void Hooks::WeaponSetsSkills()
+void WeaponSetsSkills()
 {
 	if (weaponSetsSkills.size() == 0)
 		return;
@@ -63,13 +63,13 @@ void Hooks::WeaponSetsSkills()
 	EnterCriticalSection(&weaponSetsSync);
 	if (++weaponSetsSkillsC >= weaponSetsSkills.size())
 		weaponSetsSkillsC = 0;
-	snprintf(weaponSetsText, 16, "W%u | S%u", weaponSetsWeaponsC, weaponSetsSkillsC);
+	snprintf(Hooks::weaponSetsText, 16, "W%u | S%u", weaponSetsWeaponsC, weaponSetsSkillsC);
 	copy(weaponSetsSkills[weaponSetsSkillsC].begin(), weaponSetsSkills[weaponSetsSkillsC].end(), GetBasePtr<int>(0xA7808));
 	weaponSetsRefresh = true;
 	LeaveCriticalSection(&weaponSetsSync);
 }
 
-void Hooks::WeaponSetsWeapons()
+void WeaponSetsWeapons()
 {
 	if (weaponSetsWeapons.size() == 0)
 		return;
@@ -77,7 +77,7 @@ void Hooks::WeaponSetsWeapons()
 	EnterCriticalSection(&weaponSetsSync);
 	if (++weaponSetsWeaponsC >= weaponSetsWeapons.size())
 		weaponSetsWeaponsC = 0;
-	snprintf(weaponSetsText, 16, "W%u | S%u", weaponSetsWeaponsC, weaponSetsSkillsC);
+	snprintf(Hooks::weaponSetsText, 16, "W%u | S%u", weaponSetsWeaponsC, weaponSetsSkillsC);
 	copy(weaponSetsWeapons[weaponSetsWeaponsC].begin(), weaponSetsWeapons[weaponSetsWeaponsC].end(), GetBasePtr<int>(0xA76E4));
 	weaponSetsRefresh = true;
 	LeaveCriticalSection(&weaponSetsSync);
@@ -290,6 +290,8 @@ void Hooks::WeaponSets()
 	InitializeCriticalSection(&weaponSetsSync);
 	QueryPerformanceFrequency(&timerFrequency);
 	InGameUIAdd(renderWeaponSetsUI);
+	HotkeysAdd("keyWeaponSetsS", 'R', []() { WeaponSetsSkills(); });
+	HotkeysAdd("keyWeaponSetsW", 'C', []() { WeaponSetsWeapons(); });
 
 	weaponSetsEnabled = config.getBool("weaponSets", "enabled", false);
 	weaponSetsTimeout = config.getUInt("weaponSets", "timeout", 500);

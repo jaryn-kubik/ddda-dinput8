@@ -71,6 +71,9 @@
     <ClCompile Include="WeaponSets.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DamageLog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dinput8.h">
@@ -145,6 +148,9 @@
     </ClInclude>
     <ClInclude Include="resource.h" />
     <ClInclude Include="WeaponSets.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DamageLog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

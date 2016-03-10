@@ -9,7 +9,7 @@ ImVec2 clockPosition;
 ImVec4 clockForeground, clockBackground;
 UINT32 clockTimebase, clockSize;
 ImGuiWindowFlags clockFlags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoTitleBar;
-void renderClock()
+void renderClock(bool getsInput)
 {
 	if (!clockEnabled)
 		return;
@@ -33,7 +33,7 @@ void renderClock()
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, clockBackground);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(5.0f, 5.0f));
 	ImGui::SetNextWindowPos(clockPosition, ImGuiSetCond_Once);
-	if (ImGui::Begin("InGameClock", nullptr, clockFlags))
+	if (ImGui::Begin("InGameClock", nullptr, getsInput ? clockFlags : clockFlags | ImGuiWindowFlags_NoInputs))
 	{
 		ImGui::PushStyleColor(ImGuiCol_Text, clockForeground);
 		ImGui::PushFont(ImGui::GetIO().Fonts->Fonts.back());
@@ -52,9 +52,9 @@ void renderClock()
 	ImGui::PopStyleColor();
 }
 
-void Hooks::InGameClockSwitch() { config.setBool("inGameUI", "clock", clockEnabled = !clockEnabled); }
-void Hooks::InGameClockInc(BYTE minutes) { *GetBasePtr<UINT32>(0xB8768) += minutes * 60000; }
-void Hooks::InGameClockDec(BYTE minutes)
+void InGameClockSwitch() { config.setBool("inGameUI", "clock", clockEnabled = !clockEnabled); }
+void InGameClockInc(BYTE minutes) { *GetBasePtr<UINT32>(0xB8768) += minutes * 60000; }
+void InGameClockDec(BYTE minutes)
 {
 	DWORD time = *GetBasePtr<UINT32>(0xB8768);
 	if (time < minutes * 60000U)
@@ -129,6 +129,11 @@ void Hooks::InGameClock()
 	if (!clockEnabled)
 		logFile << "InGameClock: disabled" << std::endl;
 
+	HotkeysAdd("keyClock", VK_NUMPAD5, InGameClockSwitch);
+	HotkeysAdd("keyClockMinDec", VK_NUMPAD4, []() { InGameClockDec(1); });
+	HotkeysAdd("keyClockMinInc", VK_NUMPAD6, []() { InGameClockInc(1); });
+	HotkeysAdd("keyClockHourDec", VK_NUMPAD2, []() { InGameClockDec(60); });
+	HotkeysAdd("keyClockHourInc", VK_NUMPAD8, []() { InGameClockInc(60); });
 	InGameUIAdd(renderClockUI);
 	InGameUIAddWindow(renderClock);
 	InGameUIAddInit(initClockUI);

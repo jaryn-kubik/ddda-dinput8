@@ -11,6 +11,7 @@
 #include "Server.h"
 #include "Portcrystals.h"
 #include "WeaponSets.h"
+#include "DamageLog.h"
 
 typedef HRESULT(WINAPI *tDirectInput8Create)(HINSTANCE inst_handle, DWORD version, const IID& r_iid, LPVOID* out_wrapper, LPUNKNOWN p_unk);
 tDirectInput8Create oDirectInput8Create = nullptr;
@@ -18,14 +19,18 @@ tDirectInput8Create oDirectInput8Create = nullptr;
 BYTE *codeBase, *codeEnd, *dataBase, *dataEnd;
 std::ofstream logFile("dinput8.log", std::ios_base::out);
 iniConfig config(".\\dinput8.ini");
-BYTE **pBase;
+BYTE **pBase = nullptr, **pWorld = nullptr;
 
 void InitHooks()
 {
-	BYTE sig[] = { 0x8B, 0x15, 0xCC, 0xCC, 0xCC, 0xCC, 0x33, 0xDB, 0x8B, 0xF8 };
+	BYTE sigBase[] = { 0x8B, 0x15, 0xCC, 0xCC, 0xCC, 0xCC, 0x33, 0xDB, 0x8B, 0xF8 };
+	BYTE sigWorld[] = { 0x89, 0x35, 0xCC, 0xCC, 0xCC, 0xCC, 0x89, 0xBE, 0x70, 0x09, 0x00, 0x00 };
 	BYTE *pOffset;
-	if (Hooks::FindSignature("BasePointer", sig, &pOffset))
+	if (Hooks::FindSignature("BasePointer", sigBase, &pOffset))
 		pBase = *(BYTE***)(pOffset + 2);
+
+	if (Hooks::FindSignature("WorldPointer", sigWorld, &pOffset))
+		pWorld = *(BYTE***)(pOffset + 2);
 
 	Hooks::SaveBackup();
 	Hooks::Hotkeys();
@@ -39,6 +44,7 @@ void InitHooks()
 		Hooks::PlayerStats();
 		Hooks::ItemEditor();
 		Hooks::InGameClock();
+		Hooks::DamageLog();
 	}
 }
 

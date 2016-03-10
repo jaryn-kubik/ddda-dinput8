@@ -4,7 +4,8 @@
 #include "ImGui/imgui_impl_dx9.h"
 #include "ImGui/imgui_internal.h"
 
-std::vector<void(*)()> content, windows, init;
+std::vector<void(*)()> content, init;
+std::vector<void(*)(bool)> windows;
 void onLostDevice() { ImGui_ImplDX9_InvalidateDeviceObjects(); }
 void onResetDevice() { ImGui_ImplDX9_CreateDeviceObjects(); }
 void onCreateDevice(LPDIRECT3DDEVICE9 pD3DDevice)
@@ -17,18 +18,18 @@ void onCreateDevice(LPDIRECT3DDEVICE9 pD3DDevice)
 		init[i]();
 }
 
+bool inGameUIEnabled = false;
 void onEndScene()
 {
 	ImGui_ImplDX9_NewFrame();
 	for (size_t i = 0; i < windows.size(); i++)
-		windows[i]();
+		windows[i](inGameUIEnabled);
 	ImGui::Render();
 }
 
-bool inGameUIEnabled = false;
-void renderDDDAFixUI()
+void renderDDDAFixUI(bool getsInput)
 {
-	if (!inGameUIEnabled)
+	if (!getsInput)
 		return;
 
 	static char titleBuffer[64];
@@ -90,7 +91,7 @@ bool Hooks::InGameUI()
 }
 
 void Hooks::InGameUIAdd(void(*callback)()) { content.push_back(callback); }
-void Hooks::InGameUIAddWindow(void(*callback)()) { windows.push_back(callback); }
+void Hooks::InGameUIAddWindow(void(*callback)(bool getsInput)) { windows.push_back(callback); }
 void Hooks::InGameUIAddInit(void(*callback)()) { init.push_back(callback); }
 
 namespace ImGui

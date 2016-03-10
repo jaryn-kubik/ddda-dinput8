@@ -98,6 +98,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="DamageLog.cpp" />
     <ClCompile Include="InGameUI.cpp" />
     <ClCompile Include="ImGui\imgui.cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\stdafx.h</PrecompiledHeaderFile>
@@ -130,6 +131,7 @@
     <ClCompile Include="WeaponSets.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DamageLog.h" />
     <ClInclude Include="InGameUI.h" />
     <ClInclude Include="ImGui\imconfig.h" />
     <ClInclude Include="ImGui\imgui.h" />

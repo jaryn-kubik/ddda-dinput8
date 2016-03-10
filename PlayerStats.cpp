@@ -1,6 +1,5 @@
 ﻿#include "stdafx.h"
 #include "PlayerStats.h"
-#include "Cheats.h"
 
 struct levelInfo
 {
@@ -44,18 +43,7 @@ levelInfo* getLevelInfo(int vocation, int level)
 	else
 		level = 0;
 
-	levelInfo *****pLevels = (levelInfo*****)Hooks::pGameMain;
-	if (pLevels && *pLevels)
-	{
-		levelInfo ***pLevelVocation = (*pLevels)[0x86C / 4 + vocation];
-		if (pLevelVocation)
-		{
-			levelInfo **pLevelInfo = pLevelVocation[0x70 / 4];
-			if (pLevelInfo)
-				return pLevelInfo[level];
-		}
-	}
-	return nullptr;
+	return GetWorldPtr<levelInfo>({ 0x86C + vocation * 4, 0x70, level * 4 });
 }
 
 void renderStatsRespec(const char *label, int offset, bool *respecShow)
@@ -189,9 +177,9 @@ void renderStatsVocation(const char *label, int offset)
 
 void renderStatsParty(const char *label, int offset, bool *respecShow)
 {
-	ImGui::PushID(label);
 	if (!ImGui::TreeNode(label))
 		return;
+	ImGui::PushID(label);
 
 	int baseOffset = 0xA7000 + offset;
 	int statsOffset = baseOffset + 0x96C;

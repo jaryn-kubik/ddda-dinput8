@@ -4,7 +4,7 @@ namespace Hooks
 {
 	bool InGameUI();
 	void InGameUIAdd(void(*callback)());
-	void InGameUIAddWindow(void(*callback)());
+	void InGameUIAddWindow(void(*callback)(bool getsInput));
 	void InGameUIAddInit(void(*callback)());
 };
 

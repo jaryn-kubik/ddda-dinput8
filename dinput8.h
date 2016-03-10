@@ -3,8 +3,17 @@
 extern std::ofstream logFile;
 extern iniConfig config;
 extern BYTE **pBase;
+extern BYTE **pWorld;
 
 template<class T = void> T* GetBasePtr(int offset) { return (T*)(*pBase + offset); }
+template<class T = void> T* GetWorldPtr(std::initializer_list<int> offsets)
+{
+	BYTE **result = pWorld;
+	for (auto offset : offsets)
+		if (*result)
+			result = (BYTE**)(*result + offset);
+	return (T*)*result;
+}
 
 namespace Hooks
 {
