@@ -11,7 +11,6 @@ void __stdcall HDamageLogStore(UINT32 target, float damage)
 	LeaveCriticalSection(&damageLogSync);
 }
 
-bool damageLog = false;
 LPBYTE pDamageLog, oDamageLog;
 void __declspec(naked) HDamageLog()
 {
@@ -36,9 +35,11 @@ void __declspec(naked) HDamageLog()
 	}
 }
 
+bool damageLog = false, damageLogShowTarget = true;
+ImFont *damageLogFont = nullptr;
 ImVec2 damageLogPosition, damageLogSize;
 ImVec4 damageLogForeground, damageLogBackground;
-ImGuiWindowFlags damageLogFlags = ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoTitleBar;
+ImGuiWindowFlags damageLogFlags = ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar;
 void renderDamageLog(bool getsInput)
 {
 	if (!damageLog)
@@ -56,14 +57,17 @@ void renderDamageLog(bool getsInput)
 		UINT32 lastId = 0;
 		for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 		{
-			if (lastId == 0)
-				lastId = damageLogBuffer[i].first;
 			if (lastId != damageLogBuffer[i].first)
 			{
+				if (lastId)
+					ImGui::Separator();
 				lastId = damageLogBuffer[i].first;
-				ImGui::Separator();
 			}
-			ImGui::Text("%08X: %f", damageLogBuffer[i].first, -damageLogBuffer[i].second);
+
+			if (damageLogShowTarget)
+				ImGui::Text("%08X -> %.2f", damageLogBuffer[i].first, damageLogBuffer[i].second);
+			else
+				ImGui::Text("%.2f", damageLogBuffer[i].second);
 		}
 
 		clipper.End();
@@ -87,6 +91,9 @@ void renderDamageLogUI()
 	{
 		if (ImGui::Checkbox("Enabled", &damageLog))
 			DamageLogSwitch();
+
+		if (ImGui::Checkbox("Show target id", &damageLogShowTarget))
+			config.setBool("inGameUI", "damageLogShowTarget", damageLogShowTarget);
 
 		if (ImGui::ColorEdit4("Foreground", (float*)&damageLogForeground))
 			config.setUInt("inGameUI", "damageLogForeground", ImGui::ColorConvertFloat4ToU32(damageLogForeground), true);
@@ -116,6 +123,7 @@ void Hooks::DamageLog()
 	HotkeysAdd("keyDamageLog", 'P', DamageLogSwitch);
 
 	damageLog = config.getBool("inGameUI", "damageLog", false);
+	damageLogShowTarget = config.getBool("inGameUI", "damageLogShowTarget", true);
 	ImU32 foreground = config.getUInt("inGameUI", "damageLogForeground", ImGui::ColorConvertFloat4ToU32(ImVec4(0.0f, 0.0f, 0.0f, 1.0f)));
 	ImU32 background = config.getUInt("inGameUI", "damageLogBackground", ImGui::ColorConvertFloat4ToU32(ImVec4(1.0f, 1.0f, 1.0f, 0.1f)));
 	auto position = config.getInts("inGameUI", "damageLogPosition");

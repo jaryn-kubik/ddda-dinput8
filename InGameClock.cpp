@@ -36,9 +36,11 @@ void renderClock(bool getsInput)
 	if (ImGui::Begin("InGameClock", nullptr, getsInput ? clockFlags : clockFlags | ImGuiWindowFlags_NoInputs))
 	{
 		ImGui::PushStyleColor(ImGuiCol_Text, clockForeground);
-		ImGui::PushFont(ImGui::GetIO().Fonts->Fonts.back());
+		if (clockFont)
+			ImGui::PushFont(clockFont);
 		ImGui::TextUnformatted(clockBuf);
-		ImGui::PopFont();
+		if (clockFont)
+			ImGui::PopFont();
 		if (strlen(Hooks::weaponSetsText))
 		{
 			ImVec2 size = ImGui::CalcTextSize(Hooks::weaponSetsText);
@@ -100,16 +102,6 @@ void renderClockUI()
 	}
 }
 
-void initClockUI()
-{
-	CHAR syspath[MAX_PATH];
-	GetWindowsDirectory(syspath, MAX_PATH);
-	strcat_s(syspath, "\\Fonts\\arial.ttf");
-	ImGui::GetIO().Fonts->AddFontDefault();
-	if (!ImGui::GetIO().Fonts->AddFontFromFileTTF(syspath, (float)clockSize))
-		logFile << "InGameClock: failed to load font - " << syspath << std::endl;
-}
-
 void Hooks::InGameClock()
 {
 	clockSize = config.getUInt("inGameUI", "clockSize", 30);
@@ -136,5 +128,5 @@ void Hooks::InGameClock()
 	HotkeysAdd("keyClockHourInc", VK_NUMPAD8, []() { InGameClockInc(60); });
 	InGameUIAdd(renderClockUI);
 	InGameUIAddWindow(renderClock);
-	InGameUIAddInit(initClockUI);
+	InGameUIAddFont("arial.ttf", (float)clockSize, &clockFont);
 }
