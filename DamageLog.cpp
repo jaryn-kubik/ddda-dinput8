@@ -2,40 +2,61 @@
 #include "DamageLog.h"
 #include "ImGui/imgui_internal.h"
 
+struct damageLogInfo
+{
+	LPVOID targetBase;
+	BYTE targetId;
+	float damage;
+	damageLogInfo(LPVOID base, BYTE id, float dmg) : targetBase(base), targetId(id), damage(dmg) {}
+};
+
 CRITICAL_SECTION damageLogSync;
-std::vector<std::pair<UINT32, float>> damageLogBuffer;
-void __stdcall HDamageLogStore(UINT32 target, float damage)
+std::vector<damageLogInfo> damageLogBuffer;
+void __stdcall HDamageLogStore(BYTE *targetBase, float damage)
 {
 	EnterCriticalSection(&damageLogSync);
-	damageLogBuffer.emplace_back(target, damage);
+	damageLogBuffer.emplace_back(targetBase, targetBase[0x2D], damage);
 	LeaveCriticalSection(&damageLogSync);
 }
 
-LPBYTE pDamageLog, oDamageLog;
-void __declspec(naked) HDamageLog()
+LPBYTE pDamageLog1, oDamageLog1;
+void __declspec(naked) HDamageLog1()
 {
-	__asm
-	{
-		mov		ecx, pWorld;
-		mov		ecx, [ecx];
-		mov		ecx, [ecx + 0x99C];
-		cmp		ecx, [ebp + 0x50];
-		jne		getBack;
-
-		mov		ecx, [esp + 0xC];
-		pushad;
-		push	ecx;
-		sub		ebp, 0x1720;
-		push	ebp;
-		call	HDamageLogStore;
-		popad;
-
-	getBack:
-		jmp		oDamageLog;
-	}
+	__asm	mov		eax, [esp];
+	__asm	pushad;
+	__asm	push	eax;
+	__asm	push	ebx;
+	__asm	call	HDamageLogStore;
+	__asm	popad;
+	__asm	jmp		oDamageLog1;
 }
 
-bool damageLog = false, damageLogShowTarget = true;
+LPBYTE pDamageLog2, oDamageLog2;
+void __declspec(naked) HDamageLog2()
+{
+	__asm	mov		eax, [esp];
+	__asm	pushad;
+	__asm	push	eax;
+	__asm	push	esi;
+	__asm	call	HDamageLogStore;
+	__asm	popad;
+	__asm	jmp		oDamageLog2;
+}
+
+LPBYTE pDamageLog3, oDamageLog3;
+void __declspec(naked) HDamageLog3()
+{
+	__asm	mov		eax, [esp];
+	__asm	pushad;
+	__asm	push	eax;
+	__asm	push	esi;
+	__asm	call	HDamageLogStore;
+	__asm	popad;
+	__asm	jmp		oDamageLog3;
+}
+
+bool damageLog = false;
+UINT32 damageLogTargetType;
 ImFont *damageLogFont = nullptr;
 ImVec2 damageLogPosition, damageLogSize;
 ImVec4 damageLogForeground, damageLogBackground;
@@ -54,20 +75,22 @@ void renderDamageLog(bool getsInput)
 		ImGui::PushStyleColor(ImGuiCol_Text, damageLogForeground);
 		ImGuiListClipper clipper(damageLogBuffer.size(), ImGui::GetTextLineHeightWithSpacing());
 
-		UINT32 lastId = 0;
+		LPVOID lastId = nullptr;
 		for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 		{
-			if (lastId != damageLogBuffer[i].first)
+			if (lastId != damageLogBuffer[i].targetBase)
 			{
 				if (lastId)
 					ImGui::Separator();
-				lastId = damageLogBuffer[i].first;
+				lastId = damageLogBuffer[i].targetBase;
 			}
 
-			if (damageLogShowTarget)
-				ImGui::Text("%08X -> %.2f", damageLogBuffer[i].first, damageLogBuffer[i].second);
+			if (damageLogTargetType == 2)
+				ImGui::Text("%08X -> %.2f", damageLogBuffer[i].targetBase, damageLogBuffer[i].damage);
+			else if (damageLogTargetType == 1)
+				ImGui::Text("%02hhX -> %.2f", damageLogBuffer[i].targetId, damageLogBuffer[i].damage);
 			else
-				ImGui::Text("%.2f", damageLogBuffer[i].second);
+				ImGui::Text("%.2f", damageLogBuffer[i].damage);
 		}
 
 		clipper.End();
@@ -82,7 +105,9 @@ void renderDamageLog(bool getsInput)
 void DamageLogSwitch()
 {
 	config.setBool("inGameUI", "damageLog", damageLog = !damageLog);
-	Hooks::SwitchHook("DamageLog", pDamageLog, damageLog);
+	Hooks::SwitchHook("DamageLog", pDamageLog1, damageLog);
+	Hooks::SwitchHook("DamageLog", pDamageLog2, damageLog);
+	Hooks::SwitchHook("DamageLog", pDamageLog3, damageLog);
 }
 
 void renderDamageLogUI()
@@ -92,8 +117,9 @@ void renderDamageLogUI()
 		if (ImGui::Checkbox("Enabled", &damageLog))
 			DamageLogSwitch();
 
-		if (ImGui::Checkbox("Show target id", &damageLogShowTarget))
-			config.setBool("inGameUI", "damageLogShowTarget", damageLogShowTarget);
+		std::pair<UINT32, const char*> targetType[]{ { 0, "Dmg only" },{ 1, "Group id" },{ 2, "Unique id" } };
+		if (ImGui::RadioButtons<UINT32>(&damageLogTargetType, targetType))
+			config.setUInt("inGameUI", "damageLogTargetType", damageLogTargetType);
 
 		if (ImGui::ColorEdit4("Foreground", (float*)&damageLogForeground))
 			config.setUInt("inGameUI", "damageLogForeground", ImGui::ColorConvertFloat4ToU32(damageLogForeground), true);
@@ -123,7 +149,7 @@ void Hooks::DamageLog()
 	HotkeysAdd("keyDamageLog", 'P', DamageLogSwitch);
 
 	damageLog = config.getBool("inGameUI", "damageLog", false);
-	damageLogShowTarget = config.getBool("inGameUI", "damageLogShowTarget", true);
+	damageLogTargetType = min(config.getUInt("inGameUI", "damageLogTargetType", 2), 2);
 	ImU32 foreground = config.getUInt("inGameUI", "damageLogForeground", ImGui::ColorConvertFloat4ToU32(ImVec4(0.0f, 0.0f, 0.0f, 1.0f)));
 	ImU32 background = config.getUInt("inGameUI", "damageLogBackground", ImGui::ColorConvertFloat4ToU32(ImVec4(1.0f, 1.0f, 1.0f, 0.1f)));
 	auto position = config.getInts("inGameUI", "damageLogPosition");
@@ -133,9 +159,18 @@ void Hooks::DamageLog()
 	damageLogPosition = position.size() == 2 ? ImVec2((float)position[0], (float)position[1]) : ImVec2(500, 0);
 	damageLogSize = size.size() == 2 ? ImVec2((float)size[0], (float)size[1]) : ImVec2(200, 400);
 
-	BYTE sig[] = { 0xF3, 0x0F, 0x10, 0x47, 0x08, 0x8B, 0x8F, 0xB4, 0x01, 0x00, 0x00 };
-	if (FindSignature("DamageLog", sig, &pDamageLog))
-		CreateHook("DamageLog", pDamageLog, HDamageLog, &oDamageLog, damageLog);
+	BYTE sig1[] = { 0x51, 0xF3, 0x0F, 0x11, 0x0C, 0x24, 0xE8, 0xCC, 0xCC, 0xCC, 0xCC, 0x8B, 0x13, 0x8B, 0x82, 0xD4, 0x01, 0x00, 0x00 };
+	BYTE sig2[] = { 0x51, 0xF3, 0x0F, 0x11, 0x0C, 0x24, 0xE8, 0xCC, 0xCC, 0xCC, 0xCC, 0x8B, 0x16, 0x8B, 0x82, 0xD4, 0x01, 0x00, 0x00 };
+	BYTE sig3[] = { 0x51, 0xF3, 0x0F, 0x11, 0x0C, 0x24, 0xE8, 0xCC, 0xCC, 0xCC, 0xCC, 0x8B, 0x06, 0x8B, 0x90, 0xD4, 0x01, 0x00, 0x00 };
+	if (FindSignature("DamageLog", sig1, &pDamageLog1) &&
+		FindSignature("DamageLog", sig2, &pDamageLog2) &&
+		FindSignature("DamageLog", sig3, &pDamageLog3))
+	{
+		CreateHook("DamageLog", pDamageLog1 += 6, HDamageLog1, &oDamageLog1, damageLog);
+		CreateHook("DamageLog", pDamageLog2 += 6, HDamageLog2, &oDamageLog2, damageLog);
+		CreateHook("DamageLog", pDamageLog3 += 6, HDamageLog3, &oDamageLog3, damageLog);
+	}
+
 	InGameUIAdd(renderDamageLogUI);
 	InGameUIAddWindow(renderDamageLog);
 }

@@ -343,8 +343,6 @@ const std::vector<std::pair<int, LPCSTR>> Hooks::ListSkillsAugments =
 	{ 114, "114: Facility" }
 };
 
-
-
 const std::vector<std::pair<int, LPCSTR>> Hooks::ListItemMaster =
 {
 	{ 0, "0: Maximum Health" },
