@@ -92,8 +92,15 @@ void Hooks::Hotkeys()
 						0x8B, 0x5C, 0x24, 0x58,		//mov	ebx, [esp+54h+hWnd]
 						0x56,						//push	esi
 						0x8B, 0x74, 0x24, 0x60 };	//mov	esi, [esp+58h+Msg]
+
+		BYTE sig2[] = { 0x83, 0xEC, 0x50,			//sub	esp, 50h
+						0x56,						//push	esi
+						0x8B, 0x74, 0x24, 0x5C,		//mov	esi, [esp+54h+Msg]
+						0x57,						//push	edi
+						0x8B, 0x7C, 0x24, 0x5C };	//mov	edi, [esp+58h+hRecipient]
+
 		BYTE *pOffset;
-		if (FindSignature("Hotkeys", sig, &pOffset))
+		if (FindSignature("Hotkeys1", sig, &pOffset) || FindSignature("Hotkeys2", sig2, &pOffset))
 			CreateHook("Hotkeys", pOffset, &HWndProc, &oWndProc);
 
 		BYTE sigSave[] = { 0x8B, 0x15, 0xCC, 0xCC, 0xCC, 0xCC,	//mov	edx, savePointer
