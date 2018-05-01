@@ -1,4 +1,8 @@
 ﻿#include "stdafx.h"
+#include <string>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
 #include "iniConfig.h"
 
 iniConfig::iniConfig(LPCSTR fileName)
@@ -210,14 +214,18 @@ void iniConfig::setInts(LPCSTR section, LPCSTR key, std::vector<int> list) const
 	setStr(section, key, str);
 }
 
-void iniConfig::setFloats(LPCSTR section, LPCSTR key, std::vector<float> list) const
+void iniConfig::setFloats(LPCSTR section, LPCSTR key, std::vector<float> list, int precision) const
 {
-	string str;
-	for (size_t i = 0; i < list.size(); i++)
+	std::ostringstream out;
+	if (precision != -1) 
+		out << std::setprecision(precision);
+
+	for (const float &f : list) 
 	{
-		str += std::to_string(list[i]);
-		if (i < list.size() - 1)
-			str += ";";
+		if (&f != &list[0])
+			out << ";";
+		out << f;
 	}
-	setStr(section, key, str);
+
+	setStr(section, key, std::move(out.str()));
 }

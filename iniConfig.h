@@ -30,5 +30,5 @@ public:
 	void setBool(LPCSTR section, LPCSTR key, bool value) const;
 	void setEnum(LPCSTR section, LPCSTR key, int value, std::pair<int, LPCSTR> map[], int size) const;
 	void setInts(LPCSTR section, LPCSTR key, std::vector<int> list) const;
-	void setFloats(LPCSTR section, LPCSTR key, std::vector<float> list) const;
+	void setFloats(LPCSTR section, LPCSTR key, std::vector<float> list, int precision = -1) const;
 };

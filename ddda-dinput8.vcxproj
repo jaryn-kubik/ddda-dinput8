@@ -100,6 +100,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="DamageLog.cpp" />
+    <ClCompile Include="InclinationProfiles.cpp" />
     <ClCompile Include="InGameUI.cpp" />
     <ClCompile Include="ImGui\imgui.cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\stdafx.h</PrecompiledHeaderFile>
@@ -133,6 +134,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DamageLog.h" />
+    <ClInclude Include="InclinationProfiles.h" />
     <ClInclude Include="InGameUI.h" />
     <ClInclude Include="ImGui\imconfig.h" />
     <ClInclude Include="ImGui\imgui.h" />

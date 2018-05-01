@@ -74,6 +74,9 @@
     <ClCompile Include="DamageLog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="InclinationProfiles.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dinput8.h">
@@ -151,6 +154,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DamageLog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="InclinationProfiles.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
