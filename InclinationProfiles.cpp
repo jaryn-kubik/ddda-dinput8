@@ -151,14 +151,16 @@ static void renderInclinationUI()
 			}
 		}
 	}
+}
 
-	if (mainPawnEnabled) 
+static void applyInclinations() {
+	if (mainPawnEnabled)
 		applyInclinations(0);
-	
-	if (pawn1Enabled) 
+
+	if (pawn1Enabled)
 		applyInclinations(1);
-	
-	if (pawn2Enabled) 
+
+	if (pawn2Enabled)
 		applyInclinations(2);
 }
 
@@ -177,4 +179,5 @@ void Hooks::InclinationProfiles()
 	pawn1Enabled = config.getBool("inclinationProfiles", "pawn1Enabled", false);
 	pawn2Enabled = config.getBool("inclinationProfiles", "pawn2Enabled", false);
 	InGameUIAdd(renderInclinationUI);
+	InGameUIAddTickHandler(applyInclinations);
 }

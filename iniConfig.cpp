@@ -227,5 +227,5 @@ void iniConfig::setFloats(LPCSTR section, LPCSTR key, std::vector<float> list, i
 		out << f;
 	}
 
-	setStr(section, key, std::move(out.str()));
+	setStr(section, key, out.str());
 }
