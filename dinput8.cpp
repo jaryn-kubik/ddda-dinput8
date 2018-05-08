@@ -12,6 +12,7 @@
 #include "Portcrystals.h"
 #include "WeaponSets.h"
 #include "DamageLog.h"
+#include "InclinationProfiles.h"
 
 typedef HRESULT(WINAPI *tDirectInput8Create)(HINSTANCE inst_handle, DWORD version, const IID& r_iid, LPVOID* out_wrapper, LPUNKNOWN p_unk);
 tDirectInput8Create oDirectInput8Create = nullptr;
@@ -45,6 +46,7 @@ void InitHooks()
 		Hooks::ItemEditor();
 		Hooks::InGameClock();
 		Hooks::DamageLog();
+		Hooks::InclinationProfiles();
 	}
 }
 

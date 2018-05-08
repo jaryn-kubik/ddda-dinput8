@@ -233,7 +233,7 @@ void renderStatsParty(const char *label, int offset, bool *respecShow)
 		ImGui::TreePop();
 	}
 
-	if (offset && ImGui::TreeNode("Inclinations"))//main pawn
+	if (offset && ImGui::TreeNode("Inclinations")) // pawn
 	{
 		int inclinationsOffset = statsOffset + 0x1224;
 		ImGui::InputFloat("Scather", GetBasePtr<float>(inclinationsOffset += 0));

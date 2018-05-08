@@ -6,6 +6,7 @@
 
 std::vector<void(*)()> content;
 std::vector<void(*)(bool)> windows;
+std::vector<void(*)()> tickHandlers;
 std::vector<std::tuple<LPCSTR, float, ImFont**>> fonts;
 void onLostDevice() { ImGui_ImplDX9_InvalidateDeviceObjects(); }
 void onResetDevice() { ImGui_ImplDX9_CreateDeviceObjects(); }
@@ -37,6 +38,9 @@ void onEndScene()
 	for (size_t i = 0; i < windows.size(); i++)
 		windows[i](inGameUIEnabled);
 	ImGui::Render();
+	
+	for (auto& tick : tickHandlers) 
+		tick();
 }
 
 void renderDDDAFixUI(bool getsInput)
@@ -105,6 +109,7 @@ bool Hooks::InGameUI()
 void Hooks::InGameUIAdd(void(*callback)()) { content.push_back(callback); }
 void Hooks::InGameUIAddWindow(void(*callback)(bool getsInput)) { windows.push_back(callback); }
 void Hooks::InGameUIAddFont(const char *filename, float size_pixels, ImFont **font) { fonts.emplace_back(filename, size_pixels, font); }
+void Hooks::InGameUIAddTickHandler(void(*callback)()) { tickHandlers.push_back(callback); }
 
 namespace ImGui
 {

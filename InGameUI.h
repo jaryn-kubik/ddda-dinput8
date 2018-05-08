@@ -7,6 +7,7 @@ namespace Hooks
 	void InGameUIAddWindow(void(*callback)(bool getsInput));
 	void InGameUIAddInit(void(*callback)());
 	void InGameUIAddFont(const char *filename, float size_pixels, ImFont **font);
+	void InGameUIAddTickHandler(void(*callback)());
 };
 
 namespace ImGui
